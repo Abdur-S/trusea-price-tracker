@@ -14,7 +14,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased"
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbM0LquIzmXBoQyL2MswmisKnJ9oaqu3_yZ3rYojUYr9wCxGqiV_PlgW6xTVztmQjcw5w/exec',
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbxM0LquIzmXBoQyL2MswmisKnJ9oaqu3_yZ3rYojUYr9wCxGqiV_PlgW6xTVztmQjcw5w/exec',
           viewMode: 'cards', 
           todayTab: '', yesterdayTab: '', activeTab: '',
           todayItems: [], yesterdayItems: [], displayItems: [],
@@ -26,18 +26,24 @@
               try {
                   let response = await fetch(this.webAppUrl);
                   let data = await response.json();
-                  if (data && data.tabs && data.tabs.length > 0) {
-                      this.todayTab = data.tabs[0];
-                      this.yesterdayTab = data.tabs[1] || '';
+                  
+                  // Safely read tabs list from whatever layout Google sends back
+                  let rawTabs = data.tabs || (Array.isArray(data) ? data : []);
+                  let cleanTabs = Array.isArray(rawTabs) ? rawTabs.filter(tab => typeof tab === 'string' && tab.toLowerCase().trim() !== 'daily price tracking') : [];
+                  
+                  if (cleanTabs.length > 0) {
+                      this.todayTab = cleanTabs[0];
+                      this.yesterdayTab = cleanTabs[1] || '';
                       this.activeTab = this.todayTab;
                       
-                      // Pre-populate with first load data immediately to bypass blank renders
-                      this.todayItems = data.items || [];
+                      // Pull fallback baseline values
+                      this.todayItems = data.items || (Array.isArray(data) ? data : []);
                       this.displayItems = this.todayItems;
                   }
+                  
                   this.loading = false;
-                  // Background sync the remaining parts in parallel
-                  this.syncData();
+                  // Immediately fetch full dataset synchronously
+                  await this.syncData();
               } catch (e) { 
                   console.error('Initialization failed:', e); 
                   this.loading = false;
@@ -50,15 +56,17 @@
               
               try {
                   let tReq = fetch(tUrl).then(r => r.json());
-                  let yReq = yUrl ? fetch(yUrl).then(r => r.json()) : Promise.resolve({ items: [] });
+                  let yReq = yUrl ? fetch(yUrl).then(r => r.json()) : Promise.resolve([]);
                   
                   let [tData, yData] = await Promise.all([tReq, yReq]);
                   
-                  this.todayItems = tData.items || [];
-                  this.yesterdayItems = yData.items || [];
+                  // Handles both old arrays and nested object item returns safely
+                  this.todayItems = tData.items || (Array.isArray(tData) ? tData : []);
+                  this.yesterdayItems = yData.items || (Array.isArray(yData) ? yData : []);
+                  
                   this.renderActiveTab();
               } catch(err) {
-                  console.error('Data pull error:', err);
+                  console.error('Data sync parsing error:', err);
               }
           },
           switchTab(tab) {
@@ -83,11 +91,11 @@
               this.chartInstance = new Chart(ctx, {
                   type: 'bar',
                   data: {
-                      labels: topFish.map(f => f.name.split('(')[0]),
+                      labels: topFish.map(f => f.name ? f.name.split('(')[0] : 'Fish'),
                       datasets: [
-                          { label: 'TruSea /KG', data: topFish.map(f => f.truSeaKg), backgroundColor: '#10b981' },
-                          { label: 'Licious', data: topFish.map(f => f.licious), backgroundColor: '#ef4444' },
-                          { label: 'TenderCuts', data: topFish.map(f => f.tenderCuts), backgroundColor: '#3b82f6' }
+                          { label: 'TruSea /KG', data: topFish.map(f => f.truSeaKg || 0), backgroundColor: '#10b981' },
+                          { label: 'Licious', data: topFish.map(f => f.licious || 0), backgroundColor: '#ef4444' },
+                          { label: 'TenderCuts', data: topFish.map(f => f.tenderCuts || 0), backgroundColor: '#3b82f6' }
                       ]
                   },
                   options: { responsive: true, plugins: { legend: { position: 'top' } } }
@@ -96,7 +104,7 @@
           askAI() {
               let q = this.aiQuery.toLowerCase().trim();
               if (!q) return;
-              let found = this.displayItems.find(f => q.includes(f.name.toLowerCase()) || f.name.toLowerCase().split(' ')[0].includes(q.split(' ')[0]));
+              let found = this.displayItems.find(f => f.name && (q.includes(f.name.toLowerCase()) || f.name.toLowerCase().split(' ')[0].includes(q.split(' ')[0])));
               
               if (found) {
                   if (q.includes('calculate') || q.includes('cost of') || q.includes('total')) {
