@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TruSea 3D Matrix Engine</title>
+    <title>TruSea Live Matrix</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -11,43 +11,45 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Premium Stable 3D Perspective Card Properties */
-        .perspective-grid {
-            perspective: 1200px;
+        /* Premium Gemini AI Style Animated Neon Floating Border Glow Aura */
+        .gemini-glow-card {
+            position: relative;
+            background: #ffffff;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        .tilt-card {
-            will-change: transform;
-            transform-style: preserve-3d;
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        .gemini-glow-card::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 1rem;
+            background: linear-gradient(135deg, #9b51e0, #3085ff, #00f2fe, #4af2a1);
+            background-size: 300% 300%;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .gemini-glow-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(48, 133, 255, 0.25);
+        }
+        .gemini-glow-card:hover::before {
+            opacity: 1;
+            animation: geminiGradientMovement 4s ease infinite;
         }
         
-        /* 3D Depth Card View with Vibrant Background Glow Effect */
-        .tilt-card:hover {
-            transform: translateY(-8px) rotateX(4deg) rotateY(-2deg);
-            /* Soft premium border illumination drop glow shadow */
-            box-shadow: 0 20px 40px rgba(37, 99, 235, 0.15), 
-                        0 0 25px rgba(59, 130, 246, 0.25);
-            border-color: rgba(59, 130, 246, 0.4);
-        }
-        
-        /* Push the internal elements forward on the Z-axis to create a real 3D layered look */
-        .pop-title {
-            transform: translateZ(30px);
-        }
-        .pop-prices {
-            transform: translateZ(25px);
-        }
-        .pop-comps {
-            transform: translateZ(20px);
+        @keyframes geminiGradientMovement {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased"
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbwT7zwPYviyLc_Z2MSVCEPPD91x6amnZFOgFisoPqJyKpWRvccNR_03k34D6AIZ2XuaAg/exec',
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbyqbWtW3JjyUdF_8R5k_aH4bhEcRfO9Mg4pjbFMZA9W8HNpyZ7Ot3CNb9I_lQRw-N0_Cg/exec',
           viewMode: 'cards', 
           dateMode: 'today', 
-          todayLabel: 'Today', yesterdayLabel: 'Yesterday',
+          todayLabel: 'Loading Today...', yesterdayLabel: 'Loading Yesterday...',
           todayItems: [], yesterdayItems: [], displayItems: [],
           loading: true, errorMessage: '', chartInstance: null,
           
@@ -69,7 +71,7 @@
                   this.renderActiveView();
               } catch (e) {
                   console.error(e);
-                  this.errorMessage = 'Data Stream Error: Verification link broken.';
+                  this.errorMessage = 'Live Sync Fault: Unable to resolve tracking matrix fields.';
               } finally {
                   this.loading = false;
               }
@@ -99,7 +101,7 @@
                   data: {
                       labels: targetFishList.map(f => f.name.split('(')[0]),
                       datasets: [
-                          { label: 'TruSea /KG', data: targetFishList.map(f => f.truSeaKg || null), backgroundColor: '#10b981', borderColor: '#059669', borderWidth: 1 },
+                          { label: 'TruSea /KG', data: targetFishList.map(f => f.truSeaKg || null), backgroundColor: '#00f2fe', borderColor: '#3085ff', borderWidth: 1 },
                           { label: 'Licious', data: targetFishList.map(f => f.licious || null), backgroundColor: '#ef4444', borderColor: '#dc2626', borderWidth: 1 },
                           { label: 'TenderCuts', data: targetFishList.map(f => f.tenderCuts || null), backgroundColor: '#3b82f6', borderColor: '#2563eb', borderWidth: 1 },
                           { label: 'Freshma', data: targetFishList.map(f => f.freshma || null), backgroundColor: '#f59e0b', borderColor: '#d97706', borderWidth: 1 },
@@ -113,7 +115,7 @@
                           legend: { position: 'top', labels: { font: { weight: 'bold', size: 11 } } }
                       },
                       scales: {
-                          y: { beginAtZero: true, title: { display: true, text: 'Price (INR)', font: { weight: 'bold' } } }
+                          y: { beginAtZero: true, title: { display: true, text: 'Price /KG (₹)', font: { weight: 'bold' } } }
                       }
                   }
               });
@@ -123,8 +125,8 @@
     <div class="min-h-screen p-4 sm:p-8 max-w-7xl mx-auto">
         <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-5 gap-3">
             <div>
-                <h1 class="text-2xl font-bold tracking-tight text-slate-900">TruSea <span class="text-blue-600 font-normal">Intelligence Engine</span></h1>
-                <p class="text-xs text-slate-500 mt-1">Live Dynamic Competitor Tracking Dashboard</p>
+                <h1 class="text-2xl font-bold tracking-tight text-slate-900">TruSea <span class="text-cyan-500 font-normal">Intelligence Engine</span></h1>
+                <p class="text-xs text-slate-500 mt-1">Instant Automated Data Synchronization Hub</p>
             </div>
             
             <div class="flex bg-slate-200/80 p-1 rounded-xl border border-slate-300/30 text-xs font-semibold">
@@ -134,11 +136,11 @@
         </header>
 
         <div class="mb-6 flex items-center gap-2 bg-slate-200/50 p-1 rounded-xl w-fit border border-slate-200/30" x-show="!loading && !errorMessage">
-            <button @click="toggleDate('today')" :class="dateMode === 'today' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition-all flex flex-col items-center min-w-[130px]">
+            <button @click="toggleDate('today')" :class="dateMode === 'today' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition-all flex flex-col items-center min-w-[135px]">
                 <span class="text-[9px] uppercase tracking-wider opacity-60">Today</span>
                 <span x-text="todayLabel"></span>
             </button>
-            <button @click="toggleDate('yesterday')" :class="dateMode === 'yesterday' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition-all flex flex-col items-center min-w-[130px]">
+            <button @click="toggleDate('yesterday')" :class="dateMode === 'yesterday' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition-all flex flex-col items-center min-w-[135px]">
                 <span class="text-[9px] uppercase tracking-wider opacity-60">Yesterday</span>
                 <span x-text="yesterdayLabel"></span>
             </button>
@@ -146,41 +148,36 @@
 
         <main>
             <div x-show="loading" class="flex flex-col items-center justify-center py-24 text-slate-400 gap-2">
-                <div class="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
-                <span class="text-xs">Processing live tracking matrix blocks...</span>
+                <div class="animate-spin rounded-full h-5 w-5 border-2 border-cyan-500 border-t-transparent"></div>
+                <span class="text-xs">Streaming direct data matrix components instantly...</span>
             </div>
 
             <div x-show="errorMessage" class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm font-medium" x-text="errorMessage" style="display: none;"></div>
 
-            <div x-show="!loading && !errorMessage && viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 perspective-grid" style="display: none;">
+            <div x-show="!loading && !errorMessage && viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" style="display: none;">
                 <template x-for="item in displayItems" :key="item.name + dateMode">
-                    <div :class="item.isSoldOut ? 'bg-slate-100 opacity-40 select-none pointer-events-none' : 'bg-white border-slate-200/80'" 
-                         class="tilt-card p-6 rounded-2xl border shadow-sm flex flex-col justify-between relative overflow-hidden cursor-pointer">
+                    <div :class="item.isSoldOut ? 'bg-slate-100 opacity-40 select-none pointer-events-none' : 'gemini-glow-card border-slate-200/80'" 
+                         class="p-6 rounded-2xl border shadow-sm flex flex-col justify-between relative">
                         
                         <div x-show="item.isSoldOut" class="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-bold uppercase px-2.5 py-1 rounded-bl tracking-widest z-50">Sold Out</div>
                         
                         <div>
-                            <h3 :class="item.isSoldOut ? 'text-slate-400 line-through' : 'text-slate-900'" 
-                                class="text-base font-bold mb-4 truncate pop-title" x-text="item.name"></h3>
+                            <h3 :class="item.isSoldOut ? 'text-slate-400 line-through' : 'text-slate-900'" class="text-base font-bold mb-4 truncate" x-text="item.name"></h3>
                             
-                            <div class="grid grid-cols-2 gap-2 mb-4 pop-prices">
-                                <div class="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 text-center">
-                                    <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-medium">TruSea 500g</span>
-                                    <span class="text-base font-black text-blue-600" x-text="item.truSea500g ? '₹' + item.truSea500g : '-'"></span>
-                                </div>
-                                <div class="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 text-center">
-                                    <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-medium">TruSea /KG</span>
-                                    <span class="text-base font-black text-emerald-600" x-text="item.truSeaKg ? '₹' + item.truSeaKg : '-'"></span>
+                            <div class="mb-4">
+                                <div class="bg-gradient-to-br from-slate-50 to-slate-100/50 p-3 rounded-xl border border-slate-100 text-center">
+                                    <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">TruSea Price /KG</span>
+                                    <span class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600" x-text="item.truSeaKg ? '₹' + item.truSeaKg : '-'"></span>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="border-t pt-3.5 space-y-2 text-xs text-slate-600 pop-comps">
-                            <div class="flex justify-between"><span>TenderCuts</span><span class="font-bold text-slate-700" x-text="item.tenderCuts ? '₹' + item.tenderCuts : '-'"></span></div>
-                            <div class="flex justify-between"><span>Licious</span><span class="font-bold text-slate-700" x-text="item.licious ? '₹' + item.licious : '-'"></span></div>
-                            <div class="flex justify-between"><span>Freshma</span><span class="font-bold text-slate-700" x-text="item.freshma ? '₹' + item.freshma : '-'"></span></div>
-                            <div class="flex justify-between"><span>FreshToHome</span><span class="font-bold text-slate-700" x-text="item.freshToHome ? '₹' + item.freshToHome : '-'"></span></div>
-                            <div class="flex justify-between"><span>Supreme Seafoods</span><span class="font-bold text-slate-700" x-text="item.supreme ? '₹' + item.supreme : '-'"></span></div>
+                        <div class="border-t border-slate-100 pt-3.5 space-y-2 text-xs text-slate-600">
+                            <div class="flex justify-between"><span>TenderCuts Price /KG</span><span class="font-bold text-slate-700" x-text="item.tenderCuts ? '₹' + item.tenderCuts : '-'"></span></div>
+                            <div class="flex justify-between"><span>Licious Price /KG</span><span class="font-bold text-slate-700" x-text="item.licious ? '₹' + item.licious : '-'"></span></div>
+                            <div class="flex justify-between"><span>Freshma Price /KG</span><span class="font-bold text-slate-700" x-text="item.freshma ? '₹' + item.freshma : '-'"></span></div>
+                            <div class="flex justify-between"><span>FreshToHome Price /KG</span><span class="font-bold text-slate-700" x-text="item.freshToHome ? '₹' + item.freshToHome : '-'"></span></div>
+                            <div class="flex justify-between"><span>Supreme Seafoods Price /KG</span><span class="font-bold text-slate-700" x-text="item.supreme ? '₹' + item.supreme : '-'"></span></div>
                         </div>
                     </div>
                 </template>
@@ -188,8 +185,8 @@
 
             <div x-show="!loading && !errorMessage && viewMode === 'analytics'" class="bg-white p-5 sm:p-6 rounded-xl border border-slate-200 shadow-sm max-w-5xl mx-auto" style="display: none;">
                 <div class="mb-4 flex justify-between items-center">
-                    <h3 class="text-base font-bold text-slate-900">Competitor Price Benchmarking (/KG)</h3>
-                    <span class="text-[10px] bg-blue-50 text-blue-600 border border-blue-100 px-2.5 py-1 rounded-full font-semibold uppercase tracking-wider" x-text="dateMode"></span>
+                    <h3 class="text-base font-bold text-slate-900">Competitor Pricing Benchmark Metrics Matrix</h3>
+                    <span class="text-[10px] bg-cyan-50 text-cyan-600 border border-cyan-100 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider" x-text="dateMode"></span>
                 </div>
                 <div class="relative h-[320px] sm:h-[420px] w-full">
                     <canvas id="competitorChart"></canvas>
