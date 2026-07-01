@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TruSea Live Price Engine</title>
-    <!-- Tailwind CSS Engine -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Alpine.js Engine (Fast, Lightweight State Management) -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -15,7 +13,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-blue-100" 
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbxXqzJYQ9KITHK_UCZCHLckGKDcaaDa6D7QlMdbDnaxCJ10Wv2Xu0kadsR1q6rqIHCvyg/exec',
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbxtSmm1gCo-OYigu1HMxIsMVW7xH8XCmiX8NJ9Fy2JqONrIHz2L9kU2mGfqKWSDSEoc-g/exec',
           todayTab: '',
           yesterdayTab: '',
           activeTab: '',
@@ -27,28 +25,27 @@
           async initEngine() {
               this.loading = true;
               try {
-                  // 1. Fast fetch the main tab configuration first
+                  // 1. Fetch main metadata setup
                   let response = await fetch(this.webAppUrl);
                   let data = await response.json();
                   
                   if (data.tabs) {
-                      // Filter tracking sheet out and keep only actual date tabs
+                      // Filter configuration tabs out
                       let dateTabs = data.tabs.filter(tab => tab.toLowerCase().trim() !== 'daily price tracking');
                       
-                      // Dynamically assign Today (Newest) vs Yesterday (Second Newest)
                       if (dateTabs.length > 0) this.todayTab = dateTabs[0];
                       if (dateTabs.length > 1) this.yesterdayTab = dateTabs[1];
                       
                       this.activeTab = this.todayTab;
                   }
 
-                  // 2. Parallel Fetch both sheets instantly at the same time to maximize speed
+                  // 2. High-speed parallel loading for both dates
                   let fetchToday = fetch(`${this.webAppUrl}?sheet=${encodeURIComponent(this.todayTab)}`).then(r => r.json());
                   let fetchYesterday = this.yesterdayTab ? fetch(`${this.webAppUrl}?sheet=${encodeURIComponent(this.yesterdayTab)}`).then(r => r.json()) : Promise.resolve({ items: [] });
 
                   let [todayData, yesterdayData] = await Promise.all([fetchToday, fetchYesterday]);
 
-                  // Cache everything inside memory for instant 0ms toggling
+                  // Cache results locally for instant toggles
                   this.todayItems = todayData.items || [];
                   this.yesterdayItems = yesterdayData.items || [];
                   
@@ -68,7 +65,6 @@
 
     <div class="min-h-screen p-4 sm:p-6 max-w-7xl mx-auto">
         
-        <!-- Premium Minimal Header -->
         <header class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-4 gap-2">
             <div>
                 <h1 class="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
@@ -81,9 +77,7 @@
             </div>
         </header>
 
-        <!-- Fast Toggle Switch (Dynamic Today vs Yesterday) -->
         <div class="mb-6 flex items-center gap-2 bg-slate-200/60 p-1 rounded-xl w-fit border border-slate-200/40">
-            <!-- Today Button -->
             <button @click="activeTab = todayTab; renderActiveTab()"
                     :class="activeTab === todayTab ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-500 hover:text-slate-800'"
                     class="px-4 py-2 text-xs sm:text-sm rounded-lg transition-all duration-300 ease-out flex flex-col items-center min-w-[120px] sm:min-w-[140px]">
@@ -91,7 +85,6 @@
                 <span class="text-xs" x-text="todayTab ? todayTab.replace('Updated Prices - ', '') : 'Loading...'"></span>
             </button>
 
-            <!-- Yesterday Button -->
             <button @click="activeTab = yesterdayTab; renderActiveTab()"
                     x-show="yesterdayTab"
                     :class="activeTab === yesterdayTab ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-500 hover:text-slate-800'"
@@ -101,27 +94,22 @@
             </button>
         </div>
 
-        <!-- Main Workspace Grid -->
         <main>
-            <!-- High-Speed Loading Overlay -->
             <div x-show="loading" class="flex flex-col items-center justify-center py-32 text-slate-400 gap-2">
                 <div class="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
                 <span class="text-xs tracking-wide font-medium text-slate-500">Syncing live tracks...</span>
             </div>
 
-            <!-- Empty Data Handling -->
             <div x-show="!loading && displayItems.length === 0" class="text-center py-16 text-slate-400 text-sm bg-white rounded-xl border border-slate-200">
                 No entries detected for this tracking period.
             </div>
 
-            <!-- Premium Card Matrix with hardware accelerated smoothness -->
             <div x-show="!loading && displayItems.length > 0" 
                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                 <template x-for="(item, idx) in displayItems" :key="item.name + activeTab">
                     <div :class="item.isSoldOut ? 'bg-slate-100/80 border-slate-200 opacity-40 select-none' : 'bg-white border-slate-200/60 hover:border-blue-300 hover:shadow-md'"
                          class="p-5 rounded-xl border transition-all duration-300 ease-out relative overflow-hidden flex flex-col justify-between shadow-sm transform hover:-translate-y-0.5">
                         
-                        <!-- Sold Out Ribbon Indicator -->
                         <div x-show="item.isSoldOut" class="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-bold uppercase px-2.5 py-1 rounded-bl tracking-widest">
                             Sold Out
                         </div>
@@ -129,7 +117,6 @@
                         <div>
                             <h3 :class="item.isSoldOut ? 'text-slate-400 line-through' : 'text-slate-900'" class="text-base font-bold pr-12 leading-snug mb-4" x-text="item.name"></h3>
                             
-                            <!-- Internal Pricing Matrix System -->
                             <div class="grid grid-cols-2 gap-2.5 mb-4">
                                 <div class="bg-slate-50/80 p-2.5 rounded-lg border border-slate-100/70 text-center">
                                     <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-medium mb-0.5">TruSea 500g</span>
@@ -142,7 +129,6 @@
                             </div>
                         </div>
 
-                        <!-- Competitors Listing Layout -->
                         <div class="border-t border-slate-100 pt-3.5 space-y-2 text-xs">
                             <div class="flex justify-between items-center"><span class="text-slate-400">TenderCuts</span><span class="font-medium text-slate-700" x-text="item.tenderCuts"></span></div>
                             <div class="flex justify-between items-center"><span class="text-slate-400">Licious</span><span class="font-medium text-slate-700" x-text="item.licious"></span></div>
