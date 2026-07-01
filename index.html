@@ -29,8 +29,16 @@
                   let response = await fetch(url);
                   let data = await response.json();
                   
-                  if (data.tabs) { this.sheetNames = data.tabs; }
-                  if (!this.activeTab && this.sheetNames.length > 0) { this.activeTab = this.sheetNames[0]; }
+                  if (data.tabs) { 
+                      // Filter out 'Daily Price Tracking' and take ONLY the top 2 newest sheets
+                      this.sheetNames = data.tabs.filter(tab => 
+                          tab.toLowerCase().trim() !== 'daily price tracking'
+                      ).slice(0, 2); 
+                  }
+                  
+                  if (!this.activeTab && this.sheetNames.length > 0) { 
+                      this.activeTab = this.sheetNames[0]; 
+                  }
                   this.items = data.items || [];
               } catch (e) {
                   console.error('Data sync failed:', e);
@@ -46,24 +54,28 @@
         <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-5 gap-3">
             <div>
                 <h1 class="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-                    TruSea <span class="text-blue-600 font-semibold text-xs border border-blue-200 px-2.5 py-1 rounded-full bg-blue-50">Price Dashboard</span>
+                    TruSea <span class="text-blue-600 font-semibold text-xs border border-blue-200 px-2.5 py-1 rounded-full bg-blue-50">Price Engine</span>
                 </h1>
                 <p class="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
                     <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Live Auto-Syncing with Google Sheets Daily
+                    Displaying: Current Day vs Previous Day Tracking
                 </p>
             </div>
         </header>
 
-        <!-- Dynamic Categories Scrollable Navigation Bar -->
-        <div class="mb-8 overflow-x-auto no-scrollbar flex space-x-2 border-b border-slate-200 pb-3">
-            <template x-for="tab in sheetNames" :key="tab">
-                <button @click="activeTab = tab; fetchData(tab)"
-                        :class="activeTab === tab ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/10 font-semibold' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'"
-                        class="px-4 py-2 text-xs sm:text-sm rounded-lg whitespace-nowrap transition-all duration-150 border"
-                        x-text="tab">
-                </button>
-            </template>
+        <!-- Dynamic Day Toggles (Only shows Current and Previous Day) -->
+        <div class="mb-8 flex items-center gap-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Select Date:</span>
+            <div class="overflow-x-auto no-scrollbar flex space-x-2 border-b border-slate-200 pb-1">
+                <template x-for="(tab, index) in sheetNames" :key="tab">
+                    <button @click="activeTab = tab; fetchData(tab)"
+                            :class="activeTab === tab ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/10 font-semibold' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'"
+                            class="px-4 py-2 text-xs sm:text-sm rounded-lg whitespace-nowrap transition-all duration-150 border flex items-center gap-1.5">
+                        <span x-text="tab"></span>
+                        <span x-text="index === 0 ? '(Current)' : '(Previous)'" class="text-[10px] opacity-70 font-normal"></span>
+                    </button>
+                </template>
+            </div>
         </div>
 
         <!-- Main Workspace -->
@@ -79,7 +91,7 @@
                 No entries detected in this sheet category tab.
             </div>
 
-            <!-- Beautiful Clean Card Grid (Highly Responsive) -->
+            <!-- Beautiful Clean Card Grid -->
             <div x-show="!loading && items.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                 <template x-for="(item, idx) in items" :key="idx">
                     <div :class="item.isSoldOut ? 'bg-slate-100/70 border-slate-200 opacity-50' : 'bg-white border-slate-200/80 hover:border-blue-200 hover:shadow-md hover:-translate-y-0.5'"
