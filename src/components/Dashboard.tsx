@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
-// Configuration details
-const API_KEY = "YOUR_GOOGLE_API_KEY"; // Replace with your real Google API Key
 const SPREADSHEET_ID = "1ax65ntAlS7Qs-rFIZcFLaXt31sA8xLrM5BRm305f-8Y";
-const SHEET_NAMES = ["Sheet1", "Sheet2", "Sheet3", "Sheet4"]; // Modify to perfectly match your tab names
+
+// Make sure these match your exact sheet tab names down to the letter
+const SHEET_NAMES = ["Sheet1", "Sheet2", "Sheet3", "Sheet4"]; 
 
 interface FishItem {
   name: string;
@@ -19,46 +19,47 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchSheetData(activeTab);
+    fetchCSVData(activeTab);
   }, [activeTab]);
 
-  const fetchSheetData = async (sheetName: string) => {
+  // Helper function to parse CSV lines safely
+  const parseCSV = (text: string) => {
+    const lines = text.split('\n');
+    return lines.map(line => {
+      // Handles commas inside quotes safely
+      const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+      return matches ? matches.map(val => val.replace(/^"| font-style:|"$/g, '')) : line.split(',');
+    });
+  };
+
+  const fetchCSVData = async (sheetName: string) => {
     setLoading(true);
     try {
-      // API call requests raw string values along with backing userEnteredFormat layout configurations
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?ranges=${sheetName}!A2:E60&fields=sheets(data(rowData(values(formattedValue,userEnteredFormat(backgroundColor)))))&key=${API_KEY}`;
+      // Fetching the public CSV version of the specific sheet tab grid
+      const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
       
       const response = await fetch(url);
-      const resData = await response.json();
-      
-      const rows = resData.sheets[0].data[0].rowData || [];
-      
-      const parsedData: FishItem[] = rows.map((row: any) => {
-        const values = row.values || [];
+      const csvText = await response.text();
+      const parsedRows = parseCSV(csvText);
+
+      // Assuming Row 1 is headers (Fish Name, Your Price, Comp 1, Comp 2, Status/Sold Out)
+      const fishItems: FishItem[] = parsedRows.slice(1).map((row) => {
+        const name = row[0] || '';
+        const myPrice = row[1] || 'N/A';
+        const comp1Price = row[2] || 'N/A';
+        const comp2Price = row[3] || 'N/A';
         
-        // Checks cell metadata targeting specific custom Red hex/RGB fill attributes
-        const isRed = (cell: any) => {
-          const bg = cell?.userEnteredFormat?.backgroundColor;
-          if (!bg) return false;
-          return (bg.red > 0.7 && (!bg.green || bg.green < 0.35) && (!bg.blue || bg.blue < 0.35));
-        };
+        // Checks if column 5 (E) says "sold out", "red", or "no stock"
+        const statusColumn = row[4] ? row[4].toLowerCase().trim() : '';
+        const isSoldOut = statusColumn.includes('sold out') || statusColumn.includes('red');
 
-        // Flags standard item out-of-stock instantly if either the identity or original baseline cost fields read red.
-        const soldOutCondition = isRed(values[0]) || isRed(values[1]);
-
-        return {
-          name: values[0]?.formattedValue || 'Unknown Fish',
-          myPrice: values[1]?.formattedValue || 'N/A',
-          comp1Price: values[2]?.formattedValue || 'N/A',
-          comp2Price: values[3]?.formattedValue || 'N/A',
-          isSoldOut: soldOutCondition
-        };
+        return { name, myPrice, comp1Price, comp2Price, isSoldOut };
       });
 
-      // Filter empty rows out clean
-      setData(parsedData.filter(item => item.name !== 'Unknown Fish' && item.name.trim() !== ''));
+      // Filter out blank placeholder spreadsheet lines
+      setData(fishItems.filter(item => item.name && item.name.trim() !== ''));
     } catch (error) {
-      console.error("Failed to parse sheet grid array context parameters:", error);
+      console.error("Error reading public spreadsheet CSV framework directly:", error);
     } finally {
       setLoading(false);
     }
@@ -74,12 +75,12 @@ export default function Dashboard() {
           </h1>
           <p className="text-xs text-neutral-400 mt-1 flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Live syncing dynamic mobile database grids
+            Live syncing via public CSV database link
           </p>
         </div>
       </header>
 
-      {/* Categories Navigator Menu (Smooth swipe interface adjustments built-in) */}
+      {/* Categories Navigator Menu */}
       <div className="max-w-6xl mx-auto mb-6 overflow-x-auto no-scrollbar flex space-x-2 border-b border-neutral-900 pb-2">
         {SHEET_NAMES.map((tab) => (
           <button
@@ -96,15 +97,15 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Mobile Card Component Display Grids */}
+      {/* Mobile-First Layout Grid Cards */}
       <main className="max-w-6xl mx-auto">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 text-neutral-500 gap-2">
             <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent"></div>
-            <span className="text-xs tracking-wide">Syncing market sheets...</span>
+            <span className="text-xs tracking-wide">Fetching stock data...</span>
           </div>
         ) : data.length === 0 ? (
-          <div className="text-center py-16 text-neutral-500 text-sm">No inventory listing tracks detected on this sheet page layout.</div>
+          <div className="text-center py-16 text-neutral-500 text-sm">No live data matches found for this page catalog.</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {data.map((item, idx) => (
@@ -116,7 +117,6 @@ export default function Dashboard() {
                     : 'bg-neutral-900/40 border-neutral-800/60 hover:border-neutral-700/80 shadow-sm'
                 }`}
               >
-                {/* Out Of Stock Accent Banner */}
                 {item.isSoldOut && (
                   <div className="absolute top-0 right-0 bg-red-600 text-white text-[9px] font-bold uppercase px-2.5 py-0.5 rounded-bl tracking-widest">
                     Sold Out
@@ -134,12 +134,12 @@ export default function Dashboard() {
                   </div>
                   
                   <div className="flex justify-between items-center px-3 py-1.5">
-                    <span className="text-xs text-neutral-500">Competitor A</span>
+                    <span className="text-xs text-neutral-500">Competitor 1</span>
                     <span className="text-xs sm:text-sm font-medium text-neutral-300">{item.comp1Price}</span>
                   </div>
 
                   <div className="flex justify-between items-center px-3 py-1.5">
-                    <span className="text-xs text-neutral-500">Competitor B</span>
+                    <span className="text-xs text-neutral-500">Competitor 2</span>
                     <span className="text-xs sm:text-sm font-medium text-neutral-300">{item.comp2Price}</span>
                   </div>
                 </div>
