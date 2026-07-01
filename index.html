@@ -11,23 +11,19 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Pure Neon Outline + Card Grow & Offset Shadow Effect */
+        /* Premium Flat Neon Outline + Card Grow & Offset Shadow Effect */
         .neon-outline-card {
             position: relative;
             background: #ffffff;
             border-radius: 1rem;
             z-index: 1;
-            /* Smooth transition for the Grow and Offset effect */
             transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1);
         }
-
-        /* Neon Border Laser Track (Only visible on hover) */
         .neon-outline-card::before {
             content: '';
             position: absolute;
             inset: 0;
             border-radius: 1rem;
-            /* 2px exact outline border width layer */
             padding: 2px; 
             background: linear-gradient(90deg, #00f2fe, #4facfe, #00cbff, #00f2fe);
             background-size: 300% 100%;
@@ -39,22 +35,14 @@
             transition: opacity 0.25s ease;
             pointer-events: none;
         }
-
-        /* Hover Transitions: Grow Effect + Offset Shadow + Neon Outline Trigger */
         .neon-outline-card:hover {
-            /* 1. GROW EFFECT: Card scales up slightly and pushes upward */
             transform: translateY(-6px) scale(1.02);
-            /* 2. OFFSET SHADOW: Deep realistic shadow cast lower down */
-            box-shadow: 0 20px 30px rgba(0, 242, 254, 0.15), 
-                        0 10px 15px rgba(15, 23, 42, 0.08);
+            box-shadow: 0 20px 30px rgba(0, 242, 254, 0.15), 0 10px 15px rgba(15, 23, 42, 0.08);
         }
-
         .neon-outline-card:hover::before {
-            /* 3. NEON EFFECT: Activates the laser moving border line */
             opacity: 1;
             animation: neonOutlineMove 1.5s linear infinite;
         }
-        
         @keyframes neonOutlineMove {
             0% { background-position: 0% 0%; }
             100% { background-position: 300% 0%; }
@@ -64,10 +52,10 @@
 <body class="bg-slate-50 text-slate-800 font-sans antialiased"
       x-data="{
           webAppUrl: 'https://script.google.com/macros/s/AKfycbyqkY64ohaoq_JcNFB7Vaj0vkYmzAqnGKMh2uKrFdICn_ScuglglLY_yveSf06p08uzqw/exec',
-          viewMode: 'cards', 
           dateMode: 'today', 
           todayLabel: 'Today', yesterdayLabel: 'Yesterday',
           todayItems: [], yesterdayItems: [], displayItems: [],
+          highestSeller: 'Calculating...', normalSeller: 'Calculating...',
           loading: true, errorMessage: '', chartInstance: null,
           
           async initEngine() {
@@ -99,74 +87,129 @@
           },
           renderActiveView() {
               this.displayItems = this.dateMode === 'today' ? this.todayItems : this.yesterdayItems;
-              if (this.viewMode === 'analytics') { this.renderChart(); }
+              this.calculateMarketMetrics();
           },
-          switchMode(mode) {
-              this.viewMode = mode;
-              if (mode === 'analytics') { setTimeout(() => this.renderChart(), 50); }
+          calculateMarketMetrics() {
+              if (this.displayItems.length === 0) return;
+              
+              let compTotals = { tenderCuts: 0, licious: 0, freshma: 0, freshToHome: 0, supreme: 0 };
+              let compCounts = { tenderCuts: 0, licious: 0, freshma: 0, freshToHome: 0, supreme: 0 };
+              
+              this.displayItems.forEach(item => {
+                  if (item.isSoldOut) return;
+                  if (item.tenderCuts) { compTotals.tenderCuts += item.tenderCuts; compCounts.tenderCuts++; }
+                  if (item.licious) { compTotals.licious += item.licious; compCounts.licious++; }
+                  if (item.freshma) { compTotals.freshma += item.freshma; compCounts.freshma++; }
+                  if (item.freshToHome) { compTotals.freshToHome += item.freshToHome; compCounts.freshToHome++; }
+                  if (item.supreme) { compTotals.supreme += item.supreme; compCounts.supreme++; }
+              });
+              
+              let averages = [
+                  { name: 'TenderCuts', avg: compCounts.tenderCuts ? compTotals.tenderCuts / compCounts.tenderCuts : 0 },
+                  { name: 'Licious', avg: compCounts.licious ? compTotals.licious / compCounts.licious : 0 },
+                  { name: 'Freshma', avg: compCounts.freshma ? compTotals.freshma / compCounts.freshma : 0 },
+                  { name: 'FreshToHome', avg: compCounts.freshToHome ? compTotals.freshToHome / compCounts.freshToHome : 0 },
+                  { name: 'Supreme Seafoods', avg: compCounts.supreme ? compTotals.supreme / compCounts.supreme : 0 }
+              ].filter(c => c.avg > 0);
+              
+              if (averages.length === 0) return;
+              
+              // Sort to find Highest
+              averages.sort((a, b) => b.avg - a.avg);
+              this.highestSeller = averages[0].name + ' (Avg: ₹' + Math.round(averages[0].avg) + '/KG)';
+              
+              // Find Normal (Median pricing provider)
+              let middleIdx = Math.floor(averages.length / 2);
+              this.normalSeller = averages[middleIdx].name + ' (Avg: ₹' + Math.round(averages[middleIdx].avg) + '/KG)';
+              
+              // Push metrics to graph display pass
+              setTimeout(() => this.renderInsightsChart(averages), 100);
           },
-          renderChart() {
+          renderInsightsChart(averages) {
               if (this.chartInstance) this.chartInstance.destroy();
-              let canvasEl = document.getElementById('competitorChart');
+              let canvasEl = document.getElementById('insightsChart');
               if (!canvasEl) return;
               let ctx = canvasEl.getContext('2d');
-              
-              let targetFishList = this.displayItems.slice(0, 6);
               
               this.chartInstance = new Chart(ctx, {
                   type: 'bar',
                   data: {
-                      labels: targetFishList.map(f => f.name.split('(')[0]),
-                      datasets: [
-                          { label: 'TruSea /KG', data: targetFishList.map(f => f.truSeaKg || null), backgroundColor: '#00f2fe', borderColor: '#4facfe', borderWidth: 1 },
-                          { label: 'Licious /KG', data: targetFishList.map(f => f.licious || null), backgroundColor: '#ef4444', borderColor: '#dc2626', borderWidth: 1 },
-                          { label: 'TenderCuts /KG', data: targetFishList.map(f => f.tenderCuts || null), backgroundColor: '#3b82f6', borderColor: '#2563eb', borderWidth: 1 },
-                          { label: 'Freshma /KG', data: targetFishList.map(f => f.freshma || null), backgroundColor: '#f59e0b', borderColor: '#d97706', borderWidth: 1 },
-                          { label: 'FreshToHome /KG', data: targetFishList.map(f => f.freshToHome || null), backgroundColor: '#8b5cf6', borderColor: '#7c3aed', borderWidth: 1 }
-                      ]
+                      labels: averages.map(c => c.name),
+                      datasets: [{
+                          label: 'Overall Average Price Index /KG',
+                          data: averages.map(c => Math.round(c.avg)),
+                          backgroundColor: averages.map((c, i) => i === 0 ? '#ef4444' : i === averages.length-1 ? '#10b981' : '#3b82f6'),
+                          borderWidth: 0,
+                          borderRadius: 6
+                      }]
                   },
                   options: {
                       responsive: true,
                       maintainAspectRatio: false,
-                      scales: { y: { beginAtZero: true, title: { display: true, text: 'Price /KG (₹)' } } }
+                      plugins: { legend: { display: false } },
+                      scales: { y: { beginAtZero: true, title: { display: true, text: 'Avg Price (₹)' } } }
                   }
               });
           }
       }" x-init="initEngine()">
 
     <div class="min-h-screen p-4 sm:p-8 max-w-7xl mx-auto">
+        <!-- Header -->
         <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-5 gap-3">
             <div>
                 <h1 class="text-2xl font-bold tracking-tight text-slate-900">TruSea <span class="text-cyan-500 font-normal">Intelligence Engine</span></h1>
-                <p class="text-xs text-slate-500 mt-1">Dynamic Market Price Analyzer Hub</p>
+                <p class="text-xs text-slate-500 mt-1">Live Dynamic Competitor Market Comparison System</p>
             </div>
             
-            <div class="flex bg-slate-200/80 p-1 rounded-xl border border-slate-300/30 text-xs font-semibold">
-                <button @click="switchMode('cards')" :class="viewMode === 'cards' ? 'bg-white shadow text-blue-600' : 'text-slate-600'" class="px-5 py-2 rounded-lg transition-all">Price Cards</button>
-                <button @click="switchMode('analytics')" :class="viewMode === 'analytics' ? 'bg-white shadow text-blue-600' : 'text-slate-600'" class="px-5 py-2 rounded-lg transition-all">Analytics Charts</button>
+            <!-- Date select switches -->
+            <div class="flex bg-slate-200/50 p-1 rounded-xl w-fit border border-slate-200/30" x-show="!loading && !errorMessage">
+                <button @click="toggleDate('today')" :class="dateMode === 'today' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition-all flex flex-col items-center min-w-[120px]">
+                    <span class="text-[9px] uppercase tracking-wider opacity-60">Today</span>
+                    <span x-text="todayLabel"></span>
+                </button>
+                <button @click="toggleDate('yesterday')" :class="dateMode === 'yesterday' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition-all flex flex-col items-center min-w-[120px]">
+                    <span class="text-[9px] uppercase tracking-wider opacity-60">Yesterday</span>
+                    <span x-text="yesterdayLabel"></span>
+                </button>
             </div>
         </header>
 
-        <div class="mb-6 flex items-center gap-2 bg-slate-200/50 p-1 rounded-xl w-fit border border-slate-200/30" x-show="!loading && !errorMessage">
-            <button @click="toggleDate('today')" :class="dateMode === 'today' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition-all flex flex-col items-center min-w-[135px]">
-                <span class="text-[9px] uppercase tracking-wider opacity-60">Today</span>
-                <span x-text="todayLabel"></span>
-            </button>
-            <button @click="toggleDate('yesterday')" :class="dateMode === 'yesterday' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition-all flex flex-col items-center min-w-[135px]">
-                <span class="text-[9px] uppercase tracking-wider opacity-60">Yesterday</span>
-                <span x-text="yesterdayLabel"></span>
-            </button>
-        </div>
-
-        <main>
+        <main class="space-y-8">
+            <!-- Loading -->
             <div x-show="loading" class="flex flex-col items-center justify-center py-24 text-slate-400 gap-2">
                 <div class="animate-spin rounded-full h-5 w-5 border-2 border-cyan-500 border-t-transparent"></div>
-                <span class="text-xs">Streaming live tracking metrics instantly...</span>
+                <span class="text-xs">Streaming live data metrics instantly...</span>
             </div>
 
+            <!-- Error -->
             <div x-show="errorMessage" class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm font-medium" x-text="errorMessage" style="display: none;"></div>
 
-            <div x-show="!loading && !errorMessage && viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" style="display: none;">
+            <!-- DYNAMIC SMART INSIGHTS BOXES AND BAR GRAPH -->
+            <div x-show="!loading && !errorMessage" class="grid grid-cols-1 lg:grid-cols-3 gap-6" style="display: none;">
+                <div class="lg:col-span-1 flex flex-col gap-4 justify-between">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-red-400 block mb-1">🔴 Highest Cost Seller</span>
+                        <div class="text-lg font-black text-slate-900" x-text="highestSeller"></div>
+                        <p class="text-xs text-slate-400 mt-2">Sells at the most expensive premium markup index today across all varieties.</p>
+                    </div>
+                    
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-blue-500 block mb-1">🔵 Normal Cost Seller</span>
+                        <div class="text-lg font-black text-slate-900" x-text="normalSeller"></div>
+                        <p class="text-xs text-slate-400 mt-2">Sells at normal, stable baseline market average costs today.</p>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-900 mb-4">Competitor Average Price Index Benchmark (/KG)</h3>
+                    <div class="relative h-[180px] w-full">
+                        <canvas id="insightsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARDS GRID VIEW -->
+            <div x-show="!loading && !errorMessage" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" style="display: none;">
                 <template x-for="item in displayItems" :key="item.name + dateMode">
                     <div :class="item.isSoldOut ? 'bg-slate-100 opacity-40 select-none pointer-events-none border-slate-200' : 'neon-outline-card border-slate-200/60'" 
                          class="p-6 border flex flex-col justify-between shadow-sm">
@@ -176,6 +219,7 @@
                         <div>
                             <h3 :class="item.isSoldOut ? 'text-slate-400 line-through' : 'text-slate-900'" class="text-base font-bold mb-4 truncate" x-text="item.name"></h3>
                             
+                            <!-- TruSea Target Prices Block (/KG ONLY) -->
                             <div class="mb-4">
                                 <div class="bg-gradient-to-br from-slate-50 to-slate-100/30 p-3 rounded-xl border border-slate-100 text-center">
                                     <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">TruSea Price /KG</span>
@@ -184,6 +228,7 @@
                             </div>
                         </div>
                         
+                        <!-- Competitor Data Grid Matrix -->
                         <div class="border-t border-slate-100 pt-3.5 space-y-2 text-xs text-slate-600">
                             <div class="flex justify-between"><span>TenderCuts /KG</span><span class="font-bold text-slate-700" x-text="item.tenderCuts ? '₹' + item.tenderCuts : '-'"></span></div>
                             <div class="flex justify-between"><span>Licious /KG</span><span class="font-bold text-slate-700" x-text="item.licious ? '₹' + item.licious : '-'"></span></div>
@@ -193,16 +238,6 @@
                         </div>
                     </div>
                 </template>
-            </div>
-
-            <div x-show="!loading && !errorMessage && viewMode === 'analytics'" class="bg-white p-5 sm:p-6 rounded-xl border border-slate-200 shadow-sm max-w-5xl mx-auto" style="display: none;">
-                <div class="mb-4 flex justify-between items-center">
-                    <h3 class="text-base font-bold text-slate-900">Competitor Price Benchmarking Metrics Matrix</h3>
-                    <span class="text-[10px] bg-cyan-50 text-cyan-600 border border-cyan-100 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider" x-text="dateMode"></span>
-                </div>
-                <div class="relative h-[320px] sm:h-[420px] w-full">
-                    <canvas id="competitorChart"></canvas>
-                </div>
             </div>
         </main>
     </div>
