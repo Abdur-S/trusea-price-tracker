@@ -6,25 +6,32 @@
     <title>TruSea Price Tracker</title>
     <!-- Tailwind CSS Engine -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Alpine.js Engine (Handles tabs and live fetching instantly without complex React build tools) -->
+    <!-- Alpine.js Engine -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="bg-neutral-950 text-gray-100 font-sans antialiased" 
+<body class="bg-slate-50 text-slate-800 font-sans antialiased" 
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbywv50T1E_DtdRnUCclZPUZ1npXAF5EPMrYnmK9KJixxTfPPQ78o_EPCBGu0mrYYiFRVA/exec',
-          sheetNames: ['Updated Prices - 1 Jul 2026', 'Updated Prices - 30 Jun 2026', 'Updated Prices - 29 Jun 2026', 'Daily Price Tracking'],
-          activeTab: 'Updated Prices - 1 Jul 2026',
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbxXqzJYQ9KITHK_UCZCHLckGKDcaaDa6D7QlMdbDnaxCJ10Wv2Xu0kadsR1q6rqIHCvyg/exec',
+          sheetNames: [],
+          activeTab: '',
           items: [],
           loading: true,
-          async fetchData() {
+          async fetchData(targetTab = '') {
               this.loading = true;
               try {
-                  let response = await fetch(`${this.webAppUrl}?sheet=${encodeURIComponent(this.activeTab)}`);
-                  this.items = await response.json();
+                  let url = this.webAppUrl;
+                  if (targetTab) { url += `?sheet=${encodeURIComponent(targetTab)}`; }
+                  
+                  let response = await fetch(url);
+                  let data = await response.json();
+                  
+                  if (data.tabs) { this.sheetNames = data.tabs; }
+                  if (!this.activeTab && this.sheetNames.length > 0) { this.activeTab = this.sheetNames[0]; }
+                  this.items = data.items || [];
               } catch (e) {
                   console.error('Data sync failed:', e);
               } finally {
@@ -32,80 +39,80 @@
               }
           }
       }" 
-      x-init="fetchData(); $watch('activeTab', () => fetchData())">
+      x-init="fetchData()">
 
-    <div class="min-h-screen p-4 sm:p-6">
-        <!-- Brand Header -->
-        <header class="max-w-6xl mx-auto mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-neutral-800 pb-4 gap-2">
+    <div class="min-h-screen p-4 sm:p-8 max-w-7xl mx-auto">
+        <!-- Premium Minimal Header -->
+        <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-5 gap-3">
             <div>
-                <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                    TruSea <span class="text-blue-500 font-medium text-sm sm:text-base border border-blue-500/30 px-2 py-0.5 rounded bg-blue-500/10">Price Engine</span>
+                <h1 class="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+                    TruSea <span class="text-blue-600 font-semibold text-xs border border-blue-200 px-2.5 py-1 rounded-full bg-blue-50">Price Dashboard</span>
                 </h1>
-                <p class="text-xs text-neutral-400 mt-1 flex items-center gap-1.5">
+                <p class="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
                     <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Live Syncing Dashboard (No-Build Setup)
+                    Live Auto-Syncing with Google Sheets Daily
                 </p>
             </div>
         </header>
 
-        <!-- Categories Navigator Menu -->
-        <div class="max-w-6xl mx-auto mb-6 overflow-x-auto no-scrollbar flex space-x-2 border-b border-neutral-900 pb-2">
+        <!-- Dynamic Categories Scrollable Navigation Bar -->
+        <div class="mb-8 overflow-x-auto no-scrollbar flex space-x-2 border-b border-slate-200 pb-3">
             <template x-for="tab in sheetNames" :key="tab">
-                <button @click="activeTab = tab"
-                        :class="activeTab === tab ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' : 'bg-neutral-900 text-neutral-400 hover:bg-neutral-800'"
-                        class="px-4 py-2 text-xs sm:text-sm font-medium rounded-lg whitespace-nowrap transition-all duration-150"
+                <button @click="activeTab = tab; fetchData(tab)"
+                        :class="activeTab === tab ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/10 font-semibold' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'"
+                        class="px-4 py-2 text-xs sm:text-sm rounded-lg whitespace-nowrap transition-all duration-150 border"
                         x-text="tab">
                 </button>
             </template>
         </div>
 
-        <!-- Main Cards Grid -->
-        <main class="max-w-6xl mx-auto">
-            <!-- Loading Indicator -->
-            <div x-show="loading" class="flex flex-col items-center justify-center py-24 text-neutral-500 gap-2">
-                <div class="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent"></div>
-                <span class="text-xs tracking-wide">Syncing market metrics...</span>
+        <!-- Main Workspace -->
+        <main>
+            <!-- Spinner -->
+            <div x-show="loading" class="flex flex-col items-center justify-center py-24 text-slate-400 gap-2">
+                <div class="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent"></div>
+                <span class="text-xs tracking-wide">Fetching prices...</span>
             </div>
 
-            <!-- Empty State -->
-            <div x-show="!loading && items.length === 0" class="text-center py-16 text-neutral-500 text-sm">
-                No inventory listing tracks detected on this sheet tab.
+            <!-- Empty Grid Warning -->
+            <div x-show="!loading && items.length === 0" class="text-center py-16 text-slate-400 text-sm bg-white rounded-xl border border-slate-200">
+                No entries detected in this sheet category tab.
             </div>
 
-            <!-- Data Cards -->
-            <div x-show="!loading && items.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Beautiful Clean Card Grid (Highly Responsive) -->
+            <div x-show="!loading && items.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                 <template x-for="(item, idx) in items" :key="idx">
-                    <div :class="item.isSoldOut ? 'bg-neutral-950/40 border-red-950/50 opacity-40 select-none' : 'bg-neutral-900/40 border-neutral-800/60 hover:border-neutral-700/80 shadow-sm'"
-                         class="p-4 sm:p-5 rounded-xl border transition-all relative overflow-hidden backdrop-blur-sm flex flex-col justify-between">
+                    <div :class="item.isSoldOut ? 'bg-slate-100/70 border-slate-200 opacity-50' : 'bg-white border-slate-200/80 hover:border-blue-200 hover:shadow-md hover:-translate-y-0.5'"
+                         class="p-5 rounded-xl border transition-all duration-200 relative overflow-hidden flex flex-col justify-between shadow-sm">
                         
-                        <!-- Sold Out Badge -->
-                        <div x-show="item.isSoldOut" class="absolute top-0 right-0 bg-red-600 text-white text-[9px] font-bold uppercase px-2.5 py-0.5 rounded-bl tracking-widest animate-pulse">
+                        <!-- Sold Out Badge Flag -->
+                        <div x-show="item.isSoldOut" class="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-bold uppercase px-2.5 py-1 rounded-bl tracking-widest">
                             Sold Out
                         </div>
 
                         <div>
-                            <h3 class="text-base sm:text-lg font-semibold text-white pr-12 leading-snug mb-3" x-text="item.name"></h3>
+                            <h3 :class="item.isSoldOut ? 'text-slate-400 line-through' : 'text-slate-900'" class="text-base sm:text-lg font-bold pr-12 leading-snug mb-4" x-text="item.name"></h3>
                             
-                            <!-- Price Blocks -->
-                            <div class="grid grid-cols-2 gap-2 mb-4">
-                                <div class="bg-neutral-950/60 p-2.5 rounded-lg border border-neutral-850 text-center">
-                                    <span class="block text-[10px] uppercase tracking-wider text-neutral-400 mb-0.5">TruSea 500g</span>
-                                    <span :class="item.isSoldOut ? 'text-neutral-500 line-through' : 'text-blue-400'" class="text-sm font-bold" x-text="item.truSea500g"></span>
+                            <!-- TruSea Pricing Matrix Block -->
+                            <div class="grid grid-cols-2 gap-2.5 mb-4">
+                                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 text-center">
+                                    <span class="block text-[10px] uppercase tracking-wider text-slate-400 font-medium mb-0.5">TruSea 500g</span>
+                                    <span :class="item.isSoldOut ? 'text-slate-400 line-through' : 'text-blue-600'" class="text-base font-extrabold" x-text="item.truSea500g"></span>
                                 </div>
-                                <div class="bg-neutral-950/60 p-2.5 rounded-lg border border-neutral-850 text-center">
-                                    <span class="block text-[10px] uppercase tracking-wider text-neutral-400 mb-0.5">TruSea /KG</span>
-                                    <span :class="item.isSoldOut ? 'text-neutral-500 line-through' : 'text-emerald-400'" class="text-sm font-bold" x-text="item.truSeaKg"></span>
+                                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 text-center">
+                                    <span class="block text-[10px] uppercase tracking-wider text-slate-400 font-medium mb-0.5">TruSea /KG</span>
+                                    <span :class="item.isSoldOut ? 'text-slate-400 line-through' : 'text-emerald-600'" class="text-base font-extrabold" x-text="item.truSeaKg"></span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Competitors breakdown -->
-                        <div class="border-t border-neutral-800/60 pt-3 space-y-1.5 text-xs">
-                            <div class="flex justify-between text-neutral-400"><span>TenderCuts</span><span class="font-medium text-neutral-200" x-text="item.tenderCuts"></span></div>
-                            <div class="flex justify-between text-neutral-400"><span>Licious</span><span class="font-medium text-neutral-200" x-text="item.licious"></span></div>
-                            <div class="flex justify-between text-neutral-400"><span>Freshma</span><span class="font-medium text-neutral-200" x-text="item.freshma"></span></div>
-                            <div class="flex justify-between text-neutral-400"><span>FreshToHome</span><span class="font-medium text-neutral-200" x-text="item.freshToHome"></span></div>
-                            <div class="flex justify-between text-neutral-400"><span>Supreme Seafoods</span><span class="font-medium text-neutral-200" x-text="item.supreme"></span></div>
+                        <!-- Competitors Listing Section -->
+                        <div class="border-t border-slate-100 pt-4 space-y-2 text-xs">
+                            <div class="flex justify-between items-center"><span class="text-slate-400">TenderCuts</span><span class="font-semibold text-slate-700" x-text="item.tenderCuts"></span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400">Licious</span><span class="font-semibold text-slate-700" x-text="item.licious"></span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400">Freshma</span><span class="font-semibold text-slate-700" x-text="item.freshma"></span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400">FreshToHome</span><span class="font-semibold text-slate-700" x-text="item.freshToHome"></span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400">Supreme Seafoods</span><span class="font-semibold text-slate-700" x-text="item.supreme"></span></div>
                         </div>
                     </div>
                 </template>
