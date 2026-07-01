@@ -3,20 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TruSea Analytics Tracker</title>
+    <title>TruSea Matrix Engine</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Premium 3D Perspective Card Mechanics */
+        .perspective-container {
+            perspective: 1000px;
+        }
+        .tilt-card {
+            transition: transform 0.25s ease-out, box-shadow 0.25s ease-out;
+            transform-style: preserve-3d;
+        }
+        .tilt-card:hover {
+            transform: rotateX(6deg) rotateY(-4deg) translateZ(10px);
+            box-shadow: 0 20px 30px rgba(148, 163, 184, 0.18);
+        }
+        .preserve-inner {
+            transform: translateZ(20px);
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased"
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbxPfOMuxMF5xhIyQLnTU1Df89zm_vnpHkFGI1nB8PUwPCnrtuOCSQY7iuwZzeF1zz7Ssg/exec',
-          viewMode: 'cards', // 'cards' | 'analytics'
-          dateMode: 'today', // 'today' | 'yesterday'
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbzi80xCC8O70fjzGzmc2pb1j5UL66uxvFg6w1kwj8FGxqC92IRiMzQWgG4LIe47wF0sng/exec',
+          viewMode: 'cards', 
+          dateMode: 'today', 
           todayLabel: 'Today', yesterdayLabel: 'Yesterday',
           todayItems: [], yesterdayItems: [], displayItems: [],
           loading: true, errorMessage: '', chartInstance: null,
@@ -25,12 +41,12 @@
               this.loading = true;
               this.errorMessage = '';
               try {
+                  // High-speed compilation: Pulls full data structures at once
                   let response = await fetch(this.webAppUrl);
                   let data = await response.json();
                   
                   if (data.error) { throw new Error(data.error); }
                   
-                  // Track current dynamic meta fields
                   this.todayLabel = data.meta.todayTab || 'Today';
                   this.yesterdayLabel = data.meta.yesterdayTab || 'Yesterday';
                   
@@ -40,7 +56,7 @@
                   this.renderActiveView();
               } catch (e) {
                   console.error(e);
-                  this.errorMessage = 'Data Stream Error: Unable to sync data matrix arrays.';
+                  this.errorMessage = 'Data Stream Error: Verification link broken.';
               } finally {
                   this.loading = false;
               }
@@ -50,12 +66,13 @@
               this.renderActiveView();
           },
           renderActiveView() {
+              // 0ms Memory swapping engine
               this.displayItems = this.dateMode === 'today' ? this.todayItems : this.yesterdayItems;
               if (this.viewMode === 'analytics') { this.renderChart(); }
           },
           switchMode(mode) {
               this.viewMode = mode;
-              if (mode === 'analytics') { setTimeout(() => this.renderChart(), 150); }
+              if (mode === 'analytics') { setTimeout(() => this.renderChart(), 50); }
           },
           renderChart() {
               if (this.chartInstance) this.chartInstance.destroy();
@@ -63,7 +80,6 @@
               if (!canvasEl) return;
               let ctx = canvasEl.getContext('2d');
               
-              // Target top 6 core seafood varieties from data layout
               let targetFishList = this.displayItems.slice(0, 6);
               
               this.chartInstance = new Chart(ctx, {
@@ -82,12 +98,10 @@
                       responsive: true,
                       maintainAspectRatio: false,
                       plugins: {
-                          legend: { position: 'top', labels: { font: { weight: 'bold', size: 11 } } },
-                          tooltip: { callbacks: { label: (context) => `${context.dataset.label}: ₹${context.raw}` } }
+                          legend: { position: 'top', labels: { font: { weight: 'bold', size: 11 } } }
                       },
                       scales: {
-                          y: { beginAtZero: true, title: { display: true, text: 'Price (INR)', font: { weight: 'bold' } } },
-                          x: { ticks: { font: { size: 10, weight: 'medium' } } }
+                          y: { beginAtZero: true, title: { display: true, text: 'Price (INR)', font: { weight: 'bold' } } }
                       }
                   }
               });
@@ -98,7 +112,7 @@
         <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-5 gap-3">
             <div>
                 <h1 class="text-2xl font-bold tracking-tight text-slate-900">TruSea <span class="text-blue-600 font-normal">Intelligence Engine</span></h1>
-                <p class="text-xs text-slate-500 mt-1">Live Dynamic Competitor Tracking & Graphics Dashboard</p>
+                <p class="text-xs text-slate-500 mt-1">Ultra-Fast Real-Time Market Monitor System</p>
             </div>
             
             <div class="flex bg-slate-200/80 p-1 rounded-xl border border-slate-300/30 text-xs font-semibold">
@@ -108,11 +122,11 @@
         </header>
 
         <div class="mb-6 flex items-center gap-2 bg-slate-200/50 p-1 rounded-xl w-fit border border-slate-200/30" x-show="!loading && !errorMessage">
-            <button @click="toggleDate('today')" :class="dateMode === 'today' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition architecture flex flex-col items-center min-w-[130px]">
+            <button @click="toggleDate('today')" :class="dateMode === 'today' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition-all flex flex-col items-center min-w-[130px]">
                 <span class="text-[9px] uppercase tracking-wider opacity-60">Today</span>
                 <span x-text="todayLabel"></span>
             </button>
-            <button @click="toggleDate('yesterday')" :class="dateMode === 'yesterday' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition architecture flex flex-col items-center min-w-[130px]">
+            <button @click="toggleDate('yesterday')" :class="dateMode === 'yesterday' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition-all flex flex-col items-center min-w-[130px]">
                 <span class="text-[9px] uppercase tracking-wider opacity-60">Yesterday</span>
                 <span x-text="yesterdayLabel"></span>
             </button>
@@ -126,26 +140,27 @@
 
             <div x-show="errorMessage" class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm font-medium" x-text="errorMessage" style="display: none;"></div>
 
-            <div x-show="!loading && !errorMessage && viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" style="display: none;">
+            <div x-show="!loading && !errorMessage && viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 perspective-container" style="display: none;">
                 <template x-for="item in displayItems" :key="item.name + dateMode">
-                    <div :class="item.isSoldOut ? 'bg-slate-100 opacity-40 select-none' : 'bg-white border-slate-200/70 hover:border-blue-300 hover:shadow-md'" class="p-5 rounded-xl border shadow-sm transition flex flex-col justify-between relative overflow-hidden transform hover:-translate-y-0.5">
+                    <div :class="item.isSoldOut ? 'bg-slate-100 opacity-40 select-none pointer-events-none' : 'bg-white border-slate-200/80'" class="tilt-card p-5 rounded-xl border shadow-sm flex flex-col justify-between relative overflow-hidden">
                         <div x-show="item.isSoldOut" class="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-bold uppercase px-2.5 py-1 rounded-bl tracking-widest">Sold Out</div>
-                        <div>
-                            <h3 class="text-base font-bold text-slate-900 mb-4 truncate" x-text="item.name"></h3>
+                        
+                        <div class="preserve-inner">
+                            <h3 :class="item.isSoldOut ? 'text-slate-400 line-through' : 'text-slate-900'" class="text-base font-bold mb-4 truncate" x-text="item.name"></h3>
                             
                             <div class="grid grid-cols-2 gap-2 mb-4">
-                                <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-center">
+                                <div class="bg-slate-50/80 p-2.5 rounded-lg border border-slate-100 text-center">
                                     <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-medium">TruSea 500g</span>
                                     <span class="text-base font-black text-blue-600" x-text="item.truSea500g ? '₹' + item.truSea500g : '-'"></span>
                                 </div>
-                                <div class="bg-slate-50 p-2.5 rounded-lg border text-center border-slate-100">
+                                <div class="bg-slate-50/80 p-2.5 rounded-lg border border-slate-100 text-center">
                                     <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-medium">TruSea /KG</span>
                                     <span class="text-base font-black text-emerald-600" x-text="item.truSeaKg ? '₹' + item.truSeaKg : '-'"></span>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="border-t pt-3 space-y-1.5 text-xs text-slate-600">
+                        <div class="border-t pt-3 space-y-1.5 text-xs text-slate-600 preserve-inner">
                             <div class="flex justify-between"><span>TenderCuts</span><span class="font-bold text-slate-700" x-text="item.tenderCuts ? '₹' + item.tenderCuts : '-'"></span></div>
                             <div class="flex justify-between"><span>Licious</span><span class="font-bold text-slate-700" x-text="item.licious ? '₹' + item.licious : '-'"></span></div>
                             <div class="flex justify-between"><span>Freshma</span><span class="font-bold text-slate-700" x-text="item.freshma ? '₹' + item.freshma : '-'"></span></div>
