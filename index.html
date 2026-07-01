@@ -11,39 +11,53 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Premium Flat Neon Animated Border Glow Mechanics */
-        .neon-glow-card {
+        /* Pure Neon Outline + Card Grow & Offset Shadow Effect */
+        .neon-outline-card {
             position: relative;
             background: #ffffff;
             border-radius: 1rem;
             z-index: 1;
-            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            /* Smooth transition for the Grow and Offset effect */
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1);
         }
-        /* Hidden neon background track */
-        .neon-glow-card::before {
+
+        /* Neon Border Laser Track (Only visible on hover) */
+        .neon-outline-card::before {
             content: '';
             position: absolute;
-            inset: -2px;
-            border-radius: 1.1rem;
-            background: linear-gradient(90deg, #00f2fe, #4facfe, #00f2fe, #00cbff);
-            background-size: 400% 100%;
-            z-index: -1;
+            inset: 0;
+            border-radius: 1rem;
+            /* 2px exact outline border width layer */
+            padding: 2px; 
+            background: linear-gradient(90deg, #00f2fe, #4facfe, #00cbff, #00f2fe);
+            background-size: 300% 100%;
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: 2;
             opacity: 0;
             transition: opacity 0.25s ease;
+            pointer-events: none;
         }
-        /* Triggered moving neon ring borders on hover */
-        .neon-glow-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 30px rgba(0, 242, 254, 0.25);
+
+        /* Hover Transitions: Grow Effect + Offset Shadow + Neon Outline Trigger */
+        .neon-outline-card:hover {
+            /* 1. GROW EFFECT: Card scales up slightly and pushes upward */
+            transform: translateY(-6px) scale(1.02);
+            /* 2. OFFSET SHADOW: Deep realistic shadow cast lower down */
+            box-shadow: 0 20px 30px rgba(0, 242, 254, 0.15), 
+                        0 10px 15px rgba(15, 23, 42, 0.08);
         }
-        .neon-glow-card:hover::before {
+
+        .neon-outline-card:hover::before {
+            /* 3. NEON EFFECT: Activates the laser moving border line */
             opacity: 1;
-            animation: neonBorderMove 2s linear infinite;
+            animation: neonOutlineMove 1.5s linear infinite;
         }
         
-        @keyframes neonBorderMove {
+        @keyframes neonOutlineMove {
             0% { background-position: 0% 0%; }
-            100% { background-position: 400% 0%; }
+            100% { background-position: 300% 0%; }
         }
     </style>
 </head>
@@ -124,7 +138,7 @@
         <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-5 gap-3">
             <div>
                 <h1 class="text-2xl font-bold tracking-tight text-slate-900">TruSea <span class="text-cyan-500 font-normal">Intelligence Engine</span></h1>
-                <p class="text-xs text-slate-500 mt-1">Dynamic Market Price Analyzer Loop</p>
+                <p class="text-xs text-slate-500 mt-1">Dynamic Market Price Analyzer Hub</p>
             </div>
             
             <div class="flex bg-slate-200/80 p-1 rounded-xl border border-slate-300/30 text-xs font-semibold">
@@ -154,7 +168,7 @@
 
             <div x-show="!loading && !errorMessage && viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" style="display: none;">
                 <template x-for="item in displayItems" :key="item.name + dateMode">
-                    <div :class="item.isSoldOut ? 'bg-slate-100 opacity-40 select-none pointer-events-none border-slate-200' : 'neon-glow-card border-transparent'" 
+                    <div :class="item.isSoldOut ? 'bg-slate-100 opacity-40 select-none pointer-events-none border-slate-200' : 'neon-outline-card border-slate-200/60'" 
                          class="p-6 border flex flex-col justify-between shadow-sm">
                         
                         <div x-show="item.isSoldOut" class="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-bold uppercase px-2.5 py-1 rounded-bl tracking-widest z-50">Sold Out</div>
