@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TruSea Intelligence Engine</title>
-    <!-- Tailwind CSS Engine -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Alpine.js Engine -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- Chart.js Engine -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -17,7 +14,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased"
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbx7sf1h8RL4j5nzFhqId0tgXbkWpfZmWB_L9avKRPuD_viTXpuksMHzClBE5yOxxykHCQ/exec',
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbM0LquIzmXBoQyL2MswmisKnJ9oaqu3_yZ3rYojUYr9wCxGqiV_PlgW6xTVztmQjcw5w/exec',
           viewMode: 'cards', 
           todayTab: '', yesterdayTab: '', activeTab: '',
           todayItems: [], yesterdayItems: [], displayItems: [],
@@ -25,22 +22,29 @@
           aiQuery: '', aiResponse: 'Hello! Ask me to calculate batch prices or compare fish competitors across columns.',
           
           async initEngine() {
+              this.loading = true;
               try {
                   let response = await fetch(this.webAppUrl);
                   let data = await response.json();
-                  if (data.tabs && data.tabs.length > 0) {
+                  if (data && data.tabs && data.tabs.length > 0) {
                       this.todayTab = data.tabs[0];
                       this.yesterdayTab = data.tabs[1] || '';
                       this.activeTab = this.todayTab;
+                      
+                      // Pre-populate with first load data immediately to bypass blank renders
+                      this.todayItems = data.items || [];
+                      this.displayItems = this.todayItems;
                   }
-                  await this.syncData();
+                  this.loading = false;
+                  // Background sync the remaining parts in parallel
+                  this.syncData();
               } catch (e) { 
                   console.error('Initialization failed:', e); 
                   this.loading = false;
               }
           },
           async syncData() {
-              this.loading = true;
+              if(!this.todayTab) return;
               let tUrl = `${this.webAppUrl}?sheet=${encodeURIComponent(this.todayTab)}`;
               let yUrl = this.yesterdayTab ? `${this.webAppUrl}?sheet=${encodeURIComponent(this.yesterdayTab)}` : '';
               
@@ -50,15 +54,11 @@
                   
                   let [tData, yData] = await Promise.all([tReq, yReq]);
                   
-                  // Correctly unpack the .items property from the updated payload layout
                   this.todayItems = tData.items || [];
                   this.yesterdayItems = yData.items || [];
-                  
                   this.renderActiveTab();
               } catch(err) {
                   console.error('Data pull error:', err);
-              } finally {
-                  this.loading = false;
               }
           },
           switchTab(tab) {
@@ -132,14 +132,12 @@
       }" x-init="initEngine()">
 
     <div class="min-h-screen p-4 sm:p-8 max-w-7xl mx-auto">
-        <!-- Header -->
         <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-5 gap-3">
             <div>
                 <h1 class="text-2xl font-bold tracking-tight text-slate-900">TruSea <span class="text-blue-600 font-normal">Intelligence Engine</span></h1>
                 <p class="text-xs text-slate-500 mt-1">Live Synchronized Market Comparison System</p>
             </div>
             
-            <!-- Navigation View Switches -->
             <div class="flex bg-slate-200/80 p-1 rounded-xl border border-slate-300/30 text-xs font-semibold">
                 <button @click="switchMode('cards')" :class="viewMode === 'cards' ? 'bg-white shadow text-blue-600' : 'text-slate-600'" class="px-4 py-2 rounded-lg transition">Price Cards</button>
                 <button @click="switchMode('analytics')" :class="viewMode === 'analytics' ? 'bg-white shadow text-blue-600' : 'text-slate-600'" class="px-4 py-2 rounded-lg transition">Analytics Charts</button>
@@ -147,7 +145,6 @@
             </div>
         </header>
 
-        <!-- Date Select Toggles -->
         <div class="mb-6 flex items-center gap-2 bg-slate-200/50 p-1 rounded-xl w-fit border border-slate-200/30" x-show="todayTab">
             <button @click="switchTab(todayTab)" :class="activeTab === todayTab ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition flex flex-col items-center min-w-[120px]">
                 <span class="text-[9px] uppercase tracking-wider opacity-60">Today</span>
@@ -159,15 +156,12 @@
             </button>
         </div>
 
-        <!-- Main Workspace -->
         <main>
-            <!-- Loading Indicator -->
             <div x-show="loading" class="flex flex-col items-center justify-center py-24 text-slate-400 gap-2">
                 <div class="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
                 <span class="text-xs">Processing direct data matrix links...</span>
             </div>
 
-            <!-- VIEW 1: PREMIUM CARDS -->
             <div x-show="!loading && viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 <template x-for="item in displayItems" :key="item.name + activeTab">
                     <div :class="item.isSoldOut ? 'bg-slate-100 opacity-40' : 'bg-white'" class="p-5 rounded-xl border border-slate-200 shadow-sm transition flex flex-col justify-between relative overflow-hidden">
@@ -199,13 +193,11 @@
                 </div>
             </div>
 
-            <!-- VIEW 2: ANALYTICS CHARTS -->
             <div x-show="!loading && viewMode === 'analytics'" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-w-4xl mx-auto">
                 <h3 class="text-base font-bold text-slate-900 mb-4">Market Competitor Price Spikes</h3>
                 <canvas id="marketChart"></canvas>
             </div>
 
-            <!-- VIEW 3: AI COPILOT CALCULATOR -->
             <div x-show="!loading && viewMode === 'ai'" class="max-w-xl mx-auto bg-white border rounded-xl shadow-sm overflow-hidden">
                 <div class="p-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
                     <h3 class="font-bold text-base">TruSea Sales Assistant</h3>
