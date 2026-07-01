@@ -3,126 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TruSea Price Tracker</title>
+    <title>TruSea Live Price Engine</title>
     <!-- Tailwind CSS Engine -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Alpine.js Engine -->
+    <!-- Alpine.js Engine (Fast, Lightweight State Management) -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased" 
+<body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-blue-100" 
       x-data="{
           webAppUrl: 'https://script.google.com/macros/s/AKfycbxXqzJYQ9KITHK_UCZCHLckGKDcaaDa6D7QlMdbDnaxCJ10Wv2Xu0kadsR1q6rqIHCvyg/exec',
-          sheetNames: [],
+          todayTab: '',
+          yesterdayTab: '',
           activeTab: '',
-          items: [],
+          todayItems: [],
+          yesterdayItems: [],
+          displayItems: [],
           loading: true,
-          async fetchData(targetTab = '') {
+          
+          async initEngine() {
               this.loading = true;
               try {
-                  let url = this.webAppUrl;
-                  if (targetTab) { url += `?sheet=${encodeURIComponent(targetTab)}`; }
-                  
-                  let response = await fetch(url);
+                  // 1. Fast fetch the main tab configuration first
+                  let response = await fetch(this.webAppUrl);
                   let data = await response.json();
                   
-                  if (data.tabs) { 
-                      // Filter out 'Daily Price Tracking' and take ONLY the top 2 newest sheets
-                      this.sheetNames = data.tabs.filter(tab => 
-                          tab.toLowerCase().trim() !== 'daily price tracking'
-                      ).slice(0, 2); 
+                  if (data.tabs) {
+                      // Filter tracking sheet out and keep only actual date tabs
+                      let dateTabs = data.tabs.filter(tab => tab.toLowerCase().trim() !== 'daily price tracking');
+                      
+                      // Dynamically assign Today (Newest) vs Yesterday (Second Newest)
+                      if (dateTabs.length > 0) this.todayTab = dateTabs[0];
+                      if (dateTabs.length > 1) this.yesterdayTab = dateTabs[1];
+                      
+                      this.activeTab = this.todayTab;
                   }
+
+                  // 2. Parallel Fetch both sheets instantly at the same time to maximize speed
+                  let fetchToday = fetch(`${this.webAppUrl}?sheet=${encodeURIComponent(this.todayTab)}`).then(r => r.json());
+                  let fetchYesterday = this.yesterdayTab ? fetch(`${this.webAppUrl}?sheet=${encodeURIComponent(this.yesterdayTab)}`).then(r => r.json()) : Promise.resolve({ items: [] });
+
+                  let [todayData, yesterdayData] = await Promise.all([fetchToday, fetchYesterday]);
+
+                  // Cache everything inside memory for instant 0ms toggling
+                  this.todayItems = todayData.items || [];
+                  this.yesterdayItems = yesterdayData.items || [];
                   
-                  if (!this.activeTab && this.sheetNames.length > 0) { 
-                      this.activeTab = this.sheetNames[0]; 
-                  }
-                  this.items = data.items || [];
+                  this.renderActiveTab();
               } catch (e) {
                   console.error('Data sync failed:', e);
               } finally {
                   this.loading = false;
               }
+          },
+
+          renderActiveTab() {
+              this.displayItems = this.activeTab === this.todayTab ? this.todayItems : this.yesterdayItems;
           }
       }" 
-      x-init="fetchData()">
+      x-init="initEngine()">
 
-    <div class="min-h-screen p-4 sm:p-8 max-w-7xl mx-auto">
+    <div class="min-h-screen p-4 sm:p-6 max-w-7xl mx-auto">
+        
         <!-- Premium Minimal Header -->
-        <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-5 gap-3">
+        <header class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-4 gap-2">
             <div>
-                <h1 class="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-                    TruSea <span class="text-blue-600 font-semibold text-xs border border-blue-200 px-2.5 py-1 rounded-full bg-blue-50">Price Engine</span>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+                    TruSea <span class="text-blue-600 font-medium text-xs border border-blue-200 px-2.5 py-0.5 rounded-full bg-blue-50">Price Engine</span>
                 </h1>
                 <p class="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
                     <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Displaying: Current Day vs Previous Day Tracking
+                    Live Dynamic Tracking Engine
                 </p>
             </div>
         </header>
 
-        <!-- Dynamic Day Toggles (Only shows Current and Previous Day) -->
-        <div class="mb-8 flex items-center gap-3">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Select Date:</span>
-            <div class="overflow-x-auto no-scrollbar flex space-x-2 border-b border-slate-200 pb-1">
-                <template x-for="(tab, index) in sheetNames" :key="tab">
-                    <button @click="activeTab = tab; fetchData(tab)"
-                            :class="activeTab === tab ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/10 font-semibold' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'"
-                            class="px-4 py-2 text-xs sm:text-sm rounded-lg whitespace-nowrap transition-all duration-150 border flex items-center gap-1.5">
-                        <span x-text="tab"></span>
-                        <span x-text="index === 0 ? '(Current)' : '(Previous)'" class="text-[10px] opacity-70 font-normal"></span>
-                    </button>
-                </template>
-            </div>
+        <!-- Fast Toggle Switch (Dynamic Today vs Yesterday) -->
+        <div class="mb-6 flex items-center gap-2 bg-slate-200/60 p-1 rounded-xl w-fit border border-slate-200/40">
+            <!-- Today Button -->
+            <button @click="activeTab = todayTab; renderActiveTab()"
+                    :class="activeTab === todayTab ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-500 hover:text-slate-800'"
+                    class="px-4 py-2 text-xs sm:text-sm rounded-lg transition-all duration-300 ease-out flex flex-col items-center min-w-[120px] sm:min-w-[140px]">
+                <span class="text-[10px] uppercase tracking-wider opacity-60">Today</span>
+                <span class="text-xs" x-text="todayTab ? todayTab.replace('Updated Prices - ', '') : 'Loading...'"></span>
+            </button>
+
+            <!-- Yesterday Button -->
+            <button @click="activeTab = yesterdayTab; renderActiveTab()"
+                    x-show="yesterdayTab"
+                    :class="activeTab === yesterdayTab ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-500 hover:text-slate-800'"
+                    class="px-4 py-2 text-xs sm:text-sm rounded-lg transition-all duration-300 ease-out flex flex-col items-center min-w-[120px] sm:min-w-[140px]">
+                <span class="text-[10px] uppercase tracking-wider opacity-60">Yesterday</span>
+                <span class="text-xs" x-text="yesterdayTab.replace('Updated Prices - ', '')"></span>
+            </button>
         </div>
 
-        <!-- Main Workspace -->
+        <!-- Main Workspace Grid -->
         <main>
-            <!-- Spinner -->
-            <div x-show="loading" class="flex flex-col items-center justify-center py-24 text-slate-400 gap-2">
-                <div class="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent"></div>
-                <span class="text-xs tracking-wide">Fetching prices...</span>
+            <!-- High-Speed Loading Overlay -->
+            <div x-show="loading" class="flex flex-col items-center justify-center py-32 text-slate-400 gap-2">
+                <div class="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
+                <span class="text-xs tracking-wide font-medium text-slate-500">Syncing live tracks...</span>
             </div>
 
-            <!-- Empty Grid Warning -->
-            <div x-show="!loading && items.length === 0" class="text-center py-16 text-slate-400 text-sm bg-white rounded-xl border border-slate-200">
-                No entries detected in this sheet category tab.
+            <!-- Empty Data Handling -->
+            <div x-show="!loading && displayItems.length === 0" class="text-center py-16 text-slate-400 text-sm bg-white rounded-xl border border-slate-200">
+                No entries detected for this tracking period.
             </div>
 
-            <!-- Beautiful Clean Card Grid -->
-            <div x-show="!loading && items.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-                <template x-for="(item, idx) in items" :key="idx">
-                    <div :class="item.isSoldOut ? 'bg-slate-100/70 border-slate-200 opacity-50' : 'bg-white border-slate-200/80 hover:border-blue-200 hover:shadow-md hover:-translate-y-0.5'"
-                         class="p-5 rounded-xl border transition-all duration-200 relative overflow-hidden flex flex-col justify-between shadow-sm">
+            <!-- Premium Card Matrix with hardware accelerated smoothness -->
+            <div x-show="!loading && displayItems.length > 0" 
+                 class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                <template x-for="(item, idx) in displayItems" :key="item.name + activeTab">
+                    <div :class="item.isSoldOut ? 'bg-slate-100/80 border-slate-200 opacity-40 select-none' : 'bg-white border-slate-200/60 hover:border-blue-300 hover:shadow-md'"
+                         class="p-5 rounded-xl border transition-all duration-300 ease-out relative overflow-hidden flex flex-col justify-between shadow-sm transform hover:-translate-y-0.5">
                         
-                        <!-- Sold Out Badge Flag -->
+                        <!-- Sold Out Ribbon Indicator -->
                         <div x-show="item.isSoldOut" class="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-bold uppercase px-2.5 py-1 rounded-bl tracking-widest">
                             Sold Out
                         </div>
 
                         <div>
-                            <h3 :class="item.isSoldOut ? 'text-slate-400 line-through' : 'text-slate-900'" class="text-base sm:text-lg font-bold pr-12 leading-snug mb-4" x-text="item.name"></h3>
+                            <h3 :class="item.isSoldOut ? 'text-slate-400 line-through' : 'text-slate-900'" class="text-base font-bold pr-12 leading-snug mb-4" x-text="item.name"></h3>
                             
-                            <!-- TruSea Pricing Matrix Block -->
+                            <!-- Internal Pricing Matrix System -->
                             <div class="grid grid-cols-2 gap-2.5 mb-4">
-                                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 text-center">
-                                    <span class="block text-[10px] uppercase tracking-wider text-slate-400 font-medium mb-0.5">TruSea 500g</span>
-                                    <span :class="item.isSoldOut ? 'text-slate-400 line-through' : 'text-blue-600'" class="text-base font-extrabold" x-text="item.truSea500g"></span>
+                                <div class="bg-slate-50/80 p-2.5 rounded-lg border border-slate-100/70 text-center">
+                                    <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-medium mb-0.5">TruSea 500g</span>
+                                    <span :class="item.isSoldOut ? 'text-slate-400 line-through' : 'text-blue-600'" class="text-sm sm:text-base font-extrabold" x-text="item.truSea500g"></span>
                                 </div>
-                                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 text-center">
-                                    <span class="block text-[10px] uppercase tracking-wider text-slate-400 font-medium mb-0.5">TruSea /KG</span>
-                                    <span :class="item.isSoldOut ? 'text-slate-400 line-through' : 'text-emerald-600'" class="text-base font-extrabold" x-text="item.truSeaKg"></span>
+                                <div class="bg-slate-50/80 p-2.5 rounded-lg border border-slate-100/70 text-center">
+                                    <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-medium mb-0.5">TruSea /KG</span>
+                                    <span :class="item.isSoldOut ? 'text-slate-400 line-through' : 'text-emerald-600'" class="text-sm sm:text-base font-extrabold" x-text="item.truSeaKg"></span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Competitors Listing Section -->
-                        <div class="border-t border-slate-100 pt-4 space-y-2 text-xs">
-                            <div class="flex justify-between items-center"><span class="text-slate-400">TenderCuts</span><span class="font-semibold text-slate-700" x-text="item.tenderCuts"></span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400">Licious</span><span class="font-semibold text-slate-700" x-text="item.licious"></span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400">Freshma</span><span class="font-semibold text-slate-700" x-text="item.freshma"></span></div>
+                        <!-- Competitors Listing Layout -->
+                        <div class="border-t border-slate-100 pt-3.5 space-y-2 text-xs">
+                            <div class="flex justify-between items-center"><span class="text-slate-400">TenderCuts</span><span class="font-medium text-slate-700" x-text="item.tenderCuts"></span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400">Licious</span><span class="font-medium text-slate-700" x-text="item.licious"></span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400">Freshma</span><span class="font-medium text-slate-700" x-text="item.freshma"></span></div>
                             <div class="flex justify-between items-center"><span class="text-slate-400">FreshToHome</span><span class="font-semibold text-slate-700" x-text="item.freshToHome"></span></div>
                             <div class="flex justify-between items-center"><span class="text-slate-400">Supreme Seafoods</span><span class="font-semibold text-slate-700" x-text="item.supreme"></span></div>
                         </div>
