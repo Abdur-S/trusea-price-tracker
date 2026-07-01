@@ -51,7 +51,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased"
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbyqkY64ohaoq_JcNFB7Vaj0vkYmzAqnGKMh2uKrFdICn_ScuglglLY_yveSf06p08uzqw/exec',
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbzPfOMuxMF5xhIyQLnTU1Df89zm_vnpHkFGI1nB8PUwPCnrtuOCSQY7iuwZzeF1zz7Ssg/exec',
           dateMode: 'today', 
           todayLabel: 'Today', yesterdayLabel: 'Yesterday',
           todayItems: [], yesterdayItems: [], displayItems: [],
@@ -92,11 +92,12 @@
           calculateMarketMetrics() {
               if (this.displayItems.length === 0) return;
               
-              let compTotals = { tenderCuts: 0, licious: 0, freshma: 0, freshToHome: 0, supreme: 0 };
-              let compCounts = { tenderCuts: 0, licious: 0, freshma: 0, freshToHome: 0, supreme: 0 };
+              let compTotals = { truSea: 0, tenderCuts: 0, licious: 0, freshma: 0, freshToHome: 0, supreme: 0 };
+              let compCounts = { truSea: 0, tenderCuts: 0, licious: 0, freshma: 0, freshToHome: 0, supreme: 0 };
               
               this.displayItems.forEach(item => {
                   if (item.isSoldOut) return;
+                  if (item.truSeaKg) { compTotals.truSea += item.truSeaKg; compCounts.truSea++; }
                   if (item.tenderCuts) { compTotals.tenderCuts += item.tenderCuts; compCounts.tenderCuts++; }
                   if (item.licious) { compTotals.licious += item.licious; compCounts.licious++; }
                   if (item.freshma) { compTotals.freshma += item.freshma; compCounts.freshma++; }
@@ -105,6 +106,7 @@
               });
               
               let averages = [
+                  { name: 'TruSea', avg: compCounts.truSea ? compTotals.truSea / compCounts.truSea : 0, isBrand: true },
                   { name: 'TenderCuts', avg: compCounts.tenderCuts ? compTotals.tenderCuts / compCounts.tenderCuts : 0 },
                   { name: 'Licious', avg: compCounts.licious ? compTotals.licious / compCounts.licious : 0 },
                   { name: 'Freshma', avg: compCounts.freshma ? compTotals.freshma / compCounts.freshma : 0 },
@@ -114,15 +116,19 @@
               
               if (averages.length === 0) return;
               
-              // Sort to find Highest
+              // Isolate Competitor-Only array for metrics calculation text boxes
+              let competitorsOnly = averages.filter(c => !c.isBrand);
+              competitorsOnly.sort((a, b) => b.avg - a.avg);
+              
+              if (competitorsOnly.length > 0) {
+                  this.highestSeller = competitorsOnly[0].name + ' (Avg: ₹' + Math.round(competitorsOnly[0].avg) + '/KG)';
+                  let middleIdx = Math.floor(competitorsOnly.length / 2);
+                  this.normalSeller = competitorsOnly[middleIdx].name + ' (Avg: ₹' + Math.round(competitorsOnly[middleIdx].avg) + '/KG)';
+              }
+              
+              // Sort Full array by price from highest to lowest for clean chart display ordering
               averages.sort((a, b) => b.avg - a.avg);
-              this.highestSeller = averages[0].name + ' (Avg: ₹' + Math.round(averages[0].avg) + '/KG)';
               
-              // Find Normal (Median pricing provider)
-              let middleIdx = Math.floor(averages.length / 2);
-              this.normalSeller = averages[middleIdx].name + ' (Avg: ₹' + Math.round(averages[middleIdx].avg) + '/KG)';
-              
-              // Push metrics to graph display pass
               setTimeout(() => this.renderInsightsChart(averages), 100);
           },
           renderInsightsChart(averages) {
@@ -138,8 +144,10 @@
                       datasets: [{
                           label: 'Overall Average Price Index /KG',
                           data: averages.map(c => Math.round(c.avg)),
-                          backgroundColor: averages.map((c, i) => i === 0 ? '#ef4444' : i === averages.length-1 ? '#10b981' : '#3b82f6'),
-                          borderWidth: 0,
+                          // Dynamically highlights TruSea with your signature Cyan brand color
+                          backgroundColor: averages.map(c => c.isBrand ? '#00f2fe' : '#3b82f6'),
+                          borderWidth: averages.map(c => c.isBrand ? 2 : 0),
+                          borderColor: '#4facfe',
                           borderRadius: 6
                       }]
                   },
@@ -188,20 +196,20 @@
             <div x-show="!loading && !errorMessage" class="grid grid-cols-1 lg:grid-cols-3 gap-6" style="display: none;">
                 <div class="lg:col-span-1 flex flex-col gap-4 justify-between">
                     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <span class="text-[10px] uppercase font-bold tracking-wider text-red-400 block mb-1">🔴 Highest Cost Seller</span>
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-red-400 block mb-1">🔴 Highest Cost Competitor</span>
                         <div class="text-lg font-black text-slate-900" x-text="highestSeller"></div>
                         <p class="text-xs text-slate-400 mt-2">Sells at the most expensive premium markup index today across all varieties.</p>
                     </div>
                     
                     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <span class="text-[10px] uppercase font-bold tracking-wider text-blue-500 block mb-1">🔵 Normal Cost Seller</span>
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-blue-500 block mb-1">🔵 Normal Cost Competitor</span>
                         <div class="text-lg font-black text-slate-900" x-text="normalSeller"></div>
                         <p class="text-xs text-slate-400 mt-2">Sells at normal, stable baseline market average costs today.</p>
                     </div>
                 </div>
 
                 <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                    <h3 class="text-sm font-bold text-slate-900 mb-4">Competitor Average Price Index Benchmark (/KG)</h3>
+                    <h3 class="text-sm font-bold text-slate-900 mb-4">Market Average Price Benchmark Index (/KG)</h3>
                     <div class="relative h-[180px] w-full">
                         <canvas id="insightsChart"></canvas>
                     </div>
