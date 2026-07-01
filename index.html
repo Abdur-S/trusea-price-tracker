@@ -14,7 +14,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased"
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbxM0LquIzmXBoQyL2MswmisKnJ9oaqu3_yZ3rYojUYr9wCxGqiV_PlgW6xTVztmQjcw5w/exec',
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbzi80xCC8O70fjzGzmc2pb1j5UL66uxvFg6w1kwj8FGxqC92IRiMzQWgG4LIe47wF0sng/exec',
           viewMode: 'cards', 
           todayTab: '', yesterdayTab: '', activeTab: '',
           todayItems: [], yesterdayItems: [], displayItems: [],
@@ -27,22 +27,16 @@
                   let response = await fetch(this.webAppUrl);
                   let data = await response.json();
                   
-                  // Safely read tabs list from whatever layout Google sends back
-                  let rawTabs = data.tabs || (Array.isArray(data) ? data : []);
-                  let cleanTabs = Array.isArray(rawTabs) ? rawTabs.filter(tab => typeof tab === 'string' && tab.toLowerCase().trim() !== 'daily price tracking') : [];
-                  
-                  if (cleanTabs.length > 0) {
-                      this.todayTab = cleanTabs[0];
-                      this.yesterdayTab = cleanTabs[1] || '';
+                  if (data && data.tabs && data.tabs.length > 0) {
+                      this.todayTab = data.tabs[0];
+                      this.yesterdayTab = data.tabs[1] || '';
                       this.activeTab = this.todayTab;
                       
-                      // Pull fallback baseline values
-                      this.todayItems = data.items || (Array.isArray(data) ? data : []);
+                      // Pre-populate layout right away
+                      this.todayItems = data.items || [];
                       this.displayItems = this.todayItems;
                   }
-                  
                   this.loading = false;
-                  // Immediately fetch full dataset synchronously
                   await this.syncData();
               } catch (e) { 
                   console.error('Initialization failed:', e); 
@@ -51,19 +45,17 @@
           },
           async syncData() {
               if(!this.todayTab) return;
-              let tUrl = `${this.webAppUrl}?sheet=${encodeURIComponent(this.todayTab)}`;
-              let yUrl = this.yesterdayTab ? `${this.webAppUrl}?sheet=${encodeURIComponent(this.yesterdayTab)}` : '';
-              
               try {
+                  let tUrl = `${this.webAppUrl}?sheet=${encodeURIComponent(this.todayTab)}`;
+                  let yUrl = this.yesterdayTab ? `${this.webAppUrl}?sheet=${encodeURIComponent(this.yesterdayTab)}` : '';
+                  
                   let tReq = fetch(tUrl).then(r => r.json());
-                  let yReq = yUrl ? fetch(yUrl).then(r => r.json()) : Promise.resolve([]);
+                  let yReq = yUrl ? fetch(yUrl).then(r => r.json()) : Promise.resolve({ items: [] });
                   
                   let [tData, yData] = await Promise.all([tReq, yReq]);
                   
-                  // Handles both old arrays and nested object item returns safely
-                  this.todayItems = tData.items || (Array.isArray(tData) ? tData : []);
-                  this.yesterdayItems = yData.items || (Array.isArray(yData) ? yData : []);
-                  
+                  this.todayItems = tData.items || [];
+                  this.yesterdayItems = yData.items || [];
                   this.renderActiveTab();
               } catch(err) {
                   console.error('Data sync parsing error:', err);
@@ -79,147 +71,4 @@
           },
           switchMode(mode) {
               this.viewMode = mode;
-              if (mode === 'analytics') { setTimeout(() => this.renderChart(), 100); }
-          },
-          renderChart() {
-              if (this.chartInstance) this.chartInstance.destroy();
-              let canvasEl = document.getElementById('marketChart');
-              if (!canvasEl) return;
-              let ctx = canvasEl.getContext('2d');
-              let topFish = this.displayItems.slice(0, 6);
-              
-              this.chartInstance = new Chart(ctx, {
-                  type: 'bar',
-                  data: {
-                      labels: topFish.map(f => f.name ? f.name.split('(')[0] : 'Fish'),
-                      datasets: [
-                          { label: 'TruSea /KG', data: topFish.map(f => f.truSeaKg || 0), backgroundColor: '#10b981' },
-                          { label: 'Licious', data: topFish.map(f => f.licious || 0), backgroundColor: '#ef4444' },
-                          { label: 'TenderCuts', data: topFish.map(f => f.tenderCuts || 0), backgroundColor: '#3b82f6' }
-                      ]
-                  },
-                  options: { responsive: true, plugins: { legend: { position: 'top' } } }
-              });
-          },
-          askAI() {
-              let q = this.aiQuery.toLowerCase().trim();
-              if (!q) return;
-              let found = this.displayItems.find(f => f.name && (q.includes(f.name.toLowerCase()) || f.name.toLowerCase().split(' ')[0].includes(q.split(' ')[0])));
-              
-              if (found) {
-                  if (q.includes('calculate') || q.includes('cost of') || q.includes('total')) {
-                      let kgMatch = q.match(/\d+/);
-                      let multiplier = kgMatch ? parseInt(kgMatch[0]) : 1;
-                      let rate = found.truSeaKg || (found.truSea500g ? found.truSea500g * 2 : 0);
-                      if (!rate) {
-                          this.aiResponse = `The price data for ${found.name} isn't fully available to calculate.`;
-                      } else {
-                          this.aiResponse = `📊 Calculation: ${multiplier}kg of ${found.name} at TruSea rates equals ₹${Math.round(rate * multiplier)}.`;
-                      }
-                  } else {
-                      let competitors = [
-                          { name: 'TruSea /KG', price: found.truSeaKg },
-                          { name: 'Licious', price: found.licious },
-                          { name: 'TenderCuts', price: found.tenderCuts },
-                          { name: 'Freshma', price: found.freshma },
-                          { name: 'FreshToHome', price: found.freshToHome },
-                          { name: 'Supreme', price: found.supreme }
-                      ].filter(c => c.price);
-                      
-                      if(competitors.length === 0) {
-                          this.aiResponse = `No competitor prices found for ${found.name}.`;
-                      } else {
-                          competitors.sort((a, b) => b.price - a.price);
-                          this.aiResponse = `🔍 ${found.name} Analysis: The most expensive provider is ${competitors[0].name} at ₹${competitors[0].price}. TruSea is listed at ₹${found.truSeaKg || 'N/A'}/KG.`;
-                      }
-                  }
-              } else {
-                  this.aiResponse = "I couldn't locate that specific fish type. Try asking: 'Who is costly for Barracuda' or 'Calculate 5kg of Anchovy'.";
-              }
-          }
-      }" x-init="initEngine()">
-
-    <div class="min-h-screen p-4 sm:p-8 max-w-7xl mx-auto">
-        <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-5 gap-3">
-            <div>
-                <h1 class="text-2xl font-bold tracking-tight text-slate-900">TruSea <span class="text-blue-600 font-normal">Intelligence Engine</span></h1>
-                <p class="text-xs text-slate-500 mt-1">Live Synchronized Market Comparison System</p>
-            </div>
-            
-            <div class="flex bg-slate-200/80 p-1 rounded-xl border border-slate-300/30 text-xs font-semibold">
-                <button @click="switchMode('cards')" :class="viewMode === 'cards' ? 'bg-white shadow text-blue-600' : 'text-slate-600'" class="px-4 py-2 rounded-lg transition">Price Cards</button>
-                <button @click="switchMode('analytics')" :class="viewMode === 'analytics' ? 'bg-white shadow text-blue-600' : 'text-slate-600'" class="px-4 py-2 rounded-lg transition">Analytics Charts</button>
-                <button @click="switchMode('ai')" :class="viewMode === 'ai' ? 'bg-white shadow text-blue-600' : 'text-slate-600'" class="px-4 py-2 rounded-lg transition">AI Agent Copilot</button>
-            </div>
-        </header>
-
-        <div class="mb-6 flex items-center gap-2 bg-slate-200/50 p-1 rounded-xl w-fit border border-slate-200/30" x-show="todayTab">
-            <button @click="switchTab(todayTab)" :class="activeTab === todayTab ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition flex flex-col items-center min-w-[120px]">
-                <span class="text-[9px] uppercase tracking-wider opacity-60">Today</span>
-                <span x-text="todayTab.replace('Updated Prices - ', '')"></span>
-            </button>
-            <button @click="switchTab(yesterdayTab)" x-show="yesterdayTab" :class="activeTab === yesterdayTab ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition flex flex-col items-center min-w-[120px]">
-                <span class="text-[9px] uppercase tracking-wider opacity-60">Yesterday</span>
-                <span x-text="yesterdayTab.replace('Updated Prices - ', '')"></span>
-            </button>
-        </div>
-
-        <main>
-            <div x-show="loading" class="flex flex-col items-center justify-center py-24 text-slate-400 gap-2">
-                <div class="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
-                <span class="text-xs">Processing direct data matrix links...</span>
-            </div>
-
-            <div x-show="!loading && viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                <template x-for="item in displayItems" :key="item.name + activeTab">
-                    <div :class="item.isSoldOut ? 'bg-slate-100 opacity-40' : 'bg-white'" class="p-5 rounded-xl border border-slate-200 shadow-sm transition flex flex-col justify-between relative overflow-hidden">
-                        <div x-show="item.isSoldOut" class="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-bold uppercase px-2.5 py-1 rounded-bl">Sold Out</div>
-                        <div>
-                            <h3 class="text-base font-bold text-slate-900 mb-4 truncate" x-text="item.name"></h3>
-                            <div class="grid grid-cols-2 gap-2 mb-4">
-                                <div class="bg-slate-50 p-2.5 rounded-lg border text-center border-slate-100">
-                                    <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-medium">TruSea 500g</span>
-                                    <span class="text-base font-black text-blue-600" x-text="item.truSea500g ? '₹' + item.truSea500g : '-'"></span>
-                                </div>
-                                <div class="bg-slate-50 p-2.5 rounded-lg border text-center border-slate-100">
-                                    <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-medium">TruSea /KG</span>
-                                    <span class="text-base font-black text-emerald-600" x-text="item.truSeaKg ? '₹' + item.truSeaKg : '-'"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="border-t pt-3 space-y-1.5 text-xs text-slate-600">
-                            <div class="flex justify-between"><span>TenderCuts</span><span class="font-bold text-slate-700" x-text="item.tenderCuts ? '₹'+item.tenderCuts : '-'"></span></div>
-                            <div class="flex justify-between"><span>Licious</span><span class="font-bold text-slate-700" x-text="item.licious ? '₹'+item.licious : '-'"></span></div>
-                            <div class="flex justify-between"><span>Freshma</span><span class="font-bold text-slate-700" x-text="item.freshma ? '₹'+item.freshma : '-'"></span></div>
-                            <div class="flex justify-between"><span>FreshToHome</span><span class="font-bold text-slate-700" x-text="item.freshToHome ? '₹'+item.freshToHome : '-'"></span></div>
-                            <div class="flex justify-between"><span>Supreme Seafoods</span><span class="font-bold text-slate-700" x-text="item.supreme ? '₹'+item.supreme : '-'"></span></div>
-                        </div>
-                    </div>
-                </template>
-                <div x-show="!loading && displayItems.length === 0" class="col-span-full text-center py-16 text-slate-400 text-sm bg-white rounded-xl border border-slate-200">
-                    No entries detected in this sheet category tab.
-                </div>
-            </div>
-
-            <div x-show="!loading && viewMode === 'analytics'" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-w-4xl mx-auto">
-                <h3 class="text-base font-bold text-slate-900 mb-4">Market Competitor Price Spikes</h3>
-                <canvas id="marketChart"></canvas>
-            </div>
-
-            <div x-show="!loading && viewMode === 'ai'" class="max-w-xl mx-auto bg-white border rounded-xl shadow-sm overflow-hidden">
-                <div class="p-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-                    <h3 class="font-bold text-base">TruSea Sales Assistant</h3>
-                    <p class="text-xs opacity-80 mt-0.5">Instant competitor lookups and batch price calculations</p>
-                </div>
-                <div class="p-5 space-y-4">
-                    <div class="bg-slate-50 p-4 rounded-lg border text-sm text-slate-700 border-slate-200/60 font-medium" x-text="aiResponse"></div>
-                    <div class="flex gap-2">
-                        <input x-model="aiQuery" @keydown.enter="askAI()" type="text" placeholder="e.g., Calculate 4kg of Barracuda or Costly for Anchovy..." class="w-full text-sm border p-3 rounded-lg focus:outline-blue-500">
-                        <button @click="askAI()" class="bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold px-5 rounded-lg transition">Ask</button>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-</body>
-</html>
+              if (mode === 'analytics')
