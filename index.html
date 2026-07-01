@@ -3,193 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TruSea Matrix Engine</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>TruSea Engine Tracker</title>
     <style>
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; color: #334155; margin: 0; padding: 24px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header { border-b: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { margin: 0; font-size: 24px; color: #0f172a; }
+        h1 span { color: #2563eb; font-weight: normal; }
+        .mode-container { display: flex; background: #e2e8f0; padding: 4px; border-radius: 8px; gap: 4px; }
+        .mode-btn { background: none; border: none; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 6px; color: #475569; }
+        .mode-btn.active { background: white; color: #2563eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .date-box { display: flex; gap: 8px; margin-bottom: 24px; }
+        .date-btn { background: white; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 8px; cursor: pointer; text-align: center; min-w: 120px; }
+        .date-btn.active { border-color: #2563eb; background: #eff6ff; font-weight: bold; }
+        .date-btn span { display: block; font-size: 10px; uppercase; color: #94a3b8; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: relative; }
+        .card.soldout { opacity: 0.4; background: #f1f5f9; }
+        .badge { position: absolute; top: 0; right: 0; background: #ef4444; color: white; font-size: 9px; font-weight: bold; padding: 4px 8px; border-bottom-left-radius: 8px; }
+        .fish-title { margin: 0 0 16px 0; font-size: 16px; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85%; }
+        .price-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        .price-box { background: #f8fafc; border: 1px solid #f1f5f9; padding: 8px; border-radius: 8px; text-align: center; }
+        .price-box span { display: block; font-size: 9px; color: #94a3b8; margin-bottom: 4px; }
+        .price-box b { font-size: 16px; }
+        .blue-text { color: #2563eb; }
+        .green-text { color: #10b981; }
+        .comp-table { border-top: 1px solid #f1f5f9; padding-top: 12px; }
+        .comp-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; color: #64748b; }
+        .comp-row font { font-weight: 600; color: #334155; }
+        .status { font-size: 13px; color: #64748b; text-align: center; padding: 40px 0; }
+        .ai-window { max-width: 500px; margin: 0 auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+        .ai-head { background: linear-gradient(to right, #2563eb, #4f46e5); color: white; padding: 16px; }
+        .ai-head h3 { margin: 0; font-size: 16px; }
+        .ai-head p { margin: 4px 0 0 0; font-size: 11px; opacity: 0.8; }
+        .ai-body { padding: 16px; }
+        .ai-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; line-height: 1.4; }
+        .ai-form { display: flex; gap: 8px; }
+        .ai-input { flex: 1; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-size: 13px; }
+        .ai-btn { background: #0f172a; color: white; border: none; padding: 0 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased"
-      x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbxPfOMuxMF5xhIyQLnTU1Df89zm_vnpHkFGI1nB8PUwPCnrtuOCSQY7iuwZzeF1zz7Ssg/exec',
-          viewMode: 'cards', 
-          dateMode: 'today', // 'today' | 'yesterday'
-          todayLabel: 'Today', yesterdayLabel: 'Yesterday',
-          todayItems: [], yesterdayItems: [], displayItems: [],
-          loading: true, errorMessage: '', chartInstance: null,
-          aiQuery: '', aiResponse: 'Hello! Ask me to calculate batch prices or find the most expensive seller.',
-          
-          async initEngine() {
-              this.loading = true;
-              this.errorMessage = '';
-              try {
-                  let response = await fetch(this.webAppUrl);
-                  let data = await response.json();
-                  
-                  if (data.error) { throw new Error(data.error); }
-                  
-                  // Extract runtime parameters generated by Google script layout
-                  this.todayLabel = data.meta.todayTab || 'Today';
-                  this.yesterdayLabel = data.meta.yesterdayTab || 'Yesterday';
-                  
-                  this.todayItems = data.todayData || [];
-                  this.yesterdayItems = data.yesterdayData || [];
-                  
-                  this.renderActiveView();
-              } catch (e) {
-                  console.error(e);
-                  this.errorMessage = 'Connection Error: Unable to fetch data from spreadsheet grid.';
-              } finally {
-                  this.loading = false;
-              }
-          },
-          toggleDate(mode) {
-              this.dateMode = mode;
-              this.renderActiveView();
-          },
-          renderActiveView() {
-              this.displayItems = this.dateMode === 'today' ? this.todayItems : this.yesterdayItems;
-              if (this.viewMode === 'analytics') this.renderChart();
-          },
-          switchMode(mode) {
-              this.viewMode = mode;
-              if (mode === 'analytics') { setTimeout(() => this.renderChart(), 100); }
-          },
-          renderChart() {
-              if (this.chartInstance) this.chartInstance.destroy();
-              let canvasEl = document.getElementById('marketChart');
-              if (!canvasEl) return;
-              let ctx = canvasEl.getContext('2d');
-              let topFish = this.displayItems.slice(0, 5);
-              
-              this.chartInstance = new Chart(ctx, {
-                  type: 'bar',
-                  data: {
-                      labels: topFish.map(f => f.name.split('(')[0]),
-                      datasets: [
-                          { label: 'TruSea /KG', data: topFish.map(f => f.truSeaKg || 0), backgroundColor: '#10b981' },
-                          { label: 'Licious', data: topFish.map(f => f.licious || 0), backgroundColor: '#ef4444' },
-                          { label: 'TenderCuts', data: topFish.map(f => f.tenderCuts || 0), backgroundColor: '#3b82f6' },
-                          { label: 'Freshma', data: topFish.map(f => f.freshma || 0), backgroundColor: '#f59e0b' },
-                          { label: 'FreshToHome', data: topFish.map(f => f.freshToHome || 0), backgroundColor: '#8b5cf6' }
-                      ]
-                  },
-                  options: { responsive: true, plugins: { legend: { position: 'top' } } }
-              });
-          },
-          askAI() {
-              let q = this.aiQuery.toLowerCase().trim();
-              if (!q) return;
-              let found = this.displayItems.find(f => q.includes(f.name.toLowerCase()) || f.name.toLowerCase().split(' ')[0].includes(q.split(' ')[0]));
-              
-              if (found) {
-                  if (q.includes('calculate') || q.includes('cost of') || q.includes('total')) {
-                      let kgMatch = q.match(/\d+/);
-                      let multiplier = kgMatch ? parseInt(kgMatch[0]) : 1;
-                      let rate = found.truSeaKg || (found.truSea500g ? found.truSea500g * 2 : 0);
-                      this.aiResponse = `📊 Calculation: ${multiplier}kg of ${found.name} at TruSea rates equals ₹${Math.round(rate * multiplier)}.`;
-                  } else {
-                      let competitors = [
-                          { name: 'TruSea /KG', price: found.truSeaKg },
-                          { name: 'Licious', price: found.licious },
-                          { name: 'TenderCuts', price: found.tenderCuts },
-                          { name: 'Freshma', price: found.freshma },
-                          { name: 'FreshToHome', price: found.freshToHome },
-                          { name: 'Supreme', price: found.supreme }
-                      ].filter(c => c.price);
-                      
-                      competitors.sort((a, b) => b.price - a.price);
-                      this.aiResponse = `🔍 ${found.name} Analysis: The most expensive provider is ${competitors[0].name} at ₹${competitors[0].price}. TruSea is listed at ₹${found.truSeaKg || 'N/A'}/KG.`;
-                  }
-              } else {
-                  this.aiResponse = "I couldn't locate that specific fish type. Try asking: 'Calculate 5kg of Barracuda' or 'Who is costly for Anchovy'.";
-              }
-          }
-      }" x-init="initEngine()">
+<body>
 
-    <div class="min-h-screen p-4 sm:p-8 max-w-7xl mx-auto">
-        <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-5 gap-3">
+    <div class="container" id="app">
+        <header>
             <div>
-                <h1 class="text-2xl font-bold tracking-tight text-slate-900">TruSea <span class="text-blue-600 font-normal">Intelligence Engine</span></h1>
-                <p class="text-xs text-slate-500 mt-1">Live Synchronized Market Comparison System</p>
+                <h1 id="mainTitle">TruSea <span>Intelligence Engine</span></h1>
             </div>
-            
-            <div class="flex bg-slate-200/80 p-1 rounded-xl border border-slate-300/30 text-xs font-semibold">
-                <button @click="switchMode('cards')" :class="viewMode === 'cards' ? 'bg-white shadow text-blue-600' : 'text-slate-600'" class="px-4 py-2 rounded-lg transition">Price Cards</button>
-                <button @click="switchMode('analytics')" :class="viewMode === 'analytics' ? 'bg-white shadow text-blue-600' : 'text-slate-600'" class="px-4 py-2 rounded-lg transition">Analytics Charts</button>
-                <button @click="switchMode('ai')" :class="viewMode === 'ai' ? 'bg-white shadow text-blue-600' : 'text-slate-600'" class="px-4 py-2 rounded-lg transition">AI Agent Copilot</button>
+            <div class="mode-container">
+                <button class="mode-btn active" onclick="switchView('cards')">Price Cards</button>
+                <button class="mode-btn" onclick="switchView('ai')">AI Copilot</button>
             </div>
         </header>
 
-        <div class="mb-6 flex items-center gap-2 bg-slate-200/50 p-1 rounded-xl w-fit border border-slate-200/30" x-show="!loading && !errorMessage">
-            <button @click="toggleDate('today')" :class="dateMode === 'today' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition flex flex-col items-center min-w-[130px]">
-                <span class="text-[9px] uppercase tracking-wider opacity-60">Today</span>
-                <span x-text="todayLabel"></span>
+        <div class="date-box" id="dateButtons" style="display: none;">
+            <button class="date-btn active" id="btnToday" onclick="changeDateMode('today')">
+                <span>Today</span><font id="lblToday">-</font>
             </button>
-            <button @click="toggleDate('yesterday')" :class="dateMode === 'yesterday' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition flex flex-col items-center min-w-[130px]">
-                <span class="text-[9px] uppercase tracking-wider opacity-60">Yesterday</span>
-                <span x-text="yesterdayLabel"></span>
+            <button class="date-btn" id="btnYesterday" onclick="changeDateMode('yesterday')">
+                <span>Yesterday</span><font id="lblYesterday">-</font>
             </button>
         </div>
 
-        <main>
-            <div x-show="loading" class="flex flex-col items-center justify-center py-24 text-slate-400 gap-2">
-                <div class="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
-                <span class="text-xs">Processing live tracking matrix blocks...</span>
+        <div id="loadingStatus" class="status">Connecting securely to spreadsheet price streams...</div>
+        
+        <div class="grid" id="cardsGrid" style="display: none;"></div>
+
+        <div class="ai-window" id="aiWindow" style="display: none;">
+            <div class="ai-head">
+                <h3>TruSea Sales Assistant</h3>
+                <p>Instant calculations and competitor lookup analysis loops</p>
             </div>
-
-            <div x-show="errorMessage" class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm font-medium" x-text="errorMessage" style="display: none;"></div>
-
-            <div x-show="!loading && !errorMessage && viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" style="display: none;">
-                <template x-for="item in displayItems" :key="item.name + dateMode">
-                    <div :class="item.isSoldOut ? 'bg-slate-100 opacity-40 select-none' : 'bg-white border-slate-200/70 hover:border-blue-300 hover:shadow-md'" class="p-5 rounded-xl border shadow-sm transition flex flex-col justify-between relative overflow-hidden transform hover:-translate-y-0.5">
-                        <div x-show="item.isSoldOut" class="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-bold uppercase px-2.5 py-1 rounded-bl tracking-widest">Sold Out</div>
-                        <div>
-                            <h3 class="text-base font-bold text-slate-900 mb-4 truncate" x-text="item.name"></h3>
-                            <div class="grid grid-cols-2 gap-2 mb-4">
-                                <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-center">
-                                    <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-medium">TruSea 500g</span>
-                                    <span class="text-base font-black text-blue-600" x-text="item.truSea500g ? '₹' + item.truSea500g : '-'"></span>
-                                </div>
-                                <div class="bg-slate-50 p-2.5 rounded-lg border text-center border-slate-100">
-                                    <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-medium">TruSea /KG</span>
-                                    <span class="text-base font-black text-emerald-600" x-text="item.truSeaKg ? '₹' + item.truSeaKg : '-'"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="border-t pt-3 space-y-1.5 text-xs text-slate-600">
-                            <div class="flex justify-between"><span>TenderCuts</span><span class="font-bold text-slate-700" x-text="item.tenderCuts ? '₹' + item.tenderCuts : '-'"></span></div>
-                            <div class="flex justify-between"><span>Licious</span><span class="font-bold text-slate-700" x-text="item.licious ? '₹' + item.licious : '-'"></span></div>
-                            <div class="flex justify-between"><span>Freshma</span><span class="font-bold text-slate-700" x-text="item.freshma ? '₹' + item.freshma : '-'"></span></div>
-                            <div class="flex justify-between"><span>FreshToHome</span><span class="font-bold text-slate-700" x-text="item.freshToHome ? '₹' + item.freshToHome : '-'"></span></div>
-                            <div class="flex justify-between"><span>Supreme Seafoods</span><span class="font-bold text-slate-700" x-text="item.supreme ? '₹' + item.supreme : '-'"></span></div>
-                        </div>
-                    </div>
-                </template>
-            </div>
-
-            <div x-show="!loading && !errorMessage && viewMode === 'analytics'" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-w-4xl mx-auto" style="display: none;">
-                <h3 class="text-base font-bold text-slate-900 mb-4">Competitor Price Comparison Analytics Chart</h3>
-                <canvas id="marketChart"></canvas>
-            </div>
-
-            <div x-show="!loading && !errorMessage && viewMode === 'ai'" class="max-w-xl mx-auto bg-white border rounded-xl shadow-sm overflow-hidden" style="display: none;">
-                <div class="p-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-                    <h3 class="font-bold text-base">TruSea Sales Assistant Engine</h3>
-                    <p class="text-xs opacity-80 mt-0.5">Instant competitor lookup and batch pricing calculator loops</p>
-                </div>
-                <div class="p-5 space-y-4">
-                    <div class="bg-slate-50 p-4 rounded-lg border text-sm text-slate-700 border-slate-200/60 font-medium" x-text="aiResponse"></div>
-                    <div class="flex gap-2">
-                        <input x-model="aiQuery" @keydown.enter="askAI()" type="text" placeholder="e.g., Calculate 5kg of Barracuda..." class="w-full text-sm border p-3 rounded-lg focus:outline-blue-500">
-                        <button @click="askAI()" class="bg-slate-900 text-white text-sm font-bold px-5 rounded-lg transition">Ask</button>
-                    </div>
+            <div class="ai-body">
+                <div class="ai-box" id="aiOutput">Hello! Ask me to calculate batch prices or compare fish entities.</div>
+                <div class="ai-form">
+                    <input type="text" id="aiInput" class="ai-input" placeholder="e.g., Calculate 5kg of Barracuda..." onkeydown="if(event.key === 'Enter') processAIQuery()">
+                    <button class="ai-btn" onclick="processAIQuery()">Ask</button>
                 </div>
             </div>
-        </main>
+        </div>
     </div>
+
+    <script>
+        const webAppUrl = 'https://script.google.com/macros/s/AKfycbxPfOMuxMF5xhIyQLnTU1Df89zm_vnpHkFGI1nB8PUwPCnrtuOCSQY7iuwZzeF1zz7Ssg/exec';
+        let currentView = 'cards';
+        let currentDateMode = 'today';
+        let globalDataBundle = null;
+
+        // Boot loader setup execution pass
+        window.addEventListener('DOMContentLoaded', () => {
+            fetch(webAppUrl)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('loadingStatus').innerHTML = "🚨 Access Configuration Error: " + data.error;
+                        return;
+                    }
+                    globalDataBundle = data;
+                    document.getElementById('loadingStatus').style.display = 'none';
+                    
+                    // Assign date descriptors
+                    document.getElementById('lblToday').innerText = data.meta.todayTab || 'Today';
+                    document.getElementById('lblYesterday').innerText = data.meta.yesterdayTab || 'Yesterday';
+                    document.getElementById('dateButtons').style.display = 'flex';
+                    
+                    renderInterface();
+                })
+                .catch(err => {
+                    document.getElementById('loadingStatus').innerHTML = "🚨 Data link broke down. Open Apps Script, Deploy > New Deployment, check access is set to 'Anyone', and update URL link code.";
+                    console.error(err);
+                });
+        });
+
+        function switchView(mode) {
+            currentView = mode;
+            document.querySelectorAll('.mode-btn').forEach((btn, idx) => {
+                btn.classList.toggle('active', (idx === 0 && mode === 'cards') || (idx === 1 && mode === 'ai'));
+            });
+            renderInterface();
+        }
+
+        function changeDateMode(mode) {
+            currentDateMode = mode;
+            document.getElementById('btnToday').classList.toggle('active', mode === 'today');
+            document.getElementById('btnYesterday').classList.toggle('active', mode === 'yesterday');
+            renderInterface();
+        }
+
+        function renderInterface() {
+            if (!globalDataBundle) return;
+            
+            const grid = document.getElementById('cardsGrid');
+            const aiWin = document.getElementById('aiWindow');
+            
+            if (currentView === 'ai') {
+                grid.style.display = 'none';
+                aiWin.style.display = 'block';
+                return;
+            }
+            
+            aiWin.style.display = 'none';
+            grid.style.display = 'grid';
+            grid.innerHTML = '';
+            
+            const records = currentDateMode === 'today' ? globalDataBundle.todayData : globalDataBundle.yesterdayData;
+            
+            if (!records || records.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1;" class="status">No items found for this date.</div>';
+                return;
+            }
+            
+            records.forEach(item => {
+                const card = document.createElement('div');
+                card.className = `card ${item.isSoldOut ? 'soldout' : ''}`;
+                
+                let badgeHtml = item.isSoldOut ? '<div class="badge">Sold Out</div>' : '';
+                let t500 = item.truSea500g ? '₹' + item.truSea500g : '-';
+                let tKg = item.truSeaKg ? '₹' + item.truSeaKg : '-';
+                let tc = item.tenderCuts ? '₹' + item.tenderCuts : '-';
+                let lc = item.licious ? '₹' + item.licious : '-';
+                let fm = item.freshma ? '₹' + item.freshma : '-';
+                let fth = item.freshToHome ? '₹' + item.freshToHome : '-';
+                let sp = item.supreme ? '₹' + item.supreme : '-';
+                
+                card.innerHTML = `
+                    ${badgeHtml}
+                    <h3 class="fish-title">${item.name}</h3>
+                    <div class="price-row">
+                        <div class="price-box"><span>TruSea 500g</span><b class="blue-text">${t500}</b></div>
+                        <div class="price-box"><span>TruSea /KG</span><b class="green-text">${tKg}</b></div>
+                    </div>
+                    <div class="comp-table">
+                        <div class="comp-row"><span>TenderCuts</span><font>${tc}</font></div>
+                        <div class="comp-row"><span>Licious</span><font>${lc}</font></div>
+                        <div class="comp-row"><span>Freshma</span><font>${fm}</font></div>
+                        <div class="comp-row"><span>FreshToHome</span><font>${fth}</font></div>
+                        <div class="comp-row"><span>Supreme Seafoods</span><font>${sp}</font></div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function processAIQuery() {
+            const txt = document.getElementById('aiInput').value.toLowerCase().trim();
+            if(!txt || !globalDataBundle) return;
+            
+            const list = currentDateMode === 'today' ? globalDataBundle.todayData : globalDataBundle.yesterdayData;
+            let target = list.find(f => txt.includes(f.name.toLowerCase()) || f.name.toLowerCase().split(' ')[0].includes(txt.split(' ')[0]));
+            
+            const out = document.getElementById('aiOutput');
+            if(target) {
+                let rate = target.truSeaKg || (target.truSea500g * 2) || 0;
+                if (txt.includes('calculate') || txt.includes('cost of') || txt.includes('total')) {
+                    let match = txt.match(/\d+/);
+                    let multi = match ? parseInt(match[0]) : 1;
+                    out.innerText = `📊 Calculation: ${multi}kg of ${target.name} matches a TruSea value of ₹${rate * multi}.`;
+                } else {
+                    let comps = [
+                        {n:'TruSea /KG', p:target.truSeaKg}, {n:'Licious', p:target.licious},
+                        {n:'TenderCuts', p:target.tenderCuts}, {n:'Freshma', p:target.freshma},
+                        {n:'FreshToHome', p:target.freshToHome}, {n:'Supreme', p:target.supreme}
+                    ].filter(c => c.p).sort((a,b) => b.p - a.p);
+                    out.innerText = `🔍 provider Analysis: Most expensive source is ${comps[0].n} at ₹${comps[0].p}. TruSea is ₹${target.truSeaKg || 'N/A'}/KG.`;
+                }
+            } else {
+                out.innerText = "Could not track that fish type. Examples: 'Calculate 5kg of Barracuda' or 'Who is costly for Anchovy'.";
+            }
+            document.getElementById('aiInput').value = '';
+        }
+    </script>
 </body>
 </html>
