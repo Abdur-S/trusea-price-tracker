@@ -4,43 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TruSea 3D Matrix Engine</title>
-    <!-- Standalone Layout Framework Engines -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Alpine.js Engine (Fast, Lightweight State Management) -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- Chart.js Engine -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Advanced 3D Perspective Card Properties */
+        /* Premium Stable 3D Perspective Card Properties */
         .perspective-grid {
-            perspective: 1500px;
+            perspective: 1200px;
         }
         .tilt-card {
             will-change: transform;
             transform-style: preserve-3d;
-            transition: transform 0.1s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.2s ease;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
+        
+        /* 3D Depth Card View with Vibrant Background Glow Effect */
         .tilt-card:hover {
-            box-shadow: 0 30px 45px rgba(148, 163, 184, 0.25);
+            transform: translateY(-8px) rotateX(4deg) rotateY(-2deg);
+            /* Soft premium border illumination drop glow shadow */
+            box-shadow: 0 20px 40px rgba(37, 99, 235, 0.15), 
+                        0 0 25px rgba(59, 130, 246, 0.25);
+            border-color: rgba(59, 130, 246, 0.4);
         }
-        /* Elevate text layers away from background plate for physical depth shadow */
-        .pop-layer-title {
-            transform: translateZ(50px);
-        }
-        .pop-layer-prices {
-            transform: translateZ(40px);
-        }
-        .pop-layer-comps {
+        
+        /* Push the internal elements forward on the Z-axis to create a real 3D layered look */
+        .pop-title {
             transform: translateZ(30px);
+        }
+        .pop-prices {
+            transform: translateZ(25px);
+        }
+        .pop-comps {
+            transform: translateZ(20px);
         }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased"
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbxPfOMuxMF5xhIyQLnTU1Df89zm_vnpHkFGI1nB8PUwPCnrtuOCSQY7iuwZzeF1zz7Ssg/exec',
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbwT7zwPYviyLc_Z2MSVCEPPD91x6amnZFOgFisoPqJyKpWRvccNR_03k34D6AIZ2XuaAg/exec',
           viewMode: 'cards', 
           dateMode: 'today', 
           todayLabel: 'Today', yesterdayLabel: 'Yesterday',
@@ -113,31 +117,10 @@
                       }
                   }
               });
-          },
-          
-          /* Real-Time Mathematical 3D Mouse Tracker Coordinates */
-          applyTilt(e) {
-              let card = e.currentTarget;
-              let box = card.getBoundingClientRect();
-              let x = e.clientX - box.left; 
-              let y = e.clientY - box.top; 
-              
-              // Max rotation angle constraint limit degrees
-              let maxTilt = 15; 
-              
-              let rotateX = ((box.height / 2 - y) / (box.height / 2)) * maxTilt;
-              let rotateY = ((x - box.width / 2) / (box.width / 2)) * maxTilt;
-              
-              card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.03, 1.03, 1.03)`;
-          },
-          resetTilt(e) {
-              let card = e.currentTarget;
-              card.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
           }
       }" x-init="initEngine()">
 
     <div class="min-h-screen p-4 sm:p-8 max-w-7xl mx-auto">
-        <!-- Header -->
         <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-5 gap-3">
             <div>
                 <h1 class="text-2xl font-bold tracking-tight text-slate-900">TruSea <span class="text-blue-600 font-normal">Intelligence Engine</span></h1>
@@ -150,7 +133,6 @@
             </div>
         </header>
 
-        <!-- Dynamic Date Selection Toggles -->
         <div class="mb-6 flex items-center gap-2 bg-slate-200/50 p-1 rounded-xl w-fit border border-slate-200/30" x-show="!loading && !errorMessage">
             <button @click="toggleDate('today')" :class="dateMode === 'today' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition-all flex flex-col items-center min-w-[130px]">
                 <span class="text-[9px] uppercase tracking-wider opacity-60">Today</span>
@@ -162,33 +144,26 @@
             </button>
         </div>
 
-        <!-- Main Workspace Area -->
         <main>
-            <!-- Processing Data Loader Overlay -->
             <div x-show="loading" class="flex flex-col items-center justify-center py-24 text-slate-400 gap-2">
                 <div class="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
                 <span class="text-xs">Processing live tracking matrix blocks...</span>
             </div>
 
-            <!-- Error Box Handling -->
             <div x-show="errorMessage" class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm font-medium" x-text="errorMessage" style="display: none;"></div>
 
-            <!-- VIEW 1: PREMIUM REAL-TIME 3D INTERACTIVE CARDS -->
             <div x-show="!loading && !errorMessage && viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 perspective-grid" style="display: none;">
                 <template x-for="item in displayItems" :key="item.name + dateMode">
-                    <div @mousemove="applyTilt" @mouseleave="resetTilt"
-                         :class="item.isSoldOut ? 'bg-slate-100 opacity-40 select-none pointer-events-none' : 'bg-white border-slate-200/80'" 
-                         class="tilt-card p-6 rounded-2xl border shadow-sm flex flex-col justify-between relative overflow-hidden">
+                    <div :class="item.isSoldOut ? 'bg-slate-100 opacity-40 select-none pointer-events-none' : 'bg-white border-slate-200/80'" 
+                         class="tilt-card p-6 rounded-2xl border shadow-sm flex flex-col justify-between relative overflow-hidden cursor-pointer">
                         
                         <div x-show="item.isSoldOut" class="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-bold uppercase px-2.5 py-1 rounded-bl tracking-widest z-50">Sold Out</div>
                         
                         <div>
-                            <!-- Header Element Layer -->
                             <h3 :class="item.isSoldOut ? 'text-slate-400 line-through' : 'text-slate-900'" 
-                                class="text-base font-bold mb-4 truncate pop-layer-title" x-text="item.name"></h3>
+                                class="text-base font-bold mb-4 truncate pop-title" x-text="item.name"></h3>
                             
-                            <!-- TruSea Target Prices Block -->
-                            <div class="grid grid-cols-2 gap-2 mb-4 pop-layer-prices">
+                            <div class="grid grid-cols-2 gap-2 mb-4 pop-prices">
                                 <div class="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 text-center">
                                     <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-medium">TruSea 500g</span>
                                     <span class="text-base font-black text-blue-600" x-text="item.truSea500g ? '₹' + item.truSea500g : '-'"></span>
@@ -200,8 +175,7 @@
                             </div>
                         </div>
                         
-                        <!-- Comprehensive Competitors Grid -->
-                        <div class="border-t pt-3.5 space-y-2 text-xs text-slate-600 pop-layer-comps">
+                        <div class="border-t pt-3.5 space-y-2 text-xs text-slate-600 pop-comps">
                             <div class="flex justify-between"><span>TenderCuts</span><span class="font-bold text-slate-700" x-text="item.tenderCuts ? '₹' + item.tenderCuts : '-'"></span></div>
                             <div class="flex justify-between"><span>Licious</span><span class="font-bold text-slate-700" x-text="item.licious ? '₹' + item.licious : '-'"></span></div>
                             <div class="flex justify-between"><span>Freshma</span><span class="font-bold text-slate-700" x-text="item.freshma ? '₹' + item.freshma : '-'"></span></div>
@@ -212,7 +186,6 @@
                 </template>
             </div>
 
-            <!-- VIEW 2: FULL COMPETITOR MARKET BAR GRAPHS -->
             <div x-show="!loading && !errorMessage && viewMode === 'analytics'" class="bg-white p-5 sm:p-6 rounded-xl border border-slate-200 shadow-sm max-w-5xl mx-auto" style="display: none;">
                 <div class="mb-4 flex justify-between items-center">
                     <h3 class="text-base font-bold text-slate-900">Competitor Price Benchmarking (/KG)</h3>
