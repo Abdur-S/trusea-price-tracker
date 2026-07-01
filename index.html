@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TruSea Intelligence Engine</title>
+    <!-- Tailwind CSS Engine -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js Engine -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Chart.js Engine -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -15,7 +18,7 @@
 <body class="bg-slate-50 text-slate-800 font-sans antialiased"
       x-data="{
           webAppUrl: 'https://script.google.com/macros/s/AKfycbx7sf1h8RL4j5nzFhqId0tgXbkWpfZmWB_L9avKRPuD_viTXpuksMHzClBE5yOxxykHCQ/exec',
-          viewMode: 'cards', // 'cards' | 'analytics' | 'ai'
+          viewMode: 'cards', 
           todayTab: '', yesterdayTab: '', activeTab: '',
           todayItems: [], yesterdayItems: [], displayItems: [],
           loading: true, chartInstance: null,
@@ -31,35 +34,50 @@
                       this.activeTab = this.todayTab;
                   }
                   await this.syncData();
-              } catch (e) { console.error(e); }
+              } catch (e) { 
+                  console.error('Initialization failed:', e); 
+                  this.loading = false;
+              }
           },
           async syncData() {
               this.loading = true;
               let tUrl = `${this.webAppUrl}?sheet=${encodeURIComponent(this.todayTab)}`;
               let yUrl = this.yesterdayTab ? `${this.webAppUrl}?sheet=${encodeURIComponent(this.yesterdayTab)}` : '';
               
-              let tReq = fetch(tUrl).then(r => r.json());
-              let yReq = yUrl ? fetch(yUrl).then(r => r.json()) : Promise.resolve({items:[]});
-              
-              let [tData, yData] = await Promise.all([tReq, yReq]);
-              this.todayItems = tData.items || [];
-              this.yesterdayItems = yData.items || [];
-              this.displayItems = this.activeTab === this.todayTab ? this.todayItems : this.yesterdayItems;
-              this.loading = false;
-              if(this.viewMode === 'analytics') this.renderChart();
+              try {
+                  let tReq = fetch(tUrl).then(r => r.json());
+                  let yReq = yUrl ? fetch(yUrl).then(r => r.json()) : Promise.resolve({ items: [] });
+                  
+                  let [tData, yData] = await Promise.all([tReq, yReq]);
+                  
+                  // Correctly unpack the .items property from the updated payload layout
+                  this.todayItems = tData.items || [];
+                  this.yesterdayItems = yData.items || [];
+                  
+                  this.renderActiveTab();
+              } catch(err) {
+                  console.error('Data pull error:', err);
+              } finally {
+                  this.loading = false;
+              }
           },
           switchTab(tab) {
               this.activeTab = tab;
-              this.displayItems = tab === this.todayTab ? this.todayItems : this.yesterdayItems;
-              if(this.viewMode === 'analytics') this.renderChart();
+              this.renderActiveTab();
+          },
+          renderActiveTab() {
+              this.displayItems = this.activeTab === this.todayTab ? this.todayItems : this.yesterdayItems;
+              if (this.viewMode === 'analytics') this.renderChart();
           },
           switchMode(mode) {
               this.viewMode = mode;
-              if(mode === 'analytics') { setTimeout(() => this.renderChart(), 100); }
+              if (mode === 'analytics') { setTimeout(() => this.renderChart(), 100); }
           },
           renderChart() {
-              if(this.chartInstance) this.chartInstance.destroy();
-              let ctx = document.getElementById('marketChart').getContext('2d');
+              if (this.chartInstance) this.chartInstance.destroy();
+              let canvasEl = document.getElementById('marketChart');
+              if (!canvasEl) return;
+              let ctx = canvasEl.getContext('2d');
               let topFish = this.displayItems.slice(0, 6);
               
               this.chartInstance = new Chart(ctx, {
@@ -76,16 +94,20 @@
               });
           },
           askAI() {
-              let q = this.aiQuery.toLowerCase();
-              if(!q) return;
+              let q = this.aiQuery.toLowerCase().trim();
+              if (!q) return;
               let found = this.displayItems.find(f => q.includes(f.name.toLowerCase()) || f.name.toLowerCase().split(' ')[0].includes(q.split(' ')[0]));
               
-              if(found) {
-                  if(q.includes('calculate') || q.includes('cost of') || q.includes('all')) {
+              if (found) {
+                  if (q.includes('calculate') || q.includes('cost of') || q.includes('total')) {
                       let kgMatch = q.match(/\d+/);
                       let multiplier = kgMatch ? parseInt(kgMatch[0]) : 1;
-                      let rate = found.truSeaKg || found.truSea500g * 2 || 0;
-                      this.aiResponse = `📊 Calculation Request: For ${multiplier}kg of ${found.name}, TruSea rate equals ₹${rate * multiplier}.`;
+                      let rate = found.truSeaKg || (found.truSea500g ? found.truSea500g * 2 : 0);
+                      if (!rate) {
+                          this.aiResponse = `The price data for ${found.name} isn't fully available to calculate.`;
+                      } else {
+                          this.aiResponse = `📊 Calculation: ${multiplier}kg of ${found.name} at TruSea rates equals ₹${Math.round(rate * multiplier)}.`;
+                      }
                   } else {
                       let competitors = [
                           { name: 'TruSea /KG', price: found.truSeaKg },
@@ -95,8 +117,13 @@
                           { name: 'FreshToHome', price: found.freshToHome },
                           { name: 'Supreme', price: found.supreme }
                       ].filter(c => c.price);
-                      competitors.sort((a,b) => b.price - a.price);
-                      this.aiResponse = `🔍 ${found.name} Analysis: Most expensive market provider is ${competitors[0].name} at ₹${competitors[0].price}. TruSea is currently listed at ₹${found.truSeaKg || 'N/A'}/KG.`;
+                      
+                      if(competitors.length === 0) {
+                          this.aiResponse = `No competitor prices found for ${found.name}.`;
+                      } else {
+                          competitors.sort((a, b) => b.price - a.price);
+                          this.aiResponse = `🔍 ${found.name} Analysis: The most expensive provider is ${competitors[0].name} at ₹${competitors[0].price}. TruSea is listed at ₹${found.truSeaKg || 'N/A'}/KG.`;
+                      }
                   }
               } else {
                   this.aiResponse = "I couldn't locate that specific fish type. Try asking: 'Who is costly for Barracuda' or 'Calculate 5kg of Anchovy'.";
@@ -105,12 +132,14 @@
       }" x-init="initEngine()">
 
     <div class="min-h-screen p-4 sm:p-8 max-w-7xl mx-auto">
+        <!-- Header -->
         <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-5 gap-3">
             <div>
                 <h1 class="text-2xl font-bold tracking-tight text-slate-900">TruSea <span class="text-blue-600 font-normal">Intelligence Engine</span></h1>
                 <p class="text-xs text-slate-500 mt-1">Live Synchronized Market Comparison System</p>
             </div>
             
+            <!-- Navigation View Switches -->
             <div class="flex bg-slate-200/80 p-1 rounded-xl border border-slate-300/30 text-xs font-semibold">
                 <button @click="switchMode('cards')" :class="viewMode === 'cards' ? 'bg-white shadow text-blue-600' : 'text-slate-600'" class="px-4 py-2 rounded-lg transition">Price Cards</button>
                 <button @click="switchMode('analytics')" :class="viewMode === 'analytics' ? 'bg-white shadow text-blue-600' : 'text-slate-600'" class="px-4 py-2 rounded-lg transition">Analytics Charts</button>
@@ -118,10 +147,11 @@
             </div>
         </header>
 
-        <div class="mb-6 flex items-center gap-2 bg-slate-200/50 p-1 rounded-xl w-fit border border-slate-200/30">
+        <!-- Date Select Toggles -->
+        <div class="mb-6 flex items-center gap-2 bg-slate-200/50 p-1 rounded-xl w-fit border border-slate-200/30" x-show="todayTab">
             <button @click="switchTab(todayTab)" :class="activeTab === todayTab ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition flex flex-col items-center min-w-[120px]">
                 <span class="text-[9px] uppercase tracking-wider opacity-60">Today</span>
-                <span x-text="todayTab ? todayTab.replace('Updated Prices - ', '') : 'Loading...'"></span>
+                <span x-text="todayTab.replace('Updated Prices - ', '')"></span>
             </button>
             <button @click="switchTab(yesterdayTab)" x-show="yesterdayTab" :class="activeTab === yesterdayTab ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition flex flex-col items-center min-w-[120px]">
                 <span class="text-[9px] uppercase tracking-wider opacity-60">Yesterday</span>
@@ -129,12 +159,15 @@
             </button>
         </div>
 
+        <!-- Main Workspace -->
         <main>
+            <!-- Loading Indicator -->
             <div x-show="loading" class="flex flex-col items-center justify-center py-24 text-slate-400 gap-2">
                 <div class="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
                 <span class="text-xs">Processing direct data matrix links...</span>
             </div>
 
+            <!-- VIEW 1: PREMIUM CARDS -->
             <div x-show="!loading && viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 <template x-for="item in displayItems" :key="item.name + activeTab">
                     <div :class="item.isSoldOut ? 'bg-slate-100 opacity-40' : 'bg-white'" class="p-5 rounded-xl border border-slate-200 shadow-sm transition flex flex-col justify-between relative overflow-hidden">
@@ -142,11 +175,11 @@
                         <div>
                             <h3 class="text-base font-bold text-slate-900 mb-4 truncate" x-text="item.name"></h3>
                             <div class="grid grid-cols-2 gap-2 mb-4">
-                                <div class="bg-slate-50 p-2.5 rounded-lg border text-center">
+                                <div class="bg-slate-50 p-2.5 rounded-lg border text-center border-slate-100">
                                     <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-medium">TruSea 500g</span>
                                     <span class="text-base font-black text-blue-600" x-text="item.truSea500g ? '₹' + item.truSea500g : '-'"></span>
                                 </div>
-                                <div class="bg-slate-50 p-2.5 rounded-lg border text-center">
+                                <div class="bg-slate-50 p-2.5 rounded-lg border text-center border-slate-100">
                                     <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-medium">TruSea /KG</span>
                                     <span class="text-base font-black text-emerald-600" x-text="item.truSeaKg ? '₹' + item.truSeaKg : '-'"></span>
                                 </div>
@@ -161,13 +194,18 @@
                         </div>
                     </div>
                 </template>
+                <div x-show="!loading && displayItems.length === 0" class="col-span-full text-center py-16 text-slate-400 text-sm bg-white rounded-xl border border-slate-200">
+                    No entries detected in this sheet category tab.
+                </div>
             </div>
 
+            <!-- VIEW 2: ANALYTICS CHARTS -->
             <div x-show="!loading && viewMode === 'analytics'" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-w-4xl mx-auto">
                 <h3 class="text-base font-bold text-slate-900 mb-4">Market Competitor Price Spikes</h3>
                 <canvas id="marketChart"></canvas>
             </div>
 
+            <!-- VIEW 3: AI COPILOT CALCULATOR -->
             <div x-show="!loading && viewMode === 'ai'" class="max-w-xl mx-auto bg-white border rounded-xl shadow-sm overflow-hidden">
                 <div class="p-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
                     <h3 class="font-bold text-base">TruSea Sales Assistant</h3>
