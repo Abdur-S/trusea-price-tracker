@@ -4,7 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 
 # Live App Web Exec Endpoint Definition
-API_URL = "https://script.google.com/macros/s/AKfycbw1suEHpXJJ7QMJNtuQz6S2Re9yTHai3Ck-0xcwEY0MDoGqc282_pdsf-9n9xtlMRFR/exec"
+API_URL = "https://script.google.com/macros/s/AKfycbxxYFZR578IFl5MGa7nS_Ha0xiqud1Q7HVOADI_-fEGY-AsI55N016A0h2rDo0uMZetdA/exec"
 
 def clean_and_parse_price(text):
     if not text: return None
