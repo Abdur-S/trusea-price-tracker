@@ -1,7 +1,6 @@
 import os
 import json
 import re
-import math
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -11,7 +10,6 @@ def clean_and_parse_price(text):
     nums = re.findall(r'\d+', text.replace(',', ''))
     return float(nums[0]) if nums else None
 
-# A generic, flexible scraping parser module
 def dynamic_competitor_scrape(url, brand_name):
     if not url or str(url) == 'nan' or url == "": 
         return None, False
@@ -24,11 +22,9 @@ def dynamic_competitor_scrape(url, brand_name):
         soup = BeautifulSoup(r.text, 'html.parser')
         page_src = r.text.lower()
         
-        # Global Stock Out Check
         if "out of stock" in page_src or "sold out" in page_src or "coming soon" in page_src:
             return None, True
             
-        # Generic price extraction check (matches standard e-commerce classes dynamically)
         price_el = (soup.find(class_="price") or 
                     soup.find(class_="current-price") or 
                     soup.find(class_="product-price") or
@@ -38,25 +34,26 @@ def dynamic_competitor_scrape(url, brand_name):
             return None, False
         
         ticket_price = clean_and_parse_price(price_el.text)
-        net_weight_grams = 500  # Default fallback pack weight
+        net_weight_grams = 500  
         
-        # Calculate dynamic price per KG
+        # FIX: Changed math.round to standard Python round()
         per_kg_price = round((ticket_price / net_weight_grams) * 1000)
         return per_kg_price, False
     except Exception:
         return None, False
 
 def execute_pipeline():
+    # Make sure this filename matches EXACTLY what is committed in your GitHub repository folder!
     excel_file = "TruSea Competitor Price Tracker (4).xlsx"
+    
+    # FIX: If file doesn't exist, raise an error to stop GitHub Actions immediately 
     if not os.path.exists(excel_file):
-        print("Excel ledger missing.")
-        return
+        raise FileNotFoundError(f"❌ ERROR: The file '{excel_file}' was not found in the root directory of your GitHub repository. Please upload/commit it.")
 
     xls = pd.ExcelFile(excel_file)
     df_link = pd.read_excel(xls, "Link")
     df_trusea = pd.read_excel(xls, "TruSea kg Price")
 
-    # 1. Map Sheet 2 Fallback Database 
     fallback_map = {}
     for _, row in df_trusea.iterrows():
         name = str(row.iloc[0]).strip()
@@ -64,7 +61,6 @@ def execute_pipeline():
         if name and pd.notna(price):
             fallback_map[name] = int(price)
 
-    # 2. Automatically discover all competitors from sheet 1 headers!
     all_columns = df_link.columns.tolist()
     competitor_brands = [col for col in all_columns if col != 'Product Name']
     print(f"👁️ Automatically detected competitors: {competitor_brands}")
@@ -79,10 +75,8 @@ def execute_pipeline():
         competitor_prices = []
         competitors_data = {}
 
-        # Loop through whatever competitors are present in the sheet dynamically
         for brand in competitor_brands:
             url = row.get(brand, '')
-            
             comp_price, is_oos = dynamic_competitor_scrape(url, brand)
             
             if is_oos:
@@ -93,12 +87,10 @@ def execute_pipeline():
             else:
                 competitors_data[brand] = None
 
-        # Apply TruSea Pricing Optimization Rule
         if competitor_prices:
             lowest_competitor = min(competitor_prices)
-            trusea_final_price = round(lowest_competitor * 0.90)  # Min competitor price minus 10%
+            trusea_final_price = round(lowest_competitor * 0.90)  
         else:
-            # Automatic Fallback to Sheet 2 if links are empty/out-of-stock
             trusea_final_price = fallback_map.get(product_name, None)
 
         output_payload.append({
@@ -108,7 +100,6 @@ def execute_pipeline():
             "isSoldOut": trusea_final_price is None
         })
 
-    # Save output to static JSON
     with open('data.json', 'w') as f:
         json.dump(output_payload, f, indent=2)
     print("🎯 Dynamic live synchronization payload created successfully.")
