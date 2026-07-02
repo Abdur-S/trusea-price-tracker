@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TruSea Live Pricing Engine</title>
+    <title>TruSea Real-Time Price Matrix</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -12,10 +12,7 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
         .neon-outline-card {
-            position: relative;
-            background: #ffffff;
-            border-radius: 1rem;
-            z-index: 1;
+            position: relative; background: #ffffff; border-radius: 1rem; z-index: 1;
             transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1);
         }
         .neon-outline-card::before {
@@ -44,13 +41,12 @@
           async initEngine() {
               this.loading = true;
               try {
-                  // Direct static fetch: 0ms runtime translation speed
                   let response = await fetch('data.json');
                   this.rawProducts = await response.json();
                   this.applyFilters();
               } catch (e) {
                   console.error(e);
-                  this.errorMessage = 'Data sync delay present.';
+                  this.errorMessage = 'Data synchronizing... Please refresh in a moment.';
               } finally {
                   this.loading = false;
               }
@@ -127,19 +123,20 @@
         <header class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-4">
             <div>
                 <h1 class="text-xl font-bold tracking-tight text-slate-900">TruSea <span class="text-cyan-500 font-normal">Intelligence Engine</span></h1>
-                <p class="text-[10px] text-slate-400 mt-0.5">Live Automated Cron-Job Driven Metrics Platform</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">Live Price Tracking Dashboard</p>
             </div>
         </header>
 
-        <!-- Search input field layer -->
+        <!-- Live Search Bar Controls -->
         <div class="mb-6 max-w-md" x-show="!loading && !errorMessage">
             <input x-model="searchQuery" @input="applyFilters()" type="text" placeholder="🔍 Search product name or brand (e.g., Licious)..." class="w-full text-xs bg-white border border-slate-200 p-3 pl-4 rounded-xl shadow-sm focus:outline-none focus:border-cyan-400 transition-all">
         </div>
 
         <main class="space-y-6">
-            <div x-show="loading" class="text-center py-20 text-xs text-slate-400">Loading catalog layout matrices...</div>
+            <div x-show="loading" class="text-center py-20 text-xs text-slate-400">Loading dynamic data catalog matrices...</div>
+            <div x-show="errorMessage" class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-xs font-medium" x-text="errorMessage" style="display: none;"></div>
 
-            <!-- HIGHEST VS NORMAL STATISTICAL INDICATORS -->
+            <!-- COMPARATIVE BENCHMARK CHARTS PANEL -->
             <div x-show="!loading && !errorMessage" class="grid grid-cols-1 lg:grid-cols-3 gap-4" style="display: none;">
                 <div class="lg:col-span-1 flex flex-col gap-3 justify-between">
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
@@ -156,7 +153,7 @@
                 </div>
             </div>
 
-            <!-- PREMIUM MOBILE CARDS DATA GRID -->
+            <!-- MOBILE CARDS RENDER GRID CONTAINER -->
             <div x-show="!loading && !errorMessage" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style="display: none;">
                 <template x-for="item in filteredItems" :key="item.name">
                     <div :class="item.isSoldOut ? 'bg-slate-100 opacity-50 select-none' : 'neon-outline-card border-slate-200/60'" class="p-5 border flex flex-col justify-between shadow-sm relative">
@@ -173,10 +170,10 @@
                         </div>
                         
                         <div class="border-t border-slate-100 pt-2.5 space-y-1.5 text-xs text-slate-600">
+                            <!-- Dynamic iteration over any and all added competitor platforms -->
                             <template x-for="[compName, compPrice] in Object.entries(item.competitors)" :key="compName">
                                 <div class="flex justify-between">
                                     <span x-text="compName + ' /KG'"></span>
-                                    <!-- Displays price or highlights a Stocked Out notice -->
                                     <span :class="compPrice === 'STOCKED OUT' ? 'text-red-500 font-bold tracking-tight text-[10px]' : 'font-bold text-slate-700'" 
                                           x-text="typeof compPrice === 'number' ? '₹' + compPrice : compPrice || '-'"></span>
                                 </div>
