@@ -4,7 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 
 # Paste your fresh Web App URL from Step 1 here
-API_URL = "https://script.google.com/macros/s/AKfycbw1suEHpXJJ7QMJNtuQz6S2Re9yTHai3Ck-0xcwEY0MDoGqc282_pdsf-9n9xtlMRFR/exec"
+API_URL = "https://script.google.com/macros/s/AKfycbydinXppVSzcHDAuuRA8OM6UqQWZyNYSRUthTt5Hz-enKt813TDonWzdlEZM6fbTbt4xg/exec"
 
 def clean_and_parse_price(text):
     if not text: return None
