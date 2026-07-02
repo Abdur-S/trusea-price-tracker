@@ -1,0 +1,35 @@
+name: TruSea Automated Live Price Sync
+
+on:
+  schedule:
+    # Scheduled triggers mapped exactly to Indian Standard Time (IST) 
+    # UTC matches: 1:30 AM (7 AM IST), 5:30 AM (11 AM IST), 9:30 AM (3 PM IST), 1:30 PM (7 PM IST), 5:30 PM (11 PM IST)
+    - cron: '30 1,5,9,13,17 * * *'
+  workflow_dispatch: # Allows you to manually click and trigger an instant scrape anytime
+
+jobs:
+  scrape-and-sync:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository Code
+      uses: actions/checkout@v3
+
+    - name: Set Up Python Environment
+      uses: actions/setup-python@v4
+      with:
+          python-with-version: '3.10'
+
+    - name: Install Scraping Dependencies
+      run: |
+        pip install requests beautifulsoup4 pandas openpyxl
+
+    - name: Run Mathematical Pricing Engine
+      run: python scraper.py
+
+    - name: Commit & Push Live Updates to Website Dashboard
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add data.json
+        git diff-index --quiet HEAD || git commit -m "Automated Sync: Multi-Vendor Pricing Updated"
+        git push origin main
