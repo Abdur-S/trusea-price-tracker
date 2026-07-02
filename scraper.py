@@ -3,8 +3,8 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
-# Live App Web Exec Endpoint Definition
-API_URL = "https://script.google.com/macros/s/AKfycbxxYFZR578IFl5MGa7nS_Ha0xiqud1Q7HVOADI_-fEGY-AsI55N016A0h2rDo0uMZetdA/exec"
+# Paste your fresh Web App URL from Step 1 here
+API_URL = "https://script.google.com/macros/s/AKfycbw1suEHpXJJ7QMJNtuQz6S2Re9yTHai3Ck-0xcwEY0MDoGqc282_pdsf-9n9xtlMRFR/exec"
 
 def clean_and_parse_price(text):
     if not text: return None
@@ -22,7 +22,7 @@ def dynamic_competitor_scrape(url, brand_name):
         soup = BeautifulSoup(r.text, 'html.parser')
         page_src = r.text.lower()
         
-        # OOS / Sold Out Rule implementation
+        # OOS / Sold Out Check
         if "out of stock" in page_src or "sold out" in page_src or "coming soon" in page_src:
             return None, True
             
@@ -43,8 +43,14 @@ def dynamic_competitor_scrape(url, brand_name):
 
 def execute_pipeline():
     print("🌐 Syncing spreadsheet configuration parameters over live API...")
+    # Appending the action parameters explicitly
     response = requests.get(f"{API_URL}?action=get_sheet_data", timeout=30)
-    sheet_json = response.json()
+    
+    try:
+        sheet_json = response.json()
+    except Exception as e:
+        print("❌ Server Response Error. Raw output received:", response.text)
+        raise ValueError("Google Web App returned an invalid non-JSON page. Check Step 1 permissions.")
     
     raw_links_list = sheet_json.get("links", [])
     fallbacks_list = sheet_json.get("fallbacks", [])
@@ -52,7 +58,7 @@ def execute_pipeline():
     if not raw_links_list:
         raise ValueError("❌ Connection Error: Data stream parsed empty matrix cells from the spreadsheet.")
 
-    # FIX: Replaced JavaScript regex syntax with clean Python character strips
+    # Process and build clean fallback maps
     fallback_map = {}
     for item in fallbacks_list:
         name = str(item.get("name", "")).strip()
@@ -62,10 +68,10 @@ def execute_pipeline():
         except:
             pass
 
-    # Discover competitor brands dynamically on the fly
+    # Dynamic competitor extraction engine
     sample_keys = raw_links_list[0].keys()
     competitor_brands = [k for k in sample_keys if k != 'Product Name']
-    print(f"👁️ Active Competitor Headers Found: {competitor_brands}")
+    print(f"👁️ Active Competitor Columns Found: {competitor_brands}")
 
     output_payload = []
 
@@ -88,7 +94,6 @@ def execute_pipeline():
             else:
                 competitors_data[brand] = None
 
-        # Pricing formula calculations rules execution loop
         if competitor_prices:
             lowest_competitor = min(competitor_prices)
             trusea_final_price = round(lowest_competitor * 0.90)  
@@ -102,7 +107,6 @@ def execute_pipeline():
             "isSoldOut": trusea_final_price is None
         })
 
-    # Saves to data.json to ensure the file exists for the commit step
     with open('data.json', 'w') as f:
         json.dump(output_payload, f, indent=2)
     print("🎯 Success: data.json built perfectly.")
