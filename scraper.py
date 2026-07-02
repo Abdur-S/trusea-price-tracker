@@ -52,7 +52,7 @@ def execute_pipeline():
     if not raw_links_list:
         raise ValueError("❌ Connection Error: Data stream parsed empty matrix cells from the spreadsheet.")
 
-    # Map Sheet 2 Fallback records
+    # FIX: Replaced JavaScript regex syntax with clean Python character strips
     fallback_map = {}
     for item in fallbacks_list:
         name = str(item.get("name", "")).strip()
