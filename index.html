@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TruSea Live Pricing Matrix</title>
+    <title>TruSea Live Pricing Engine</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -36,8 +36,8 @@
             pointer-events: none;
         }
         .neon-outline-card:hover {
-            transform: translateY(-6px) scale(1.02);
-            box-shadow: 0 20px 30px rgba(0, 242, 254, 0.15), 0 10px 15px rgba(15, 23, 42, 0.08);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 30px rgba(0, 242, 254, 0.12), 0 10px 15px rgba(15, 23, 42, 0.06);
         }
         .neon-outline-card:hover::before {
             opacity: 1;
@@ -53,8 +53,9 @@
       x-data="{
           webAppUrl: 'https://script.google.com/macros/s/AKfycbwJ0_60b766d1fzA-i1_xa1BYOJy2dfOIXx0TZrV5S5SIc_2i_x4EDoQPyncnMYvzOn6g/exec',
           dateMode: 'today', 
+          searchQuery: '',
           todayLabel: 'Today', yesterdayLabel: 'Yesterday',
-          todayItems: [], yesterdayItems: [], displayItems: [],
+          todayItems: [], yesterdayItems: [], filteredItems: [],
           highestSeller: 'Calculating...', normalSeller: 'Calculating...',
           loading: true, errorMessage: '', chartInstance: null,
           
@@ -64,56 +65,67 @@
               try {
                   let response = await fetch(this.webAppUrl);
                   let data = await response.json();
-                  
                   if (data.error) { throw new Error(data.error); }
                   
                   this.todayLabel = data.meta.todayTab || 'Today';
                   this.yesterdayLabel = data.meta.yesterdayTab || 'Yesterday';
-                  
                   this.todayItems = data.todayData || [];
                   this.yesterdayItems = data.yesterdayData || [];
                   
-                  this.renderActiveView();
+                  this.applyFilters();
               } catch (e) {
                   console.error(e);
-                  this.errorMessage = 'Live Sync Fault: Unable to parse tracking stream coordinates.';
+                  this.errorMessage = 'Live Sync Fault: Unable to resolve cloud data streams.';
               } finally {
                   this.loading = false;
               }
           },
           toggleDate(mode) {
               this.dateMode = mode;
-              this.renderActiveView();
+              this.applyFilters();
           },
-          renderActiveView() {
-              this.displayItems = this.dateMode === 'today' ? this.todayItems : this.yesterdayItems;
+          applyFilters() {
+              let rawList = this.dateMode === 'today' ? this.todayItems : this.yesterdayItems;
+              let q = this.searchQuery.toLowerCase().trim();
+              
+              if (!q) {
+                  this.filteredItems = rawList;
+              } else {
+                  this.filteredItems = rawList.filter(item => {
+                      let matchFishName = item.name.toLowerCase().includes(q);
+                      let matchCompBrand = Object.keys(item.competitors).some(key => key.toLowerCase().includes(q));
+                      return matchFishName || matchCompBrand;
+                  });
+              }
               this.calculateMarketMetrics();
           },
           calculateMarketMetrics() {
-              if (this.displayItems.length === 0) return;
+              let activeItems = this.dateMode === 'today' ? this.todayItems : this.yesterdayItems;
+              if (activeItems.length === 0) return;
               
-              let compTotals = { truSea: 0, tenderCuts: 0, licious: 0, freshma: 0, freshToHome: 0, supreme: 0 };
-              let compCounts = { truSea: 0, tenderCuts: 0, licious: 0, freshma: 0, freshToHome: 0, supreme: 0 };
+              let compTotals = {};
+              let compCounts = {};
+              let totalTruSea = 0, countTruSea = 0;
               
-              this.displayItems.forEach(item => {
+              activeItems.forEach(item => {
                   if (item.isSoldOut) return;
-                  if (item.truSeaKg) { compTotals.truSea += item.truSeaKg; compCounts.truSea++; }
-                  if (item.tenderCuts) { compTotals.tenderCuts += item.tenderCuts; compCounts.tenderCuts++; }
-                  if (item.licious) { compTotals.licious += item.licious; compCounts.licious++; }
-                  if (item.freshma) { compTotals.freshma += item.freshma; compCounts.freshma++; }
-                  if (item.freshToHome) { compTotals.freshToHome += item.freshToHome; compCounts.freshToHome++; }
-                  if (item.supreme) { compTotals.supreme += item.supreme; compCounts.supreme++; }
+                  if (item.truSeaKg) { totalTruSea += item.truSeaKg; countTruSea++; }
+                  
+                  Object.keys(item.competitors).forEach(key => {
+                      let val = item.competitors[key];
+                      if (val) {
+                          compTotals[key] = (compTotals[key] || 0) + val;
+                          compCounts[key] = (compCounts[key] || 0) + 1;
+                      }
+                  });
               });
               
-              let averages = [
-                  { name: 'TruSea', avg: compCounts.truSea ? compTotals.truSea / compCounts.truSea : 0, isBrand: true },
-                  { name: 'TenderCuts', avg: compCounts.tenderCuts ? compTotals.tenderCuts / compCounts.tenderCuts : 0 },
-                  { name: 'Licious', avg: compCounts.licious ? compTotals.licious / compCounts.licious : 0 },
-                  { name: 'Freshma', avg: compCounts.freshma ? compTotals.freshma / compCounts.freshma : 0 },
-                  { name: 'FreshToHome', avg: compCounts.freshToHome ? compTotals.freshToHome / compCounts.freshToHome : 0 },
-                  { name: 'Supreme Seafoods', avg: compCounts.supreme ? compTotals.supreme / compCounts.supreme : 0 }
-              ].filter(c => c.avg > 0);
+              let averages = [{ name: 'TruSea', avg: countTruSea ? totalTruSea / countTruSea : 0, isBrand: true }];
+              Object.keys(compTotals).forEach(key => {
+                  averages.push({ name: key, avg: compTotals[key] / compCounts[key], isBrand: false });
+              });
               
+              averages = averages.filter(c => c.avg > 0);
               if (averages.length === 0) return;
               
               let competitorsOnly = averages.filter(c => !c.isBrand);
@@ -151,73 +163,85 @@
           }
       }" x-init="initEngine()">
 
-    <div class="min-h-screen p-4 sm:p-8 max-w-7xl mx-auto">
+    <div class="min-h-screen p-4 sm:p-6 max-w-7xl mx-auto">
         <!-- Header -->
-        <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-5 gap-3">
+        <header class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-4 gap-3">
             <div>
-                <h1 class="text-2xl font-bold tracking-tight text-slate-900">TruSea <span class="text-cyan-500 font-normal">Intelligence Engine</span></h1>
-                <p class="text-xs text-slate-500 mt-1">Live Dynamic Competitor Market Comparison System</p>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900">TruSea <span class="text-cyan-500 font-normal">Intelligence Engine</span></h1>
+                <p class="text-[11px] text-slate-400">Live Dynamic Price Tracker</p>
             </div>
             
-            <div class="flex bg-slate-200/50 p-1 rounded-xl w-fit border border-slate-200/30" x-show="!loading && !errorMessage">
-                <button @click="toggleDate('today')" :class="dateMode === 'today' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition-all flex flex-col items-center min-w-[125px]">
-                    <span class="text-[9px] uppercase tracking-wider opacity-60">Today</span><span x-text="todayLabel"></span>
+            <div class="flex bg-slate-200/50 p-1 rounded-xl border border-slate-200/30 text-xs">
+                <button @click="toggleDate('today')" :class="dateMode === 'today' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 rounded-lg transition-all flex flex-col items-center min-w-[110px]">
+                    <span class="text-[8px] uppercase tracking-wider opacity-60">Today</span><span x-text="todayLabel"></span>
                 </button>
-                <button @click="toggleDate('yesterday')" :class="dateMode === 'yesterday' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 text-xs rounded-lg transition-all flex flex-col items-center min-w-[125px]">
-                    <span class="text-[9px] uppercase tracking-wider opacity-60">Yesterday</span><span x-text="yesterdayLabel"></span>
+                <button @click="toggleDate('yesterday')" :class="dateMode === 'yesterday' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500'" class="px-4 py-1.5 rounded-lg transition-all flex flex-col items-center min-w-[110px]">
+                    <span class="text-[8px] uppercase tracking-wider opacity-60">Yesterday</span><span x-text="yesterdayLabel"></span>
                 </button>
             </div>
         </header>
 
-        <main class="space-y-8">
-            <div x-show="loading" class="flex flex-col items-center justify-center py-24 text-slate-400 gap-2">
+        <!-- Search Bar Area -->
+        <div class="mb-6 max-w-md" x-show="!loading && !errorMessage">
+            <div class="relative">
+                <input x-model="searchQuery" @input="applyFilters()" type="text" placeholder="Search by fish name or competitor..." class="w-full text-xs bg-white border border-slate-200 p-3 pl-4 rounded-xl shadow-sm focus:outline-none focus:border-cyan-400 transition-all">
+            </div>
+        </div>
+
+        <main class="space-y-6">
+            <div x-show="loading" class="flex flex-col items-center justify-center py-20 text-slate-400 gap-2">
                 <div class="animate-spin rounded-full h-5 w-5 border-2 border-cyan-500 border-t-transparent"></div>
                 <span class="text-xs">Streaming metrics instantly...</span>
             </div>
 
-            <div x-show="errorMessage" class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm font-medium" x-text="errorMessage" style="display: none;"></div>
+            <div x-show="errorMessage" class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-xs font-medium" x-text="errorMessage" style="display: none;"></div>
 
-            <!-- SMART INSIGHTS AND BAR GRAPH -->
-            <div x-show="!loading && !errorMessage" class="grid grid-cols-1 lg:grid-cols-3 gap-6" style="display: none;">
-                <div class="lg:col-span-1 flex flex-col gap-4 justify-between">
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <span class="text-[10px] uppercase font-bold tracking-wider text-red-400 block mb-1">🔴 Highest Cost Competitor</span>
-                        <div class="text-lg font-black text-slate-900" x-text="highestSeller"></div>
+            <!-- INSIGHTS BOXES AND BAR GRAPH -->
+            <div x-show="!loading && !errorMessage" class="grid grid-cols-1 lg:grid-cols-3 gap-4" style="display: none;">
+                <div class="lg:col-span-1 flex flex-col gap-3 justify-between">
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <span class="text-[9px] uppercase font-bold tracking-wider text-red-400 block mb-0.5">🔴 Highest Cost Competitor</span>
+                        <div class="text-base font-black text-slate-900" x-text="highestSeller"></div>
                     </div>
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <span class="text-[10px] uppercase font-bold tracking-wider text-blue-500 block mb-1">🔵 Normal Cost Competitor</span>
-                        <div class="text-lg font-black text-slate-900" x-text="normalSeller"></div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <span class="text-[9px] uppercase font-bold tracking-wider text-blue-500 block mb-0.5">🔵 Normal Cost Competitor</span>
+                        <div class="text-base font-black text-slate-900" x-text="normalSeller"></div>
                     </div>
                 </div>
-                <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                    <h3 class="text-sm font-bold text-slate-900 mb-4">Market Average Price Benchmark Index Including TruSea (/KG)</h3>
-                    <div class="relative h-[180px] w-full"><canvas id="insightsChart"></canvas></div>
+                <div class="lg:col-span-2 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="relative h-[120px] w-full"><canvas id="insightsChart"></canvas></div>
                 </div>
             </div>
 
-            <!-- CARDS GRID VIEW -->
-            <div x-show="!loading && !errorMessage" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" style="display: none;">
-                <template x-for="item in displayItems" :key="item.name + dateMode">
-                    <div :class="item.isSoldOut ? 'bg-slate-100 opacity-40 select-none pointer-events-none border-slate-200' : 'neon-outline-card border-slate-200/60'" class="p-6 border flex flex-col justify-between shadow-sm">
-                        <div x-show="item.isSoldOut" class="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-bold uppercase px-2.5 py-1 rounded-bl tracking-widest z-50">Sold Out</div>
+            <!-- MOBILE-OPTIMIZED CARDS GRID VIEW -->
+            <div x-show="!loading && !errorMessage" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style="display: none;">
+                <template x-for="item in filteredItems" :key="item.name + dateMode">
+                    <div :class="item.isSoldOut ? 'bg-slate-100 opacity-40 select-none pointer-events-none border-slate-200' : 'neon-outline-card border-slate-200/60'" class="p-5 border flex flex-col justify-between shadow-sm">
+                        <div x-show="item.isSoldOut" class="absolute top-0 right-0 bg-red-500 text-white text-[8px] font-bold uppercase px-2 py-0.5 rounded-bl tracking-widest z-50">Sold Out</div>
                         <div>
-                            <h3 :class="item.isSoldOut ? 'text-slate-400 line-through' : 'text-slate-900'" class="text-base font-bold mb-4 truncate" x-text="item.name"></h3>
-                            <div class="mb-4">
-                                <div class="bg-gradient-to-br from-slate-50 to-slate-100/30 p-3 rounded-xl border border-slate-100 text-center">
-                                    <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">TruSea Price /KG</span>
-                                    <span class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500" x-text="item.truSeaKg ? '₹' + item.truSeaKg : '-'"></span>
+                            <h3 :class="item.isSoldOut ? 'text-slate-400 line-through' : 'text-slate-900'" class="text-sm font-bold mb-3 truncate" x-text="item.name"></h3>
+                            <div class="mb-3">
+                                <div class="bg-gradient-to-br from-slate-50 to-slate-100/30 p-2.5 rounded-xl border border-slate-100 text-center">
+                                    <span class="block text-[8px] uppercase tracking-wider text-slate-400 font-bold">TruSea Price /KG</span>
+                                    <span class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500" x-text="item.truSeaKg ? '₹' + item.truSeaKg : '-'"></span>
                                 </div>
                             </div>
                         </div>
-                        <div class="border-t border-slate-100 pt-3.5 space-y-2 text-xs text-slate-600">
-                            <div class="flex justify-between"><span>TenderCuts /KG</span><span class="font-bold text-slate-700" x-text="item.tenderCuts ? '₹' + item.tenderCuts : '-'"></span></div>
-                            <div class="flex justify-between"><span>Licious /KG</span><span class="font-bold text-slate-700" x-text="item.licious ? '₹' + item.licious : '-'"></span></div>
-                            <div class="flex justify-between"><span>Freshma /KG</span><span class="font-bold text-slate-700" x-text="item.freshma ? '₹' + item.freshma : '-'"></span></div>
-                            <div class="flex justify-between"><span>FreshToHome /KG</span><span class="font-bold text-slate-700" x-text="item.freshToHome ? '₹' + item.freshToHome : '-'"></span></div>
-                            <div class="flex justify-between"><span>Supreme Seafoods /KG</span><span class="font-bold text-slate-700" x-text="item.supreme ? '₹' + item.supreme : '-'"></span></div>
+                        <div class="border-t border-slate-100 pt-2.5 space-y-1.5 text-xs text-slate-600">
+                            <template x-for="[compName, compPrice] in Object.entries(item.competitors)" :key="compName">
+                                <div class="flex justify-between" x-show="compPrice !== null">
+                                    <span x-text="compName + ' /KG'"></span>
+                                    <span class="font-bold text-slate-700" x-text="'₹' + compPrice"></span>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </template>
+            </div>
+            
+            <!-- Empty Filter Fallback -->
+            <div x-show="filteredItems.length === 0 && !loading" class="text-center text-xs py-10 text-slate-400" style="display: none;">
+                No fish species or competitors found matching your criteria.
             </div>
         </main>
     </div>
