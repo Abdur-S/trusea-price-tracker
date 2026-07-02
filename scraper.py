@@ -1,9 +1,10 @@
-import os
 import json
 import re
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
+
+# Live App Web Exec Endpoint Definition
+API_URL = "https://script.google.com/macros/s/AKfycbw1suEHpXJJ7QMJNtuQz6S2Re9yTHai3Ck-0xcwEY0MDoGqc282_pdsf-9n9xtlMRFR/exec"
 
 def clean_and_parse_price(text):
     if not text: return None
@@ -16,12 +17,12 @@ def dynamic_competitor_scrape(url, brand_name):
     try:
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
         r = requests.get(url, headers=headers, timeout=12)
-        if r.status_code != 200: 
-            return None, False
+        if r.status_code != 200: return None, False
         
         soup = BeautifulSoup(r.text, 'html.parser')
         page_src = r.text.lower()
         
+        # OOS / Sold Out Rule implementation
         if "out of stock" in page_src or "sold out" in page_src or "coming soon" in page_src:
             return None, True
             
@@ -30,47 +31,47 @@ def dynamic_competitor_scrape(url, brand_name):
                     soup.find(class_="product-price") or
                     soup.find(attrs={"data-price": True}))
                     
-        if not price_el: 
-            return None, False
+        if not price_el: return None, False
         
         ticket_price = clean_and_parse_price(price_el.text)
-        net_weight_grams = 500  
+        net_weight_grams = 500  # Automatically scales custom weights to a 1000g /KG base metric
         
-        # FIX: Changed math.round to standard Python round()
         per_kg_price = round((ticket_price / net_weight_grams) * 1000)
         return per_kg_price, False
     except Exception:
         return None, False
 
 def execute_pipeline():
-    # Make sure this filename matches EXACTLY what is committed in your GitHub repository folder!
-    excel_file = "TruSea Competitor Price Tracker (4).xlsx"
+    print("🌐 Syncing spreadsheet configuration parameters over live API...")
+    response = requests.get(f"{API_URL}?action=get_sheet_data", timeout=30)
+    sheet_json = response.json()
     
-    # FIX: If file doesn't exist, raise an error to stop GitHub Actions immediately 
-    if not os.path.exists(excel_file):
-        raise FileNotFoundError(f"❌ ERROR: The file '{excel_file}' was not found in the root directory of your GitHub repository. Please upload/commit it.")
+    raw_links_list = sheet_json.get("links", [])
+    fallbacks_list = sheet_json.get("fallbacks", [])
+    
+    if not raw_links_list:
+        raise ValueError("❌ Connection Error: Data stream parsed empty matrix cells from the spreadsheet.")
 
-    xls = pd.ExcelFile(excel_file)
-    df_link = pd.read_excel(xls, "Link")
-    df_trusea = pd.read_excel(xls, "TruSea kg Price")
-
+    # Map Sheet 2 Fallback records
     fallback_map = {}
-    for _, row in df_trusea.iterrows():
-        name = str(row.iloc[0]).strip()
-        price = row.iloc[1]
-        if name and pd.notna(price):
-            fallback_map[name] = int(price)
+    for item in fallbacks_list:
+        name = str(item.get("name", "")).strip()
+        price_val = str(item.get("price", "0")).replace('₹', '').replace(',', '').strip()
+        try:
+            fallback_map[name] = int(float(price_val))
+        except:
+            pass
 
-    all_columns = df_link.columns.tolist()
-    competitor_brands = [col for col in all_columns if col != 'Product Name']
-    print(f"👁️ Automatically detected competitors: {competitor_brands}")
+    # Discover competitor brands dynamically on the fly
+    sample_keys = raw_links_list[0].keys()
+    competitor_brands = [k for k in sample_keys if k != 'Product Name']
+    print(f"👁️ Active Competitor Headers Found: {competitor_brands}")
 
     output_payload = []
 
-    for _, row in df_link.iterrows():
-        product_name = str(row['Product Name']).strip()
-        if not product_name or product_name == 'nan': 
-            continue
+    for row in raw_links_list:
+        product_name = str(row.get('Product Name', '')).strip()
+        if not product_name or product_name == 'nan': continue
 
         competitor_prices = []
         competitors_data = {}
@@ -87,6 +88,7 @@ def execute_pipeline():
             else:
                 competitors_data[brand] = None
 
+        # Pricing formula calculations rules execution loop
         if competitor_prices:
             lowest_competitor = min(competitor_prices)
             trusea_final_price = round(lowest_competitor * 0.90)  
@@ -100,9 +102,10 @@ def execute_pipeline():
             "isSoldOut": trusea_final_price is None
         })
 
+    # Saves to data.json to ensure the file exists for the commit step
     with open('data.json', 'w') as f:
         json.dump(output_payload, f, indent=2)
-    print("🎯 Dynamic live synchronization payload created successfully.")
+    print("🎯 Success: data.json built perfectly.")
 
 if __name__ == "__main__":
     execute_pipeline()
