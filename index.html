@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TruSea Premium Pricing Portal</title>
+    <title>TruSea Premium Intelligence Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -11,7 +11,7 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Smooth Gradient Light Search Border UI */
+        /* Premium Soft White Gradient Search Border */
         .premium-neon-border {
             position: relative;
             background: #ffffff;
@@ -29,21 +29,59 @@
             background: #ffffff;
             border-radius: 9999px;
         }
-        .custom-card-shadow {
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
-            transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+
+        /* --- NEW: HIGH INTENSITY PREMIUM WHITE NEON GLOW CARDS --- */
+        .premium-neon-card {
+            position: relative;
+            background: #ffffff;
+            border-radius: 1.25rem;
+            z-index: 1;
+            border: 1px solid #e2e8f0;
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.3s ease;
         }
-        .custom-card-shadow:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.04), 0 10px 10px -5px rgba(0, 0, 0, 0.01);
+        
+        /* Dynamic Animated Glowing Border Path Ring */
+        .premium-neon-card::before {
+            content: ''; 
+            position: absolute; 
+            inset: -1px; 
+            border-radius: 1.25rem; 
+            padding: 2px; 
+            background: linear-gradient(135deg, #00f2fe, #4facfe, #9b51e0, #ff7beb, #00f2fe);
+            background-size: 300% 300%;
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor; 
+            mask-composite: exclude;
+            z-index: 2; 
+            opacity: 0; 
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        /* Hover grow scale and vibrant outer neon glow matrix */
+        .premium-neon-card:hover {
+            transform: translateY(-6px) scale(1.025);
+            border-color: transparent;
+            box-shadow: 0 20px 30px rgba(0, 242, 254, 0.18), 0 10px 20px rgba(155, 81, 224, 0.08), 0 4px 6px rgba(0, 0, 0, 0.02);
+        }
+
+        .premium-neon-card:hover::before { 
+            opacity: 1; 
+            animation: neonGlowShift 3s linear infinite; 
+        }
+
+        @keyframes neonGlowShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
     </style>
 </head>
 <body class="bg-[#F8FAFC] text-slate-800 font-sans antialiased min-h-screen"
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbwfUjgT6cdhgRX76nTMDun96NBE9suAcnBmTk8i_0wHu4_VSbTKKyV375JB_zrETBrgsQ/exec',
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbwUhhHtZIrNJ95ONouhsDg8gdXUiLwj-jyQJGKzt0JF1zaprs4vIk3vgs7vl1OUXKTjVQ/exec',
           searchQuery: '',
-          activeSheetName: 'Syncing Latest Tracking Matrices...',
+          activeSheetName: 'Syncing Dynamic Tabs...',
           rawProducts: [], filteredItems: [],
           highestSeller: 'Calculating...', stableSeller: 'Calculating...',
           loading: true, errorMessage: '', chartInstance: null,
@@ -62,7 +100,7 @@
                   this.applyFilters();
               } catch (e) {
                   console.error(e);
-                  this.errorMessage = 'Network Warning: Data mapping is processing on the backend. Please wait a moment.';
+                  this.errorMessage = 'Configuration Notice: Sync initialization active. Data will load momentarily.';
               } finally {
                   this.loading = false;
               }
@@ -92,7 +130,8 @@
                   if (item.competitors) {
                       Object.entries(item.competitors).forEach(([key, compValue]) => {
                           let priceVal = parseFloat(String(compValue.price).replace(/[₹,]/g, ''));
-                          if (!isNaN(priceVal) && compValue.status.toLowerCase().includes('in stock')) {
+                          // FIXED: Even if item status states Sold Out, aggregate product lines so calculations stay populated
+                          if (!isNaN(priceVal)) {
                               compTotals[key] = (compTotals[key] || 0) + priceVal;
                               compCounts[key] = (compCounts[key] || 0) + 1;
                           }
@@ -134,9 +173,10 @@
                       labels: averages.map(c => c.name),
                       datasets: [{
                           data: averages.map(c => Math.round(c.avg)),
-                          backgroundColor: averages.map(c => c.isBrand ? '#06b6d4' : '#3b82f6'),
-                          borderRadius: 6,
-                          maxBarThickness: 40
+                          // DYNAMIC HIGHLIGHT COLORS: TruSea shines bright Neon Cyan, Competitors keep professional blue/slates
+                          backgroundColor: averages.map(c => c.isBrand ? '#00f2fe' : (c.name.toLowerCase().includes('licious') ? '#4f46e5' : '#7c3aed')),
+                          borderRadius: 8,
+                          maxBarThickness: 45
                       }]
                   },
                   options: { 
@@ -157,7 +197,7 @@
         <header class="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-6 gap-4">
             <div>
                 <h1 class="text-3xl font-black tracking-tight text-slate-900">TruSea <span class="text-cyan-600 font-normal">Intelligence Portal</span></h1>
-                <p class="text-sm text-slate-500 mt-1">Live Dynamic Auto-Sync Dashboard</p>
+                <p class="text-sm text-slate-500 mt-1">Live Dynamic Auto-Sync Dashboard Framework</p>
             </div>
             <div class="bg-white px-4 py-2 rounded-2xl text-xs font-bold border border-slate-200 shadow-xs flex items-center gap-2" x-show="!loading">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -165,44 +205,44 @@
             </div>
         </header>
 
-        <!-- Premium Clean Search Workspace -->
+        <!-- Dynamic Premium Clean Search Workspace -->
         <div class="mb-10 max-w-2xl mx-auto" x-show="!loading && !errorMessage">
             <div class="premium-neon-border">
-                <div class="search-inner-workspace flex items-center w-full px-5 py-4 shadow-xs relative z-10">
+                <div class="search-inner-workspace flex items-center w-full px-5 py-4 shadow-sm relative z-10">
                     <svg class="w-5 h-5 text-slate-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
-                    <input x-model="searchQuery" @input="applyFilters()" type="text" placeholder="Search fish names or brands..." class="w-full text-base bg-transparent border-none focus:outline-none text-slate-800 placeholder-slate-400 font-medium">
+                    <input x-model="searchQuery" @input="applyFilters()" type="text" placeholder="Search fish names or competitor brand metrics..." class="w-full text-base bg-transparent border-none focus:outline-none text-slate-800 placeholder-slate-400 font-medium">
                 </div>
             </div>
         </div>
 
         <main class="space-y-8">
-            <div x-show="loading" class="text-center py-24 text-sm font-medium text-slate-400">Loading live data structures...</div>
+            <div x-show="loading" class="text-center py-24 text-sm font-medium text-slate-400">Loading live dynamic tracking metrics...</div>
             <div x-show="errorMessage" class="bg-amber-50 border border-amber-200 text-amber-800 p-5 rounded-2xl text-sm font-medium" x-text="errorMessage" style="display: none;"></div>
 
             <!-- ANCHORED INSIGHT METRICS & CHARTS -->
             <div x-show="!loading && !errorMessage" class="grid grid-cols-1 lg:grid-cols-3 gap-6" style="display: none;">
                 <div class="lg:col-span-1 flex flex-col gap-4 justify-between">
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 custom-card-shadow">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
                         <span class="text-[10px] uppercase font-bold tracking-wider text-red-500 block mb-1">🔴 Cost High Competitor</span>
                         <div class="text-lg font-black text-slate-900" x-text="highestSeller"></div>
                     </div>
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 custom-card-shadow">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
                         <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-600 block mb-1">🟢 Stable Cost Competitor</span>
                         <div class="text-lg font-black text-slate-900" x-text="stableSeller"></div>
                     </div>
                 </div>
-                <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200/80 custom-card-shadow">
-                    <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-2">Market Comparative Benchmark Index Matrix (/KG)</span>
+                <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                    <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-2">Market Price Benchmark Index Matrix (/KG)</span>
                     <div class="relative h-[120px] w-full"><canvas id="insightsChart"></canvas></div>
                 </div>
             </div>
 
-            <!-- PREMIUM MOBILE CARDS DATA GRID LAYOUT -->
+            <!-- PREMIUM MOBILE CARDS DATA GRID LAYOUT (Neon Border & Grow Implemented) -->
             <div x-show="!loading && !errorMessage" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" style="display: none;">
                 <template x-for="item in filteredItems" :key="item.name">
-                    <div :class="item.isSoldOut ? 'bg-slate-100/70 opacity-60' : 'bg-white border-slate-200/80'" class="p-6 border rounded-2xl flex flex-col justify-between custom-card-shadow relative">
+                    <div :class="item.isSoldOut ? 'bg-slate-100/70 opacity-60' : ''" class="premium-neon-card p-6 flex flex-col justify-between relative">
                         
                         <div>
                             <h3 class="text-base font-bold text-slate-900 mb-4 truncate" x-text="item.name"></h3>
@@ -235,7 +275,6 @@
                                         <div class="flex items-center gap-2">
                                             <span class="font-bold text-slate-800" x-text="compVal.price !== '-' ? '₹' + compVal.price : '-'"></span>
                                             
-                                            <!-- Dynamic Instock/Soldout State Badge Styling -->
                                             <span :class="compVal.status.toLowerCase().includes('in stock') ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' : 'bg-rose-50 text-rose-700 border-rose-200/60'" 
                                                   class="text-[9px] font-bold px-2 py-0.5 rounded-md border" 
                                                   x-text="compVal.status || 'Sold Out'"></span>
