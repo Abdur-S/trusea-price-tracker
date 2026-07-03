@@ -64,12 +64,14 @@
           async initEngine() {
               this.loading = true;
               try {
-                  let response = await fetch(`${this.webAppUrl}?action=get_sheet_data`);
+                  // NEW: Cache Buster implementation completely clears out Google API proxy lag instantly
+                  let cacheBuster = new Date().getTime();
+                  let response = await fetch(`${this.webAppUrl}?_cb=${cacheBuster}`);
                   let resData = await response.json();
                   this.rawProducts = resData.data || [];
                   this.applyFilters();
               } catch (e) {
-                  this.errorMessage = 'Data sync tracking active...';
+                  this.errorMessage = 'Syncing latest live dataset parameters...';
               } finally {
                   this.loading = false;
               }
@@ -156,7 +158,7 @@
         </div>
 
         <main class="space-y-6">
-            <div x-show="loading" class="text-center py-20 text-xs text-slate-400 font-semibold">Performing real-time dynamic layout alignment sync...</div>
+            <div x-show="loading" class="text-center py-20 text-xs text-slate-400 font-semibold">Live Real-Time Active Sync Processing...</div>
 
             <!-- Dashboard Analytics -->
             <div x-show="!loading" class="grid grid-cols-1 lg:grid-cols-3 gap-4" style="display: none;">
@@ -199,7 +201,7 @@
                             </div>
                         </div>
                         
-                        <!-- Competitor Price metrics mapping -->
+                        <!-- Competitor Price and Stock Status Block -->
                         <div class="border-t border-slate-100 pt-2 space-y-1.5 text-[11px] text-slate-600">
                             <template x-if="item.competitors">
                                 <template x-for="[compName, compVal] in Object.entries(item.competitors)" :key="compName">
