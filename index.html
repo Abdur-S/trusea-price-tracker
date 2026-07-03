@@ -14,14 +14,14 @@
         /* Premium Flat Neon Outline + Card Grow & Offset Shadow Effect */
         .neon-outline-card {
             position: relative;
-            background: #ffffff;
+            background: #111116;
             border-radius: 1rem;
             z-index: 1;
             transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1);
         }
         .neon-outline-card::before {
-            content: ''; position: absolute; inset: 0; border-radius: 1rem; padding: 2px; 
-            background: linear-gradient(90deg, #00f2fe, #4facfe, #00cbff, #00f2fe);
+            content: ''; position: absolute; inset: 0; border-radius: 1rem; padding: 1.5px; 
+            background: linear-gradient(90deg, #00f2fe, #4facfe, #9b51e0, #00f2fe);
             background-size: 300% 100%;
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor; mask-composite: exclude;
@@ -29,40 +29,103 @@
         }
         .neon-outline-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 20px 30px rgba(0, 242, 254, 0.12), 0 10px 15px rgba(15, 23, 42, 0.06);
+            box-shadow: 0 20px 30px rgba(0, 242, 254, 0.08), 0 10px 15px rgba(0, 0, 0, 0.4);
         }
-        .neon-outline-card:hover::before { opacity: 1; animation: neonOutlineMove 1.5s linear infinite; }
-        
-        /* Gemini AI Inspired Moving Neon Border Wrapper */
-        .gemini-neon-wrapper {
+        .neon-outline-card:hover::before { opacity: 1; animation: neonOutlineMove 2s linear infinite; }
+        @keyframes neonOutlineMove { 0% { background-position: 0% 0%; } 100% { background-position: 300% 0%; } }
+
+        /* --- GOOGLE GEMINI INSPIRED PREMIUM AI SEARCH BAR --- */
+        @property --gemini-angle {
+            syntax: '<angle>';
+            initial-value: 0deg;
+            inherits: false;
+        }
+
+        @keyframes geminiRotate {
+            0% { --gemini-angle: 0deg; }
+            100% { --gemini-angle: 360deg; }
+        }
+
+        @keyframes aiPulse {
+            0%, 100% { transform: scale(1); opacity: 0.85; filter: drop-shadow(0 0 2px rgba(0,242,254,0.4)); }
+            50% { transform: scale(1.12); opacity: 1; filter: drop-shadow(0 0 8px rgba(155,81,224,0.7)); }
+        }
+
+        .gemini-ai-container {
             position: relative;
-            border-radius: 1rem;
-            padding: 3px;
-            background: linear-gradient(90deg, #9b51e0, #3085ff, #00f2fe, #4facfe, #9b51e0);
-            background-size: 400% 100%;
-            animation: geminiMove 6s linear infinite;
-            box-shadow: 0 0 15px rgba(48, 133, 255, 0.2), 0 0 5px rgba(155, 81, 224, 0.1);
-            transition: box-shadow 0.3s ease, transform 0.3s ease;
-        }
-        
-        /* Accelerate and enhance glow on hover */
-        .gemini-neon-wrapper:hover {
-            animation: geminiMove 2s linear infinite;
-            box-shadow: 0 0 25px rgba(0, 242, 254, 0.55), 0 0 10px rgba(155, 81, 224, 0.3);
+            width: 100%;
+            border-radius: 9999px;
+            padding: 2px;
+            z-index: 10;
+            background: transparent;
+            transition: transform 300ms cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        @keyframes geminiMove {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 400% 50%; }
+        /* Moving Conic Gradient Border */
+        .gemini-ai-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 9999px;
+            padding: 2px;
+            background: conic-gradient(from var(--gemini-angle), #3085ff, #00f2fe, #4facfe, #9b51e0, #ff7beb, #3085ff);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            animation: geminiRotate 4s linear infinite;
+            transition: opacity 300ms ease;
+            pointer-events: none;
+            z-index: 2;
         }
 
-        @keyframes neonOutlineMove { 
-            0% { background-position: 0% 0%; } 
-            100% { background-position: 300% 0%; } 
+        /* Blurred Soft Outer Glow Layer */
+        .gemini-ai-container::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 9999px;
+            background: conic-gradient(from var(--gemini-angle), #3085ff, #00f2fe, #4facfe, #9b51e0, #ff7beb, #3085ff);
+            animation: geminiRotate 4s linear infinite;
+            filter: blur(8px);
+            opacity: 0.35;
+            transition: opacity 300ms ease;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Hover Modifications */
+        .gemini-ai-container:hover {
+            transform: scale(1.02);
+        }
+        .gemini-ai-container:hover::before {
+            animation-duration: 2.5s;
+        }
+        .gemini-ai-container:hover::after {
+            opacity: 0.65;
+            filter: blur(12px);
+            animation-duration: 2.5s;
+        }
+
+        /* Focus Within Modifications */
+        .gemini-ai-container:focus-within {
+            transform: scale(1.02);
+            box-shadow: inset 0 0 12px rgba(0, 242, 254, 0.15);
+        }
+        .gemini-ai-container:focus-within::before {
+            animation-duration: 2s;
+        }
+        .gemini-ai-container:focus-within::after {
+            opacity: 0.85;
+            filter: blur(14px);
+            animation-duration: 2s;
+        }
+
+        .gemini-sparkle-pulse {
+            animation: aiPulse 2.5s ease-in-out infinite;
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased"
+<body class="bg-[#0B0B0F] text-slate-200 font-sans antialiased min-h-screen"
       x-data="{
           webAppUrl: 'https://script.google.com/macros/s/AKfycby3J_sLXDGhcxCSVRpCB8CboXV3hqkth8cGp5B1tfPT2EiyQ1JwPk3m8RVKXbumYiZMnA/exec',
           searchQuery: '',
@@ -142,6 +205,10 @@
               let canvasEl = document.getElementById('insightsChart');
               if (!canvasEl) return;
               
+              // Set global chart text to light mode visibility for dark layout matching
+              Chart.defaults.color = '#94a3b8';
+              Chart.defaults.borderColor = '#1e1e24';
+              
               this.chartInstance = new Chart(canvasEl.getContext('2d'), {
                   type: 'bar',
                   data: {
@@ -153,45 +220,67 @@
                           borderColor: '#4facfe', borderRadius: 6
                       }]
                   },
-                  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                  options: { 
+                      responsive: true, 
+                      maintainAspectRatio: false, 
+                      plugins: { legend: { display: false } },
+                      scales: {
+                          y: { grid: { color: '#1e1e24' } },
+                          x: { grid: { display: false } }
+                      }
+                  }
               });
           }
       }" x-init="initEngine()">
 
     <div class="min-h-screen p-4 sm:p-6 max-w-7xl mx-auto">
-        <!-- Dashboard Header Framework (Top Right Badge Removed) -->
-        <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-5">
+        <!-- Dashboard Header Framework -->
+        <header class="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800/60 pb-5">
             <div>
-                <h1 class="text-3xl font-black tracking-tight text-slate-900">TruSea <span class="text-cyan-500 font-normal">Intelligence Portal</span></h1>
-                <p class="text-xs text-slate-400 mt-1">Live Real-Time Dynamic Auto-Sync Dashboard</p>
+                <h1 class="text-3xl font-black tracking-tight text-white">TruSea <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 font-normal">Intelligence Portal</span></h1>
+                <p class="text-xs text-slate-500 mt-1">Live Real-Time Dynamic Auto-Sync Dashboard</p>
             </div>
         </header>
 
-        <!-- Upgraded Large Gemini AI Animated Neon Search Bar Container -->
-        <div class="mb-8 max-w-2xl mx-auto" x-show="!loading && !errorMessage">
-            <div class="gemini-neon-wrapper">
-                <input x-model="searchQuery" @input="applyFilters()" type="text" placeholder="🔍 Search fish name or competitor brand..." class="w-full text-sm sm:text-base bg-white border-none p-4 rounded-xl shadow-inner focus:outline-none text-slate-900 placeholder-slate-400 font-medium">
+        <!-- Dynamic Gemini AI Premium Search Bar Layout Implementation -->
+        <div class="mb-10 max-w-2xl mx-auto" x-show="!loading && !errorMessage">
+            <div class="gemini-ai-container">
+                <!-- Glassmorphism Internal Control Element -->
+                <div class="flex items-center w-full bg-[#0F0F14]/70 backdrop-blur-md rounded-[9999px] pl-5 pr-5 py-3.5 shadow-2xl relative z-10">
+                    <!-- Left Search Icon -->
+                    <svg class="w-5 h-5 text-slate-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    
+                    <!-- Text Inputs Core -->
+                    <input x-model="searchQuery" @input="applyFilters()" type="text" placeholder="Search fish names" class="w-full text-base bg-transparent border-none focus:outline-none text-white placeholder-slate-500 font-medium">
+                    
+                    <!-- Right Sparkle AI Icon -->
+                    <svg class="w-5 h-5 text-cyan-400 ml-3 flex-shrink-0 gemini-sparkle-pulse" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8L12 2z"></path>
+                    </svg>
+                </div>
             </div>
         </div>
 
         <main class="space-y-6">
             <!-- Loading Status Indicator -->
-            <div x-show="loading" class="text-center py-20 text-sm text-slate-400">Syncing dynamic data arrays directly from current layout...</div>
-            <div x-show="errorMessage" class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-xs font-medium" x-text="errorMessage" style="display: none;"></div>
+            <div x-show="loading" class="text-center py-20 text-sm text-slate-500">Syncing dynamic data arrays directly from current layout...</div>
+            <div x-show="errorMessage" class="bg-red-950/40 border border-red-900/50 text-red-400 p-4 rounded-xl text-xs font-medium" x-text="errorMessage" style="display: none;"></div>
 
             <!-- ANCHORED STATISTICAL INSIGHTS & BENCHMARK GRAPHS -->
             <div x-show="!loading && !errorMessage" class="grid grid-cols-1 lg:grid-cols-3 gap-4" style="display: none;">
                 <div class="lg:col-span-1 flex flex-col gap-3 justify-between">
-                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="bg-[#111116] p-4 rounded-xl border border-slate-800/80 shadow-sm">
                         <span class="text-[9px] uppercase font-bold tracking-wider text-red-400 block mb-0.5">🔴 Cost High Competitor</span>
-                        <div class="text-base font-black text-slate-900" x-text="highestSeller"></div>
+                        <div class="text-base font-black text-white" x-text="highestSeller"></div>
                     </div>
-                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                        <span class="text-[9px] uppercase font-bold tracking-wider text-emerald-500 block mb-0.5">🟢 Stable Cost Competitor</span>
-                        <div class="text-base font-black text-slate-900" x-text="stableSeller"></div>
+                    <div class="bg-[#111116] p-4 rounded-xl border border-slate-800/80 shadow-sm">
+                        <span class="text-[9px] uppercase font-bold tracking-wider text-emerald-400 block mb-0.5"> 🟢 Stable Cost Competitor</span>
+                        <div class="text-base font-black text-white" x-text="stableSeller"></div>
                     </div>
                 </div>
-                <div class="lg:col-span-2 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div class="lg:col-span-2 bg-[#111116] p-4 rounded-xl border border-slate-800/80 shadow-sm">
                     <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-2">Market Price Benchmark Index Matrix (/KG)</span>
                     <div class="relative h-[110px] w-full"><canvas id="insightsChart"></canvas></div>
                 </div>
@@ -200,37 +289,37 @@
             <!-- PREMIUM MOBILE CARDS DATA GRID LAYOUT -->
             <div x-show="!loading && !errorMessage" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style="display: none;">
                 <template x-for="item in filteredItems" :key="item.name">
-                    <div :class="item.isSoldOut ? 'bg-slate-100 opacity-60' : 'neon-outline-card border-slate-200/60'" class="p-5 border flex flex-col justify-between shadow-sm relative">
+                    <div :class="item.isSoldOut ? 'bg-[#14141a]/40 opacity-40 select-none' : 'neon-outline-card border-slate-800/60'" class="p-5 border flex flex-col justify-between shadow-sm relative">
                         
                         <div>
-                            <h3 class="text-base font-bold text-slate-900 mb-3 truncate" x-text="item.name"></h3>
+                            <h3 class="text-base font-bold text-white mb-3 truncate" x-text="item.name"></h3>
                             
-                            <!-- Mandatory Target Column Groupings (First 3 Mandatory Sheet Elements) -->
-                            <div class="space-y-2 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <!-- Target Column Groupings -->
+                            <div class="space-y-2 mb-4 bg-[#0d0d12] p-3 rounded-xl border border-slate-900">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-[11px] text-slate-500 font-medium">Current TruSea Price Perkg</span>
-                                    <span class="text-xs font-bold text-slate-700" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
+                                    <span class="text-[11px] text-slate-400 font-medium">Current TruSea Price Perkg</span>
+                                    <span class="text-xs font-bold text-slate-300" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
                                 </div>
-                                <div class="flex justify-between items-center border-t border-slate-200/60 pt-2">
-                                    <span class="text-[11px] text-slate-900 font-bold">TruSea Price Per Kg</span>
-                                    <span class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
+                                <div class="flex justify-between items-center border-t border-slate-800/50 pt-2">
+                                    <span class="text-[11px] text-slate-200 font-bold">TruSea Price Per Kg</span>
+                                    <span class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
                                 </div>
-                                <div class="flex justify-between items-center border-t border-slate-200/60 pt-2">
-                                    <span class="text-[11px] text-slate-500 font-medium">Difference</span>
-                                    <span :class="parseFloat(item.difference) < 0 ? 'text-emerald-600' : 'text-red-500'" class="text-xs font-bold" x-text="item.difference !== '-' ? (parseFloat(item.difference) > 0 ? '+' + item.difference : item.difference) : '-'"></span>
+                                <div class="flex justify-between items-center border-t border-slate-800/50 pt-2">
+                                    <span class="text-[11px] text-slate-400 font-medium">Difference</span>
+                                    <span :class="parseFloat(item.difference) < 0 ? 'text-emerald-400' : 'text-red-400'" class="text-xs font-bold" x-text="item.difference !== '-' ? (parseFloat(item.difference) > 0 ? '+' + item.difference : item.difference) : '-'"></span>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Dynamic Competitor Price & Status Block Rows -->
-                        <div class="border-t border-slate-100 pt-2.5 space-y-2 text-xs text-slate-600">
-                            <span class="block text-[8px] uppercase tracking-wider text-slate-400 font-bold mb-1">Competitor Pricing Benchmark</span>
+                        <!-- Dynamic Competitor Block Rows -->
+                        <div class="border-t border-slate-800/60 pt-2.5 space-y-2 text-xs text-slate-400">
+                            <span class="block text-[8px] uppercase tracking-wider text-slate-500 font-bold mb-1">Competitor Pricing Benchmark</span>
                             <template x-for="[compName, compObj] in Object.entries(item.competitors)" :key="compName">
-                                <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-100">
-                                    <span class="font-medium text-slate-600" x-text="compName"></span>
+                                <div class="flex justify-between items-center bg-[#0d0d12] p-2 rounded-lg border border-slate-900">
+                                    <span class="font-medium text-slate-400" x-text="compName"></span>
                                     <div class="flex items-center gap-2">
-                                        <span class="font-bold text-slate-800" x-text="compObj.price !== '-' ? '₹' + compObj.price : '-'"></span>
-                                        <span :class="compObj.status.toLowerCase().includes('in stock') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'" 
+                                        <span class="font-bold text-slate-200" x-text="compObj.price !== '-' ? '₹' + compObj.price : '-'"></span>
+                                        <span :class="compObj.status.toLowerCase().includes('in stock') ? 'bg-green-950/40 text-green-400 border border-green-900/30' : 'bg-red-950/40 text-red-400 border border-red-900/30'" 
                                               class="text-[9px] font-bold px-1.5 py-0.5 rounded-md" 
                                               x-text="compObj.status"></span>
                                     </div>
