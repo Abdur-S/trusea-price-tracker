@@ -56,7 +56,7 @@
 </head>
 <body class="bg-[#F8FAFC] text-slate-800 font-sans antialiased min-h-screen pb-12"
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbxviB06GRMyKZc-X7YONl7cMXApCM8uOwt4H86mrMr49aLvPo9hgrSUUQPsvBFb6BXvzA/exec',
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbzy86imWtE_1KZL34JW7q0e_DSLfh69hjMEyGKNR74HI7Cze62dxasneirw2ttRYliUgQ/exec',
           searchQuery: '', rawProducts: [], filteredItems: [],
           highestSeller: 'Calculating...', normalSeller: 'Calculating...',
           loading: true, errorMessage: '', chartInstance: null,
@@ -69,7 +69,7 @@
                   this.rawProducts = resData.data || [];
                   this.applyFilters();
               } catch (e) {
-                  this.errorMessage = 'Data sync active...';
+                  this.errorMessage = 'Data sync tracking active...';
               } finally {
                   this.loading = false;
               }
@@ -146,17 +146,17 @@
             <h1 class="text-xl font-black text-slate-900 tracking-tight">TruSea <span class="text-cyan-600 font-normal">Price Tracker</span></h1>
         </header>
 
-        <!-- Gemini Search Bar -->
+        <!-- Search input workspace link matrix -->
         <div class="mb-6 max-w-xl mx-auto">
             <div class="gemini-ai-search-container">
-                <div class="flex items-center w-full bg-white rounded-full px-4 py-2 shadow-xs">
+                <div class="flex items-center w-full bg-white rounded-full px-4 py-2.5 shadow-xs">
                     <input x-model="searchQuery" @input="applyFilters()" type="text" placeholder="Search fish names..." class="w-full text-xs bg-transparent border-none focus:outline-none text-slate-800 placeholder-slate-400 font-medium">
                 </div>
             </div>
         </div>
 
         <main class="space-y-6">
-            <div x-show="loading" class="text-center py-20 text-xs text-slate-400 font-semibold">Live sync process...</div>
+            <div x-show="loading" class="text-center py-20 text-xs text-slate-400 font-semibold">Performing real-time dynamic layout alignment sync...</div>
 
             <!-- Dashboard Analytics -->
             <div x-show="!loading" class="grid grid-cols-1 lg:grid-cols-3 gap-4" style="display: none;">
@@ -175,14 +175,14 @@
                 </div>
             </div>
 
-            <!-- Custom Clean Cards Grid -->
+            <!-- Custom Compact Mobile Cards Grid Configuration -->
             <div x-show="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style="display: none;">
                 <template x-for="item in filteredItems" :key="item.name">
                     <div :class="item.isSoldOut ? 'bg-slate-50 opacity-60' : ''" class="premium-glow-card p-4 flex flex-col justify-between">
                         <div>
                             <h3 class="text-xs font-extrabold text-slate-900 mb-2 tracking-tight truncate" x-text="item.name"></h3>
                             
-                            <!-- TruSea Matrix Base -->
+                            <!-- First 3 Mandatory Structural Elements -->
                             <div class="space-y-1.5 mb-3 bg-[#FAFAFA] p-2.5 rounded-lg border border-slate-100 text-[11px]">
                                 <div class="flex justify-between items-center">
                                     <span class="text-slate-500">Current TruSea Price per kg</span>
@@ -199,7 +199,7 @@
                             </div>
                         </div>
                         
-                        <!-- Competitor Price and Stock Status Block -->
+                        <!-- Competitor Price metrics mapping -->
                         <div class="border-t border-slate-100 pt-2 space-y-1.5 text-[11px] text-slate-600">
                             <template x-if="item.competitors">
                                 <template x-for="[compName, compVal] in Object.entries(item.competitors)" :key="compName">
@@ -208,7 +208,7 @@
                                         <div class="flex items-center gap-1.5">
                                             <span class="font-extrabold text-slate-900" x-text="compVal.price !== '-' ? '₹' + compVal.price : '-'"></span>
                                             <span :class="compVal.status.toLowerCase().includes('in stock') ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'" 
-                                                  class="text-[9px] font-bold px-1 py-0.5 rounded border" x-text="compVal.status || 'Sold Out'"></span>
+                                                  class="text-[9px] font-bold px-1.5 py-0.5 rounded border" x-text="compVal.status || 'Sold Out'"></span>
                                         </div>
                                     </div>
                                 </template>
