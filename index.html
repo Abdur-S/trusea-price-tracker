@@ -208,7 +208,7 @@
                                     <div class="flex justify-between items-center bg-[#FAFAFA] p-2.5 rounded-lg border border-slate-100">
                                         <span class="font-bold text-slate-600" x-text="compName"></span>
                                         <div class="flex items-center gap-2">
-                                            <span class="font-extrabold text-slate-900" x-text="compVal.price !== '-' ? '₹' + compVal.price : '-'"></span>
+                                            <span class="font-extrabold text-slate-900" x-text="compVal.price !== '-' ? '₹' + compVal.price + '/kg' : '-'"></span>
                                             <span :class="compVal.status.toLowerCase().includes('in stock') ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'" 
                                                   class="text-xs font-bold px-2 py-1 rounded border" x-text="compVal.status || 'Sold Out'"></span>
                                         </div>
