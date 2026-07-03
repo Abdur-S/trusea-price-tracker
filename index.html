@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TruSea Premium Intelligence Dashboard</title>
+    <title>TruSea Premium Pricing Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -11,7 +11,7 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Premium Soft White Glow Search Bar (Zero Blinking Jitter) */
+        /* Smooth Gradient Light Search Border UI */
         .premium-neon-border {
             position: relative;
             background: #ffffff;
@@ -22,28 +22,28 @@
             transition: box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
         }
         .premium-neon-border:hover, .premium-neon-border:focus-within {
-            transform: scale(1.015);
-            box-shadow: 0 12px 24px rgba(0, 242, 254, 0.15), 0 4px 12px rgba(155, 81, 224, 0.08);
+            transform: scale(1.01);
+            box-shadow: 0 12px 24px rgba(0, 242, 254, 0.12), 0 4px 12px rgba(155, 81, 224, 0.05);
         }
         .search-inner-workspace {
             background: #ffffff;
             border-radius: 9999px;
         }
         .custom-card-shadow {
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
             transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.25s cubic-bezier(0.25, 1, 0.5, 1);
         }
         .custom-card-shadow:hover {
             transform: translateY(-4px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.04), 0 10px 10px -5px rgba(0, 0, 0, 0.01);
         }
     </style>
 </head>
 <body class="bg-[#F8FAFC] text-slate-800 font-sans antialiased min-h-screen"
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbyYroEr756URv4aCt5qXrXjTeWjqoxxE4Z1qAYAm0WHVYPh_jyCrjD-tK1PAA8GjAHMNw/exec',
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbwfUjgT6cdhgRX76nTMDun96NBE9suAcnBmTk8i_0wHu4_VSbTKKyV375JB_zrETBrgsQ/exec',
           searchQuery: '',
-          activeSheetName: 'Auto-Detecting Latest Sheet...',
+          activeSheetName: 'Syncing Latest Tracking Matrices...',
           rawProducts: [], filteredItems: [],
           highestSeller: 'Calculating...', stableSeller: 'Calculating...',
           loading: true, errorMessage: '', chartInstance: null,
@@ -52,38 +52,17 @@
               this.loading = true;
               this.errorMessage = '';
               try {
-                  // Append action fallback directly to hit the updated network distribution blocks
                   let response = await fetch(`${this.webAppUrl}?action=get_sheet_data`);
                   let resData = await response.json();
                   
-                  // If the deployment link hits a legacy cache lock, fallback cleanly to standard parsing
-                  if (!resData.data && resData.length > 0) {
-                      resData = { data: resData, meta: { activeSheet: 'Latest Pricing Tab' } };
-                  }
                   if (resData.error) { throw new Error(resData.error); }
                   
-                  this.rawProducts = (resData.data || []).map(item => {
-                      // Safety Scrubbing: Clean out URLs accidentally leaked from older caches
-                      if (String(item.currentTruSeaWebPrice).includes('http')) item.currentTruSeaWebPrice = '-';
-                      if (String(item.truSeaPerKg).includes('http')) item.truSeaPerKg = '-';
-                      
-                      if (item.competitors) {
-                          Object.keys(item.competitors).forEach(cName => {
-                              if (typeof item.competitors[cName] === 'object' && item.competitors[cName] !== null) {
-                                  if (String(item.competitors[cName].price).includes('http')) item.competitors[cName].price = '-';
-                              } else if (String(item.competitors[cName]).includes('http')) {
-                                  item.competitors[cName] = '-';
-                              }
-                          });
-                      }
-                      return item;
-                  });
-                  
-                  this.activeSheetName = resData.meta?.activeSheet || 'Dynamic Live Tracking Tab';
+                  this.rawProducts = resData.data || [];
+                  this.activeSheetName = resData.meta?.activeSheet || 'Dynamic Live Sheet';
                   this.applyFilters();
               } catch (e) {
                   console.error(e);
-                  this.errorMessage = 'Live Sync Warning: Cache alignment active. If data is unexpected, please redeploy your Apps Script as a New Version.';
+                  this.errorMessage = 'Network Warning: Data mapping is processing on the backend. Please wait a moment.';
               } finally {
                   this.loading = false;
               }
@@ -112,11 +91,8 @@
                   
                   if (item.competitors) {
                       Object.entries(item.competitors).forEach(([key, compValue]) => {
-                          let priceStr = (typeof compValue === 'object' && compValue !== null) ? compValue.price : compValue;
-                          let statusStr = (typeof compValue === 'object' && compValue !== null) ? (compValue.status || '') : '';
-                          
-                          let priceVal = parseFloat(String(priceStr).replace(/[₹,]/g, ''));
-                          if (!isNaN(priceVal) && (!statusStr || statusStr.toLowerCase().includes('in stock'))) {
+                          let priceVal = parseFloat(String(compValue.price).replace(/[₹,]/g, ''));
+                          if (!isNaN(priceVal) && compValue.status.toLowerCase().includes('in stock')) {
                               compTotals[key] = (compTotals[key] || 0) + priceVal;
                               compCounts[key] = (compCounts[key] || 0) + 1;
                           }
@@ -139,9 +115,6 @@
                   this.highestSeller = competitorsOnly[0].name + ' (Avg: ₹' + Math.round(competitorsOnly[0].avg) + '/KG)';
                   let middleIdx = Math.floor(competitorsOnly.length / 2);
                   this.stableSeller = competitorsOnly[middleIdx].name + ' (Avg: ₹' + Math.round(competitorsOnly[middleIdx].avg) + '/KG)';
-              } else {
-                  this.highestSeller = 'No Market Competitor Data Available';
-                  this.stableSeller = 'Stable Market Baseline Active';
               }
               
               averages.sort((a, b) => b.avg - a.avg);
@@ -161,9 +134,9 @@
                       labels: averages.map(c => c.name),
                       datasets: [{
                           data: averages.map(c => Math.round(c.avg)),
-                          backgroundColor: averages.map(c => c.isBrand ? '#00f2fe' : '#3b82f6'),
-                          borderRadius: 8,
-                          maxBarThickness: 45
+                          backgroundColor: averages.map(c => c.isBrand ? '#06b6d4' : '#3b82f6'),
+                          borderRadius: 6,
+                          maxBarThickness: 40
                       }]
                   },
                   options: { 
@@ -180,36 +153,35 @@
       }" x-init="initEngine()">
 
     <div class="min-h-screen p-4 sm:p-8 max-w-7xl mx-auto">
-        <!-- Premium Header Panel Architecture -->
+        <!-- Dashboard Header -->
         <header class="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-6 gap-4">
             <div>
-                <h1 class="text-3xl font-black tracking-tight text-slate-900">TruSea <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600 font-normal">Intelligence Engine</span></h1>
-                <p class="text-sm text-slate-500 mt-1">Live Dynamic Auto-Sync Framework</p>
+                <h1 class="text-3xl font-black tracking-tight text-slate-900">TruSea <span class="text-cyan-600 font-normal">Intelligence Portal</span></h1>
+                <p class="text-sm text-slate-500 mt-1">Live Dynamic Auto-Sync Dashboard</p>
             </div>
             <div class="bg-white px-4 py-2 rounded-2xl text-xs font-bold border border-slate-200 shadow-xs flex items-center gap-2" x-show="!loading">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Active Sheet Tab: <span class="text-cyan-600" x-text="activeSheetName"></span>
+                Active Sheet: <span class="text-cyan-600" x-text="activeSheetName"></span>
             </div>
         </header>
 
-        <!-- Dynamic Premium Gradient Search Bar Workspace -->
+        <!-- Premium Clean Search Workspace -->
         <div class="mb-10 max-w-2xl mx-auto" x-show="!loading && !errorMessage">
             <div class="premium-neon-border">
-                <div class="search-inner-workspace flex items-center w-full px-5 py-4 shadow-sm relative z-10">
+                <div class="search-inner-workspace flex items-center w-full px-5 py-4 shadow-xs relative z-10">
                     <svg class="w-5 h-5 text-slate-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
-                    <input x-model="searchQuery" @input="applyFilters()" type="text" placeholder="Search fish names or competitor brand metrics..." class="w-full text-base bg-transparent border-none focus:outline-none text-slate-800 placeholder-slate-400 font-medium">
+                    <input x-model="searchQuery" @input="applyFilters()" type="text" placeholder="Search fish names or brands..." class="w-full text-base bg-transparent border-none focus:outline-none text-slate-800 placeholder-slate-400 font-medium">
                 </div>
             </div>
         </div>
 
         <main class="space-y-8">
-            <!-- Loading States Indicator -->
-            <div x-show="loading" class="text-center py-24 text-sm font-medium text-slate-400">Syncing database structure metrics from your latest sheet...</div>
-            <div x-show="errorMessage" class="bg-amber-50 border border-amber-200 text-amber-800 p-5 rounded-2xl text-sm font-medium shadow-xs" x-text="errorMessage" style="display: none;"></div>
+            <div x-show="loading" class="text-center py-24 text-sm font-medium text-slate-400">Loading live data structures...</div>
+            <div x-show="errorMessage" class="bg-amber-50 border border-amber-200 text-amber-800 p-5 rounded-2xl text-sm font-medium" x-text="errorMessage" style="display: none;"></div>
 
-            <!-- ANCHORED INSIGHT MATRIX & BAR GRAPH METRICS -->
+            <!-- ANCHORED INSIGHT METRICS & CHARTS -->
             <div x-show="!loading && !errorMessage" class="grid grid-cols-1 lg:grid-cols-3 gap-6" style="display: none;">
                 <div class="lg:col-span-1 flex flex-col gap-4 justify-between">
                     <div class="bg-white p-5 rounded-2xl border border-slate-200/80 custom-card-shadow">
@@ -222,51 +194,51 @@
                     </div>
                 </div>
                 <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200/80 custom-card-shadow">
-                    <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-3">Market Comparative Benchmark Index (/KG)</span>
+                    <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-2">Market Comparative Benchmark Index Matrix (/KG)</span>
                     <div class="relative h-[120px] w-full"><canvas id="insightsChart"></canvas></div>
                 </div>
             </div>
 
-            <!-- MOBILE CARDS DATA GRID LAYOUT DESIGN -->
+            <!-- PREMIUM MOBILE CARDS DATA GRID LAYOUT -->
             <div x-show="!loading && !errorMessage" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" style="display: none;">
                 <template x-for="item in filteredItems" :key="item.name">
-                    <div :class="item.isSoldOut ? 'bg-slate-100/70 opacity-60 select-none' : 'bg-white border-slate-200/80'" class="p-6 border rounded-2xl flex flex-col justify-between custom-card-shadow relative">
+                    <div :class="item.isSoldOut ? 'bg-slate-100/70 opacity-60' : 'bg-white border-slate-200/80'" class="p-6 border rounded-2xl flex flex-col justify-between custom-card-shadow relative">
                         
                         <div>
                             <h3 class="text-base font-bold text-slate-900 mb-4 truncate" x-text="item.name"></h3>
                             
-                            <!-- Mandatory Tracking Elements (First 3 Mandatory Metrics) -->
+                            <!-- First 3 Mandatory Columns Layout Mappings -->
                             <div class="space-y-2.5 mb-5 bg-slate-50 p-4 rounded-xl border border-slate-100">
                                 <div class="flex justify-between items-center text-xs">
                                     <span class="text-slate-500 font-medium">Current TruSea Price Perkg</span>
-                                    <span class="font-bold text-slate-700" x-text="item.currentTruSeaWebPrice && item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
+                                    <span class="font-bold text-slate-700" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
                                 </div>
                                 <div class="flex justify-between items-center border-t border-slate-200/60 pt-2.5">
                                     <span class="text-xs text-slate-900 font-bold">TruSea Price Per Kg</span>
-                                    <span class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600" x-text="item.truSeaPerKg && item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
+                                    <span class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
                                 </div>
                                 <div class="flex justify-between items-center border-t border-slate-200/60 pt-2.5 text-xs">
                                     <span class="text-slate-500 font-medium">Difference</span>
-                                    <span :class="parseFloat(item.difference) < 0 ? 'text-emerald-600' : 'text-red-500'" class="font-bold" x-text="item.difference && item.difference !== '-' ? (parseFloat(item.difference) > 0 ? '+' + item.difference : item.difference) : '-'"></span>
+                                    <span :class="parseFloat(item.difference) < 0 ? 'text-emerald-600' : 'text-red-500'" class="font-bold" x-text="item.difference !== '-' ? (parseFloat(item.difference) > 0 ? '+' + item.difference : item.difference) : '-'"></span>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Dynamic Competitor Price Per KG Render Map -->
+                        <!-- Dynamic Competitor Columns Mapping Grid -->
                         <div class="border-t border-slate-100 pt-3.5 space-y-2.5 text-xs text-slate-600">
-                            <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-bold mb-1">Competitor Benchmark Matrix</span>
+                            <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-bold mb-1">Competitor Pricing Benchmark</span>
                             
                             <template x-if="item.competitors">
                                 <template x-for="[compName, compVal] in Object.entries(item.competitors)" :key="compName">
-                                    <div class="flex justify-between items-center bg-slate-50/50 p-2 rounded-xl border border-slate-100 shadow-3xs">
+                                    <div class="flex justify-between items-center bg-slate-50/50 p-2 rounded-xl border border-slate-100">
                                         <span class="font-semibold text-slate-600" x-text="compName"></span>
                                         <div class="flex items-center gap-2">
-                                            <span class="font-bold text-slate-800" x-text="typeof compVal === 'object' ? (compVal.price && compVal.price !== '-' ? '₹' + compVal.price : '-') : (compVal && compVal !== '-' ? '₹' + compVal : '-')"></span>
+                                            <span class="font-bold text-slate-800" x-text="compVal.price !== '-' ? '₹' + compVal.price : '-'"></span>
                                             
-                                            <!-- High Contrast Status Badge Mappings -->
-                                            <span :class="((typeof compVal === 'object' ? compVal.status : '') || '').toLowerCase().includes('in stock') ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' : 'bg-rose-50 text-rose-700 border-rose-200/60'" 
+                                            <!-- Dynamic Instock/Soldout State Badge Styling -->
+                                            <span :class="compVal.status.toLowerCase().includes('in stock') ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' : 'bg-rose-50 text-rose-700 border-rose-200/60'" 
                                                   class="text-[9px] font-bold px-2 py-0.5 rounded-md border" 
-                                                  x-text="(typeof compVal === 'object' ? compVal.status : '') || 'Sold Out'"></span>
+                                                  x-text="compVal.status || 'Sold Out'"></span>
                                         </div>
                                     </div>
                                 </template>
