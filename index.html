@@ -61,73 +61,32 @@
             transition: transform 300ms cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        /* Moving Conic Gradient Border */
         .gemini-ai-container::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 9999px;
-            padding: 2px;
+            content: ''; position: absolute; inset: 0; border-radius: 9999px; padding: 2px;
             background: conic-gradient(from var(--gemini-angle), #3085ff, #00f2fe, #4facfe, #9b51e0, #ff7beb, #3085ff);
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            animation: geminiRotate 4s linear infinite;
-            transition: opacity 300ms ease;
-            pointer-events: none;
-            z-index: 2;
+            -webkit-mask-composite: xor; mask-composite: exclude;
+            animation: geminiRotate 4s linear infinite; pointer-events: none; z-index: 2;
         }
 
-        /* Blurred Soft Outer Glow Layer */
         .gemini-ai-container::after {
-            content: '';
-            position: absolute;
-            inset: -2px;
-            border-radius: 9999px;
+            content: ''; position: absolute; inset: -2px; border-radius: 9999px;
             background: conic-gradient(from var(--gemini-angle), #3085ff, #00f2fe, #4facfe, #9b51e0, #ff7beb, #3085ff);
-            animation: geminiRotate 4s linear infinite;
-            filter: blur(8px);
-            opacity: 0.35;
-            transition: opacity 300ms ease;
-            z-index: 1;
-            pointer-events: none;
+            animation: geminiRotate 4s linear infinite; filter: blur(8px); opacity: 0.35;
+            transition: opacity 300ms ease, filter 300ms ease; z-index: 1; pointer-events: none;
         }
 
-        /* Hover Modifications */
-        .gemini-ai-container:hover {
-            transform: scale(1.02);
-        }
-        .gemini-ai-container:hover::before {
-            animation-duration: 2.5s;
-        }
-        .gemini-ai-container:hover::after {
-            opacity: 0.65;
-            filter: blur(12px);
-            animation-duration: 2.5s;
-        }
+        .gemini-ai-container:hover { transform: scale(1.02); }
+        .gemini-ai-container:hover::after { opacity: 0.65; filter: blur(12px); }
 
-        /* Focus Within Modifications */
-        .gemini-ai-container:focus-within {
-            transform: scale(1.02);
-            box-shadow: inset 0 0 12px rgba(0, 242, 254, 0.15);
-        }
-        .gemini-ai-container:focus-within::before {
-            animation-duration: 2s;
-        }
-        .gemini-ai-container:focus-within::after {
-            opacity: 0.85;
-            filter: blur(14px);
-            animation-duration: 2s;
-        }
-
-        .gemini-sparkle-pulse {
-            animation: aiPulse 2.5s ease-in-out infinite;
-        }
+        .gemini-ai-container:focus-within { transform: scale(1.02); box-shadow: inset 0 0 12px rgba(0, 242, 254, 0.15); }
+        .gemini-ai-container:focus-within::after { opacity: 0.85; filter: blur(14px); }
+        .gemini-sparkle-pulse { animation: aiPulse 2.5s ease-in-out infinite; }
     </style>
 </head>
 <body class="bg-[#0B0B0F] text-slate-200 font-sans antialiased min-h-screen"
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycby3J_sLXDGhcxCSVRpCB8CboXV3hqkth8cGp5B1tfPT2EiyQ1JwPk3m8RVKXbumYiZMnA/exec',
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbwUhhHtZIrNJ95ONouhsDg8gdXUiLwj-jyQJGKzt0JF1zaprs4vIk3vgs7vl1OUXKTjVQ/exec',
           searchQuery: '',
           rawProducts: [], filteredItems: [],
           highestSeller: 'Calculating...', stableSeller: 'Calculating...',
@@ -205,7 +164,6 @@
               let canvasEl = document.getElementById('insightsChart');
               if (!canvasEl) return;
               
-              // Set global chart text to light mode visibility for dark layout matching
               Chart.defaults.color = '#94a3b8';
               Chart.defaults.borderColor = '#1e1e24';
               
@@ -233,29 +191,23 @@
           }
       }" x-init="initEngine()">
 
-    <div class="min-h-screen p-4 sm:p-6 max-w-7xl mx-auto">
+    <div class="min-h-screen p-4 sm:p-6 max-w-7xl mx-auto pb-24">
         <!-- Dashboard Header Framework -->
         <header class="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800/60 pb-5">
             <div>
-                <h1 class="text-3xl font-black tracking-tight text-white">TruSea <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 font-normal">Intelligence Portal</span></h1>
-                <p class="text-xs text-slate-500 mt-1">Live Real-Time Dynamic Auto-Sync Dashboard</p>
+                <h1 class="text-xl font-bold tracking-tight text-white">TruSea <span class="text-cyan-500 font-normal">Intelligence Portal</span></h1>
+                <p class="text-[10px] text-slate-500 mt-1">Live Real-Time Dynamic Auto-Sync Dashboard</p>
             </div>
         </header>
 
-        <!-- Dynamic Gemini AI Premium Search Bar Layout Implementation -->
+        <!-- Dynamic Gemini AI Premium Search Bar -->
         <div class="mb-10 max-w-2xl mx-auto" x-show="!loading && !errorMessage">
             <div class="gemini-ai-container">
-                <!-- Glassmorphism Internal Control Element -->
                 <div class="flex items-center w-full bg-[#0F0F14]/70 backdrop-blur-md rounded-[9999px] pl-5 pr-5 py-3.5 shadow-2xl relative z-10">
-                    <!-- Left Search Icon -->
                     <svg class="w-5 h-5 text-slate-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
-                    
-                    <!-- Text Inputs Core -->
                     <input x-model="searchQuery" @input="applyFilters()" type="text" placeholder="Search fish names" class="w-full text-base bg-transparent border-none focus:outline-none text-white placeholder-slate-500 font-medium">
-                    
-                    <!-- Right Sparkle AI Icon -->
                     <svg class="w-5 h-5 text-cyan-400 ml-3 flex-shrink-0 gemini-sparkle-pulse" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8L12 2z"></path>
                     </svg>
@@ -264,11 +216,10 @@
         </div>
 
         <main class="space-y-6">
-            <!-- Loading Status Indicator -->
-            <div x-show="loading" class="text-center py-20 text-sm text-slate-500">Syncing dynamic data arrays directly from current layout...</div>
+            <div x-show="loading" class="text-center py-20 text-sm text-slate-500">Syncing dynamic data arrays...</div>
             <div x-show="errorMessage" class="bg-red-950/40 border border-red-900/50 text-red-400 p-4 rounded-xl text-xs font-medium" x-text="errorMessage" style="display: none;"></div>
 
-            <!-- ANCHORED STATISTICAL INSIGHTS & BENCHMARK GRAPHS -->
+            <!-- STATISTICAL INSIGHTS & BENCHMARK GRAPHS -->
             <div x-show="!loading && !errorMessage" class="grid grid-cols-1 lg:grid-cols-3 gap-4" style="display: none;">
                 <div class="lg:col-span-1 flex flex-col gap-3 justify-between">
                     <div class="bg-[#111116] p-4 rounded-xl border border-slate-800/80 shadow-sm">
@@ -276,7 +227,7 @@
                         <div class="text-base font-black text-white" x-text="highestSeller"></div>
                     </div>
                     <div class="bg-[#111116] p-4 rounded-xl border border-slate-800/80 shadow-sm">
-                        <span class="text-[9px] uppercase font-bold tracking-wider text-emerald-400 block mb-0.5"> 🟢 Stable Cost Competitor</span>
+                        <span class="text-[9px] uppercase font-bold tracking-wider text-emerald-400 block mb-0.5">🟢 Stable Cost Competitor</span>
                         <div class="text-base font-black text-white" x-text="stableSeller"></div>
                     </div>
                 </div>
@@ -286,15 +237,12 @@
                 </div>
             </div>
 
-            <!-- PREMIUM MOBILE CARDS DATA GRID LAYOUT -->
+            <!-- CARDS GRID LAYOUT -->
             <div x-show="!loading && !errorMessage" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style="display: none;">
                 <template x-for="item in filteredItems" :key="item.name">
                     <div :class="item.isSoldOut ? 'bg-[#14141a]/40 opacity-40 select-none' : 'neon-outline-card border-slate-800/60'" class="p-5 border flex flex-col justify-between shadow-sm relative">
-                        
                         <div>
                             <h3 class="text-base font-bold text-white mb-3 truncate" x-text="item.name"></h3>
-                            
-                            <!-- Target Column Groupings -->
                             <div class="space-y-2 mb-4 bg-[#0d0d12] p-3 rounded-xl border border-slate-900">
                                 <div class="flex justify-between items-center">
                                     <span class="text-[11px] text-slate-400 font-medium">Current TruSea Price Perkg</span>
@@ -310,8 +258,6 @@
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- Dynamic Competitor Block Rows -->
                         <div class="border-t border-slate-800/60 pt-2.5 space-y-2 text-xs text-slate-400">
                             <span class="block text-[8px] uppercase tracking-wider text-slate-500 font-bold mb-1">Competitor Pricing Benchmark</span>
                             <template x-for="[compName, compObj] in Object.entries(item.competitors)" :key="compName">
@@ -320,17 +266,123 @@
                                     <div class="flex items-center gap-2">
                                         <span class="font-bold text-slate-200" x-text="compObj.price !== '-' ? '₹' + compObj.price : '-'"></span>
                                         <span :class="compObj.status.toLowerCase().includes('in stock') ? 'bg-green-950/40 text-green-400 border border-green-900/30' : 'bg-red-950/40 text-red-400 border border-red-900/30'" 
-                                              class="text-[9px] font-bold px-1.5 py-0.5 rounded-md" 
-                                              x-text="compObj.status"></span>
+                                              class="text-[9px] font-bold px-1.5 py-0.5 rounded-md" x-text="compObj.status"></span>
                                     </div>
                                 </div>
                             </template>
                         </div>
-
                     </div>
                 </template>
             </div>
         </main>
+    </div>
+
+    <!-- --- DYNAMIC PREMIUM COLLAPSIBLE GEMINI AI CHATBOT --- -->
+    <div x-data="{
+        isOpen: false,
+        apiKey: localStorage.getItem('gemini_key') || '',
+        userMessage: '',
+        messages: [{ sender: 'ai', text: 'Hello! I have access to TruSea\'s live pricing engine. Ask me anything about stock statuses or price optimization margins.' }],
+        isThinking: false,
+        
+        saveKey() {
+            localStorage.setItem('gemini_key', this.apiKey);
+            alert('API Key updated successfully in your local browser storage!');
+        },
+        async askGemini() {
+            if (!this.userMessage.trim()) return;
+            if (!this.apiKey) {
+                alert('Please register your Gemini API Key in the chat console settings cog first.');
+                return;
+            }
+            
+            let query = this.userMessage.trim();
+            this.messages.push({ sender: 'user', text: query });
+            this.userMessage = '';
+            this.isThinking = true;
+            
+            // Generate context reference package from current state dashboard
+            let pricingContext = JSON.stringify(this.$data.rawProducts.map(p => ({
+                fish: p.name, trusea: p.truSeaPerKg, diff: p.difference, competitors: p.competitors
+            })));
+
+            try {
+                let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `You are an executive pricing strategist for TruSea seafood tracking platform. Use this current dynamic stock dataset: ${pricingContext}. Answer this customer query clearly and cleanly: ${query}` }] }]
+                    })
+                });
+                let data = await response.json();
+                let reply = data.candidates[0].content.parts[0].text;
+                this.messages.push({ sender: 'ai', text: reply });
+            } catch (err) {
+                this.messages.push({ sender: 'ai', text: 'Error connecting to the Gemini engine cluster. Verify your API credentials.' });
+            } finally {
+                this.isThinking = false;
+                this.$nextTick(() => { let scroll = document.getElementById('chatScroller'); if(scroll) scroll.scrollTop = scroll.scrollHeight; });
+            }
+        }
+    }" class="fixed bottom-6 right-6 z-50 text-xs">
+        
+        <!-- Toggle Button Widget -->
+        <button @click="isOpen = !isOpen" class="bg-gradient-to-r from-cyan-500 to-purple-600 p-3.5 rounded-full text-white shadow-2xl flex items-center justify-center hover:scale-110 transition-transform focus:outline-none">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="!isOpen">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="isOpen" style="display:none;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        <!-- Glassmorphism AI Chat Interface Workspace -->
+        <div x-show="isOpen" x-transition class="absolute bottom-16 right-0 w-80 sm:w-96 bg-[#0F0F14]/90 border border-slate-800/80 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[450px]" style="display: none;">
+            
+            <!-- Header Panel Frame -->
+            <div class="bg-[#15151c] p-4 border-b border-slate-800/60 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                    <span class="font-bold text-white tracking-wide">TruSea Assistant</span>
+                </div>
+                <!-- Key Settings Deployment Panel Drawer -->
+                <div x-data="{ showSettings: false }" class="relative">
+                    <button @click="showSettings = !showSettings" class="text-slate-400 hover:text-white focus:outline-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </button>
+                    <div x-show="showSettings" class="absolute right-0 mt-2 w-64 bg-[#1a1a24] border border-slate-800 p-3 rounded-xl shadow-xl space-y-2 z-50">
+                        <span class="block text-[10px] text-slate-400 font-bold">Secure Browser API Verification Key</span>
+                        <input type="password" x-model="apiKey" placeholder="AIzaSy..." class="w-full bg-[#0d0d12] border border-slate-800 p-2 rounded-lg text-white focus:outline-none focus:border-cyan-500">
+                        <button @click="saveKey(); showSettings = false" class="w-full bg-cyan-500 hover:bg-cyan-600 text-black font-bold p-1.5 rounded-lg transition-colors">Apply Matrix Credentials</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Stream Message Panel Area -->
+            <div id="chatScroller" class="flex-1 p-4 overflow-y-auto space-y-3 no-scrollbar bg-[#0B0B0F]/40">
+                <template x-for="msg in messages">
+                    <div :class="msg.sender === 'user' ? 'justify-end' : 'justify-start'" class="flex">
+                        <div :class="msg.sender === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-[#15151c] text-slate-300 rounded-bl-none border border-slate-800/40'" class="p-3 rounded-xl max-w-[85%] leading-relaxed break-words shadow-md" x-text="msg.text"></div>
+                    </div>
+                </template>
+                <div x-show="isThinking" class="flex justify-start" style="display: none;">
+                    <div class="bg-[#15151c] text-slate-500 p-3 rounded-xl rounded-bl-none border border-slate-800/40 italic flex items-center gap-1.5 shadow-md">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce"></span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce [animation-delay:0.2s]"></span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce [animation-delay:0.4s]"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Message Input Panel Area -->
+            <form @submit.prevent="askGemini()" class="p-3 bg-[#15151c] border-t border-slate-800/60 flex items-center gap-2">
+                <input type="text" x-model="userMessage" placeholder="Ask about pricing or inventory..." class="w-full bg-[#0d0d12] border border-slate-800/80 rounded-xl p-2.5 text-white focus:outline-none focus:border-purple-500">
+                <button type="submit" class="bg-cyan-500 text-black hover:bg-cyan-400 p-2.5 rounded-xl font-bold transition-colors shadow-md flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                </button>
+            </form>
+            
+        </div>
     </div>
 </body>
 </html>
