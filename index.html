@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TruSea Live Competitor Pricing Portal</title>
+    <title>TruSea Live Pricing Engine</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -37,11 +37,11 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased"
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbw7_oXBHAAxcT08AKz9ud99EKaLribckJ3eURwQiH7u0B3BWSOYlx9ho4uzsLcZrZC7ww/exec',
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbwUhhHtZIrNJ95ONouhsDg8gdXUiLwj-jyQJGKzt0JF1zaprs4vIk3vgs7vl1OUXKTjVQ/exec',
           searchQuery: '',
-          activeSheetName: 'Loading...',
+          activeSheetName: 'Scanning...',
           rawProducts: [], filteredItems: [],
-          highestSeller: 'Calculating...', normalSeller: 'Calculating...',
+          highestSeller: 'Calculating...', stableSeller: 'Calculating...',
           loading: true, errorMessage: '', chartInstance: null,
           
           async initEngine() {
@@ -52,12 +52,12 @@
                   let resData = await response.json();
                   if (resData.error) { throw new Error(resData.error); }
                   
-                  this.activeSheetName = resData.meta.activeSheet || 'Live Sheet';
+                  this.activeSheetName = resData.meta.activeSheet || 'Live Dynamic Sheet';
                   this.rawProducts = resData.data || [];
                   this.applyFilters();
               } catch (e) {
                   console.error(e);
-                  this.errorMessage = 'Live Sync Fault: Web app URL permissions locked.';
+                  this.errorMessage = 'Live Sync Fault: Web App connection blocked. Make sure the script deployment is set to Anyone.';
               } finally {
                   this.loading = false;
               }
@@ -104,10 +104,13 @@
               competitorsOnly.sort((a, b) => b.avg - a.avg);
               
               if (competitorsOnly.length > 0) {
+                  // High cost indicator identifies the max market average markup
                   this.highestSeller = competitorsOnly[0].name + ' (Avg: ₹' + Math.round(competitorsOnly[0].avg) + '/KG)';
+                  // Stable baseline cost indicator maps to the median vendor positioning index
                   let middleIdx = Math.floor(competitorsOnly.length / 2);
-                  this.normalSeller = competitorsOnly[middleIdx].name + ' (Avg: ₹' + Math.round(competitorsOnly[middleIdx].avg) + '/KG)';
+                  this.stableSeller = competitorsOnly[middleIdx].name + ' (Avg: ₹' + Math.round(competitorsOnly[middleIdx].avg) + '/KG)';
               }
+              
               averages.sort((a, b) => b.avg - a.avg);
               setTimeout(() => this.renderChart(averages), 100);
           },
@@ -133,51 +136,54 @@
       }" x-init="initEngine()">
 
     <div class="min-h-screen p-4 sm:p-6 max-w-7xl mx-auto">
-        <!-- Header Section -->
+        <!-- Dashboard Header Framework -->
         <header class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-4 gap-2">
             <div>
                 <h1 class="text-xl font-bold tracking-tight text-slate-900">TruSea <span class="text-cyan-500 font-normal">Intelligence Portal</span></h1>
-                <p class="text-[10px] text-slate-400 mt-0.5">Live Auto-Sync Tracker</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">Live Real-Time Dynamic Auto-Sync Dashboard</p>
             </div>
-            <div class="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-200" x-show="!loading">
-                Synced Tab: <span class="text-cyan-600 font-bold" x-text="activeSheetName"></span>
+            <div class="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 shadow-sm" x-show="!loading">
+                Synced Dynamic Sheet: <span class="text-cyan-600 font-bold" x-text="activeSheetName"></span>
             </div>
         </header>
 
-        <!-- Search input field layer -->
+        <!-- Premium Real-time Interactive Search Bar -->
         <div class="mb-6 max-w-md" x-show="!loading && !errorMessage">
-            <input x-model="searchQuery" @input="applyFilters()" type="text" placeholder="🔍 Search product name or brand (e.g., Licious)..." class="w-full text-xs bg-white border border-slate-200 p-3 pl-4 rounded-xl shadow-sm focus:outline-none focus:border-cyan-400 transition-all">
+            <input x-model="searchQuery" @input="applyFilters()" type="text" placeholder="🔍 Search fish name or competitor brand..." class="w-full text-xs bg-white border border-slate-200 p-3 pl-4 rounded-xl shadow-sm focus:outline-none focus:border-cyan-400 transition-all">
         </div>
 
         <main class="space-y-6">
-            <div x-show="loading" class="text-center py-20 text-xs text-slate-400">Syncing live spreadsheet database structure...</div>
+            <!-- Loading Status Indicator -->
+            <div x-show="loading" class="text-center py-20 text-xs text-slate-400">Syncing dynamic data arrays directly from current layout...</div>
             <div x-show="errorMessage" class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-xs font-medium" x-text="errorMessage" style="display: none;"></div>
 
-            <!-- SMART STATISTICAL INSIGHTS -->
+            <!-- ANCHORED STATISTICAL INSIGHTS & BENCHMARK GRAPHS -->
             <div x-show="!loading && !errorMessage" class="grid grid-cols-1 lg:grid-cols-3 gap-4" style="display: none;">
                 <div class="lg:col-span-1 flex flex-col gap-3 justify-between">
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                        <span class="text-[9px] uppercase font-bold tracking-wider text-red-400 block mb-0.5">🔴 Highest Cost Competitor</span>
+                        <span class="text-[9px] uppercase font-bold tracking-wider text-red-400 block mb-0.5">🔴 Cost High Competitor</span>
                         <div class="text-base font-black text-slate-900" x-text="highestSeller"></div>
                     </div>
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                        <span class="text-[9px] uppercase font-bold tracking-wider text-blue-500 block mb-0.5">🔵 Normal Cost Competitor</span>
-                        <div class="text-base font-black text-slate-900" x-text="normalSeller"></div>
+                        <span class="text-[9px] uppercase font-bold tracking-wider text-emerald-500 block mb-0.5">🟢 Stable Cost Competitor</span>
+                        <div class="text-base font-black text-slate-900" x-text="stableSeller"></div>
                     </div>
                 </div>
                 <div class="lg:col-span-2 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                    <div class="relative h-[120px] w-full"><canvas id="insightsChart"></canvas></div>
+                    <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-2">Market Price Benchmark Index Matrix (/KG)</span>
+                    <div class="relative h-[110px] w-full"><canvas id="insightsChart"></canvas></div>
                 </div>
             </div>
 
-            <!-- DYNAMIC MOBILE CARDS DATA GRID -->
+            <!-- PREMIUM MOBILE CARDS DATA GRID LAYOUT -->
             <div x-show="!loading && !errorMessage" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style="display: none;">
                 <template x-for="item in filteredItems" :key="item.name">
                     <div :class="item.isSoldOut ? 'bg-slate-100 opacity-60' : 'neon-outline-card border-slate-200/60'" class="p-5 border flex flex-col justify-between shadow-sm relative">
+                        
                         <div>
                             <h3 class="text-sm font-bold text-slate-900 mb-3 truncate" x-text="item.name"></h3>
                             
-                            <!-- TruSea Live Dynamic Columns Mappings -->
+                            <!-- Mandatory Target Column Groupings (First 3 Mandatory Sheet Elements) -->
                             <div class="space-y-2 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
                                 <div class="flex justify-between items-center">
                                     <span class="text-[11px] text-slate-500 font-medium">Current TruSea Price Perkg</span>
@@ -189,16 +195,16 @@
                                 </div>
                                 <div class="flex justify-between items-center border-t border-slate-200/60 pt-2">
                                     <span class="text-[11px] text-slate-500 font-medium">Difference</span>
-                                    <span :class="parseFloat(item.difference) < 0 ? 'text-green-600' : 'text-red-500'" class="text-xs font-bold" x-text="item.difference !== '-' ? (parseFloat(item.difference) > 0 ? '+' + item.difference : item.difference) : '-'"></span>
+                                    <span :class="parseFloat(item.difference) < 0 ? 'text-emerald-600' : 'text-red-500'" class="text-xs font-bold" x-text="item.difference !== '-' ? (parseFloat(item.difference) > 0 ? '+' + item.difference : item.difference) : '-'"></span>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Dynamic Competitor Print Layer -->
+                        <!-- Dynamic Competitor Price & Status Block Rows -->
                         <div class="border-t border-slate-100 pt-2.5 space-y-2 text-xs text-slate-600">
-                            <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-bold mb-1">Competitor Benchmark Matrix</span>
+                            <span class="block text-[8px] uppercase tracking-wider text-slate-400 font-bold mb-1">Competitor Pricing Benchmark</span>
                             <template x-for="[compName, compObj] in Object.entries(item.competitors)" :key="compName">
-                                <div class="flex justify-between items-center bg-white p-1.5 rounded-lg border border-slate-100 shadow-2xs">
+                                <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-100">
                                     <span class="font-medium text-slate-600" x-text="compName"></span>
                                     <div class="flex items-center gap-2">
                                         <span class="font-bold text-slate-800" x-text="compObj.price !== '-' ? '₹' + compObj.price : '-'"></span>
@@ -209,6 +215,7 @@
                                 </div>
                             </template>
                         </div>
+
                     </div>
                 </template>
             </div>
