@@ -59,10 +59,21 @@
           webAppUrl: 'https://script.google.com/macros/s/AKfycbwOJPIxvqYTAEpH-XT8FGCcCnifwHZJQJFt6HCL-bUZaeNoMUGyxag2nAjQxiEPDsyeAg/exec',
           searchQuery: '', rawProducts: [], filteredItems: [],
           highestSeller: 'Calculating...', normalSeller: 'Calculating...',
-          loading: true, errorMessage: '', chartInstance: null,
+          loading: true, isSyncing: false, errorMessage: '', chartInstance: null,
           
           async initEngine() {
               this.loading = true;
+              await this.fetchLivePrices();
+              this.loading = false;
+
+              // AUTO SYNC: 30000ms (30 seconds) க்கு ஒருமுறை தானாக background-ல் sync ஆகும்
+              setInterval(async () => {
+                  await this.fetchLivePrices();
+              }, 30000);
+          },
+
+          async fetchLivePrices() {
+              this.isSyncing = true;
               try {
                   let cacheBuster = new Date().getTime();
                   let response = await fetch(`${this.webAppUrl}?_cb=${cacheBuster}`);
@@ -72,9 +83,10 @@
               } catch (e) {
                   this.errorMessage = 'Syncing latest live dataset parameters...';
               } finally {
-                  this.loading = false;
+                  this.isSyncing = false;
               }
           },
+
           applyFilters() {
               let q = this.searchQuery.toLowerCase().trim();
               this.filteredItems = q ? this.rawProducts.filter(i => i.name.toLowerCase().includes(q)) : this.rawProducts;
@@ -83,7 +95,6 @@
           calculateMetrics() {
               if (this.rawProducts.length === 0) return;
               
-              // Pre-initialize to guarantee every vendor exists in metrics
               let compTotals = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
               let compCounts = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
               let totalTruSea = 0, countTruSea = 0;
@@ -156,8 +167,16 @@
       }" x-init="initEngine()">
 
     <div class="max-w-7xl mx-auto p-4 sm:p-6">
-        <header class="mb-6 border-b border-slate-200 pb-3">
+        <header class="mb-6 border-b border-slate-200 pb-3 flex justify-between items-center">
             <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">TruSea <span class="text-cyan-600 font-normal">Price Tracker</span></h1>
+            <!-- Live Auto Sync Status Indicator -->
+            <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                <span class="relative flex h-2 w-2">
+                    <span :class="isSyncing ? 'animate-ping bg-amber-400' : 'bg-emerald-500'" class="absolute inline-flex h-full w-full rounded-full opacity-75"></span>
+                    <span :class="isSyncing ? 'bg-amber-500' : 'bg-emerald-500'" class="relative inline-flex rounded-full h-2 w-2"></span>
+                </span>
+                <span x-text="isSyncing ? 'Syncing...' : 'Auto Sync Active'"></span>
+            </div>
         </header>
 
         <!-- Search input workspace link matrix -->
