@@ -64,7 +64,6 @@
           async initEngine() {
               this.loading = true;
               try {
-                  // NEW: Cache Buster implementation completely clears out Google API proxy lag instantly
                   let cacheBuster = new Date().getTime();
                   let response = await fetch(`${this.webAppUrl}?_cb=${cacheBuster}`);
                   let resData = await response.json();
@@ -127,7 +126,15 @@
                       labels: averages.map(c => c.name),
                       datasets: [{
                           data: averages.map(c => Math.round(c.avg)),
-                          backgroundColor: averages.map(c => c.isBrand ? '#00f2fe' : (c.name.toLowerCase().includes('licious') ? '#4f46e5' : '#7c3aed')),
+                          backgroundColor: averages.map(c => {
+                              if (c.isBrand) return '#00f2fe';
+                              let name = c.name.toLowerCase();
+                              if (name.includes('licious')) return '#4f46e5';
+                              if (name.includes('fresh ma')) return '#10b981';
+                              if (name.includes('fresh to home')) return '#f59e0b';
+                              if (name.includes('supreme sea foods')) return '#3b82f6';
+                              return '#7c3aed';
+                          }),
                           borderRadius: 6, maxBarThickness: 30
                       }]
                   },
