@@ -56,7 +56,7 @@
 </head>
 <body class="bg-[#F8FAFC] text-slate-800 font-sans antialiased min-h-screen pb-12"
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbw_37iZ2h780irzyiCeaux5atIsfkwnZyCQpud585rhrO5svJLYoKISg58dK-4OqvSeQw/exec',
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbwOJPIxvqYTAEpH-XT8FGCcCnifwHZJQJFt6HCL-bUZaeNoMUGyxag2nAjQxiEPDsyeAg/exec',
           searchQuery: '', rawProducts: [], filteredItems: [],
           highestSeller: 'Calculating...', normalSeller: 'Calculating...',
           loading: true, errorMessage: '', chartInstance: null,
@@ -132,7 +132,7 @@
                               if (name.includes('licious')) return '#4f46e5';
                               if (name.includes('fresh ma')) return '#10b981';
                               if (name.includes('fresh to home')) return '#f59e0b';
-                              if (name.includes('supreme sea foods')) return '#3b82f6';
+                              if (name.includes('supreme')) return '#3b82f6';
                               return '#7c3aed';
                           }),
                           borderRadius: 6, maxBarThickness: 30
