@@ -82,16 +82,19 @@
           },
           calculateMetrics() {
               if (this.rawProducts.length === 0) return;
-              let compTotals = {}; let compCounts = {};
+              
+              // Pre-initialize to guarantee every vendor exists in metrics
+              let compTotals = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
+              let compCounts = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
               let totalTruSea = 0, countTruSea = 0;
               
               this.rawProducts.forEach(item => {
-                  let parsedTruSea = parseFloat(String(item.truSeaPerKg).replace(/[₹,]/g, ''));
+                  let parsedTruSea = parseFloat(String(item.truSeaPerKg).replace(/[^\d.]/g, ''));
                   if (!isNaN(parsedTruSea)) { totalTruSea += parsedTruSea; countTruSea++; }
                   
                   if (item.competitors) {
                       Object.entries(item.competitors).forEach(([key, compValue]) => {
-                          let priceVal = parseFloat(String(compValue.price).replace(/[₹,]/g, ''));
+                          let priceVal = parseFloat(String(compValue.price).replace(/[^\d.]/g, ''));
                           if (!isNaN(priceVal)) {
                               compTotals[key] = (compTotals[key] || 0) + priceVal;
                               compCounts[key] = (compCounts[key] || 0) + 1;
@@ -102,10 +105,11 @@
               
               let averages = [{ name: 'TruSea', avg: countTruSea ? totalTruSea / countTruSea : 0, isBrand: true }];
               Object.keys(compTotals).forEach(key => {
-                  if (compCounts[key] > 0) averages.push({ name: key, avg: compTotals[key] / compCounts[key], isBrand: false });
+                  let finalAvg = compCounts[key] > 0 ? compTotals[key] / compCounts[key] : 0;
+                  averages.push({ name: key, avg: finalAvg, isBrand: false });
               });
               
-              let competitorsOnly = averages.filter(c => !c.isBrand);
+              let competitorsOnly = averages.filter(c => !c.isBrand && c.avg > 0);
               competitorsOnly.sort((a, b) => b.avg - a.avg);
               
               if (competitorsOnly.length > 0) {
@@ -130,10 +134,11 @@
                               if (c.isBrand) return '#00f2fe';
                               let name = c.name.toLowerCase();
                               if (name.includes('licious')) return '#4f46e5';
+                              if (name.includes('tender')) return '#7c3aed';
                               if (name.includes('fresh ma')) return '#10b981';
                               if (name.includes('fresh to home')) return '#f59e0b';
                               if (name.includes('supreme')) return '#3b82f6';
-                              return '#7c3aed';
+                              return '#cbd5e1';
                           }),
                           borderRadius: 6, maxBarThickness: 30
                       }]
