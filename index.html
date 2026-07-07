@@ -109,6 +109,11 @@
               let currentTabProducts = this.allMasterData[this.selectedDate] || [];
               let q = this.searchQuery.toLowerCase().trim();
               this.filteredItems = q ? currentTabProducts.filter(i => i.name.toLowerCase().includes(q)) : currentTabProducts;
+              
+              // Mobile Setup: Dismiss active keyboard viewfocus parameters safely
+              if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                  document.activeElement.blur();
+              }
           },
 
           processAnalytics(averages) {
@@ -190,11 +195,20 @@
         </div>
 
         <div class="mb-6 max-w-xl mx-auto">
-            <div class="gemini-ai-search-container">
-                <div class="flex items-center w-full bg-white rounded-full px-4 py-2.5 shadow-xs">
-                    <input x-model="searchQuery" @input="applyFilters()" type="text" placeholder="Search fish names..." class="w-full text-base bg-transparent border-none focus:outline-none text-slate-800 placeholder-slate-400 font-medium">
+            <form @submit.prevent="applyFilters()">
+                <div class="gemini-ai-search-container">
+                    <div class="flex items-center w-full bg-white rounded-full px-4 py-1.5 shadow-xs">
+                        <input x-model="searchQuery" 
+                               type="text" 
+                               enterkeyhint="search"
+                               placeholder="Type name & press Enter..." 
+                               class="w-full text-base bg-transparent border-none focus:outline-none text-slate-800 placeholder-slate-400 font-medium py-1">
+                        <button type="submit" class="bg-cyan-600 text-white rounded-full px-4 py-1.5 text-xs font-bold shadow-xs hover:bg-cyan-700 transition">
+                            Search
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
 
         <main class="space-y-6">
