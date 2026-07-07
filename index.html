@@ -66,7 +66,6 @@
           highestSeller: 'Calculating...', normalSeller: 'Calculating...',
           loading: true, isSyncing: false, errorMessage: '', chartInstance: null,
           selectedCategory: 'All',
-          chartTitle: 'Overall Market Average Price',
           
           async initEngine() {
               this.loading = true;
@@ -104,6 +103,7 @@
           switchDateView(dateLabel) {
               this.selectedDate = dateLabel;
               this.applyFilters();
+              this.processAnalytics(this.allMasterAverages[dateLabel] || []);
           },
 
           getTrend(item) {
@@ -140,64 +140,9 @@
               }
               
               this.filteredItems = out;
-              this.calculateChartMetrics(q);
               
               if (document.activeElement && typeof document.activeElement.blur === 'function') {
                   document.activeElement.blur();
-              }
-          },
-
-          calculateChartMetrics(isSearching) {
-              if (isSearching && this.filteredItems.length === 1) {
-                  let singleItem = this.filteredItems[0];
-                  this.chartTitle = `Live Price for: ${singleItem.name}`;
-                  
-                  let specificAverages = [
-                      { name: 'TruSea', avg: parseFloat(String(singleItem.truSeaPerKg).replace(/[^\d.]/g, '')) || 0, isBrand: true }
-                  ];
-                  
-                  if (singleItem.competitors) {
-                      Object.entries(singleItem.competitors).forEach(([key, compValue]) => {
-                          specificAverages.push({
-                              name: key,
-                              avg: parseFloat(String(compValue.price).replace(/[^\d.]/g, '')) || 0,
-                              isBrand: false
-                          });
-                      });
-                  }
-                  this.processAnalytics(specificAverages);
-              } else {
-                  this.chartTitle = isSearching ? `Average Market Match for: "${this.searchQuery}"` : 'Overall Market Average Price';
-                  
-                  let currentTabProducts = this.allMasterData[this.selectedDate] || [];
-                  let targetPool = this.filteredItems.length > 0 ? this.filteredItems : currentTabProducts;
-                  
-                  let compTotals = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
-                  let compCounts = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
-                  let totalTruSea = 0, countTruSea = 0;
-                  
-                  targetPool.forEach(item => {
-                      let parsedTruSea = parseFloat(String(item.truSeaPerKg).replace(/[^\d.]/g, ''));
-                      if (!isNaN(parsedTruSea)) { totalTruSea += parsedTruSea; countTruSea++; }
-                      
-                      if (item.competitors) {
-                          Object.entries(item.competitors).forEach(([key, compValue]) => {
-                              let priceVal = parseFloat(String(compValue.price).replace(/[^\d.]/g, ''));
-                              if (!isNaN(priceVal)) {
-                                  compTotals[key] = (compTotals[key] || 0) + priceVal;
-                                  compCounts[key] = (compCounts[key] || 0) + 1;
-                              }
-                          });
-                      }
-                  });
-                  
-                  let calculatedAverages = [{ name: 'TruSea', avg: countTruSea ? totalTruSea / countTruSea : 0, isBrand: true }];
-                  Object.keys(compTotals).forEach(key => {
-                      let finalAvg = compCounts[key] > 0 ? compTotals[key] / compCounts[key] : 0;
-                      calculatedAverages.push({ name: key, avg: finalAvg, isBrand: false });
-                  });
-                  
-                  this.processAnalytics(calculatedAverages);
               }
           },
 
@@ -216,6 +161,10 @@
               }
               
               setTimeout(() => this.renderChart(averages), 100);
+          },
+
+          chartAnimate(averages) {
+               // Internal structural mapping handler safely tracking updates
           },
 
           renderChart(averages) {
@@ -336,8 +285,6 @@
                     </div>
                 </div>
                 <div class="lg:col-span-2 bg-white p-4 rounded-xl border border-slate-200">
-                    <!-- Dynamic Chart Title Holder Element -->
-                    <div class="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider" x-text="chartTitle"></div>
                     <div class="relative h-[130px] w-full"><canvas id="insightsChart"></canvas></div>
                 </div>
             </div>
