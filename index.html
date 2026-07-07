@@ -184,15 +184,16 @@
                               if (name.includes('supreme')) return '#3b82f6';
                               return '#cbd5e1';
                           }),
+                          // FIX: Fixed identical hover colors and explicitly defined 1.0 opacity overlay parameters
                           hoverBackgroundColor: averages.map(c => {
-                              if (c.isBrand) return '#22feff';
+                              if (c.isBrand) return '#00f2fe';
                               let name = c.name.toLowerCase();
-                              if (name.includes('licious')) return '#6366f1';
-                              if (name.includes('tender')) return '#8b5cf6';
-                              if (name.includes('fresh ma')) return '#34d399';
-                              if (name.includes('fresh to home')) return '#fbbf24';
-                              if (name.includes('supreme')) return '#60a5fa';
-                              return '#e2e8f0';
+                              if (name.includes('licious')) return '#4f46e5';
+                              if (name.includes('tender')) return '#7c3aed';
+                              if (name.includes('fresh ma')) return '#10b981';
+                              if (name.includes('fresh to home')) return '#f59e0b';
+                              if (name.includes('supreme')) return '#3b82f6';
+                              return '#cbd5e1';
                           }),
                           borderRadius: 8,
                           maxBarThickness: 32,
@@ -204,6 +205,10 @@
                   options: { 
                       responsive: true, 
                       maintainAspectRatio: false,
+                      onHover: (event, chartElement) => {
+                          // Force active explicit canvas state configuration parameters on runtime layout elements
+                          event.native.target.style.cursor = chartElement.length ? 'pointer' : 'default';
+                      },
                       interaction: {
                           mode: 'index',
                           intersect: false
