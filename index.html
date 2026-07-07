@@ -7,6 +7,11 @@
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2306b6d4'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 11v1c0 1.66 1.34 3 3 3v2.93zm5.9-3.41c-.14-.38-.45-.69-.83-.83L15 13v-2c0-1.1-.9-2-2-2h-2V5.08c2.93.43 5.29 2.54 5.92 5.42h-1.92c-.5 0-.9-.4-.9-.9V8h-1V7h2c1.1 0 2-.9 2-2V4.26c2.42 1.72 4 4.54 4 7.74 0 1.35-.28 2.63-.78 3.8l-1.32-.87z'/></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
@@ -37,8 +42,8 @@
         }
 
         .premium-glow-card {
-            position: relative; background: #ffffff !important; border-radius: 1rem; z-index: 1; border: 1px solid #e2e8f0;
-            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            position: relative; border-radius: 1rem; z-index: 1;
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.3s ease;
         }
         .premium-glow-card::before {
             content: ''; position: absolute; inset: -1px; border-radius: 1rem; padding: 1.5px;
@@ -47,14 +52,20 @@
             -webkit-mask-composite: xor; mask-composite: exclude; z-index: 2; opacity: 0; transition: opacity 0.3s ease;
         }
         .premium-glow-card:hover {
-            transform: translateY(-4px) scale(1.015); border-color: transparent;
-            box-shadow: 0 15px 25px rgba(0, 242, 254, 0.12), 0 8px 15px rgba(155, 81, 224, 0.05);
+            transform: translateY(-4px) scale(1.015); border-color: transparent !important;
+        }
+        .light .premium-glow-card:hover {
+            box-shadow: 0 15px 30px rgba(0, 242, 254, 0.18), 0 10px 20px rgba(155, 81, 224, 0.1);
+        }
+        .dark .premium-glow-card:hover {
+            box-shadow: 0 15px 35px rgba(0, 242, 254, 0.35), 0 10px 25px rgba(255, 123, 235, 0.2);
         }
         .premium-glow-card:hover::before { opacity: 1; animation: cardGlowAnimation 3s linear infinite; }
         @keyframes cardGlowAnimation { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
     </style>
 </head>
-<body class="bg-[#F8FAFC] text-slate-800 font-sans antialiased min-h-screen pb-12"
+<body class="bg-[#F8FAFC] dark:bg-[#0F172A] text-slate-800 dark:text-slate-200 font-sans antialiased min-h-screen pb-12 transition-colors duration-300"
+      :class="darkMode ? 'dark' : 'light'"
       x-data="{
           webAppUrl: 'https://script.google.com/macros/s/AKfycbwOJPIxvqYTAEpH-XT8FGCcCnifwHZJQJFt6HCL-bUZaeNoMUGyxag2nAjQxiEPDsyeAg/exec',
           searchQuery: '', 
@@ -66,6 +77,8 @@
           highestSeller: 'Calculating...', normalSeller: 'Calculating...',
           loading: true, isSyncing: false, errorMessage: '', chartInstance: null,
           selectedCategory: 'All',
+          chartTitle: 'Overall Market Average Price',
+          darkMode: Alpine.$persist(false).as('tru_dark_mode'),
           
           async initEngine() {
               this.loading = true;
@@ -75,6 +88,10 @@
               setInterval(async () => {
                   await this.fetchLivePrices(false);
               }, 30000);
+
+              this.$watch('darkMode', () => {
+                  this.applyFilters();
+              });
           },
 
           async fetchLivePrices(isFirstLoad) {
@@ -103,26 +120,25 @@
           switchDateView(dateLabel) {
               this.selectedDate = dateLabel;
               this.applyFilters();
-              this.processAnalytics(this.allMasterAverages[dateLabel] || []);
           },
 
           getTrend(item) {
               let idx = this.availableDates.indexOf(this.selectedDate);
-              if (idx === -1 || idx === this.availableDates.length - 1) return { symbol: '-', class: 'text-slate-400' };
+              if (idx === -1 || idx === this.availableDates.length - 1) return { symbol: '-', class: 'text-slate-400 dark:text-slate-500' };
               
               let prevDate = this.availableDates[idx + 1];
               let prevItems = this.allMasterData[prevDate] || [];
               let prevItem = prevItems.find(p => p.name === item.name);
               
-              if (!prevItem || prevItem.truSeaPerKg === '-' || item.truSeaPerKg === '-') return { symbol: '-', class: 'text-slate-400' };
+              if (!prevItem || prevItem.truSeaPerKg === '-' || item.truSeaPerKg === '-') return { symbol: '-', class: 'text-slate-400 dark:text-slate-500' };
               
               let currentPrice = parseFloat(String(item.truSeaPerKg).replace(/[^\d.]/g, ''));
               let prevPrice = parseFloat(String(prevItem.truSeaPerKg).replace(/[^\d.]/g, ''));
               
-              if (isNaN(currentPrice) || isNaN(prevPrice)) return { symbol: '-', class: 'text-slate-400' };
+              if (isNaN(currentPrice) || isNaN(prevPrice)) return { symbol: '-', class: 'text-slate-400 dark:text-slate-500' };
               if (currentPrice > prevPrice) return { symbol: '↑', class: 'text-red-500 font-bold text-xs' };
               if (currentPrice < prevPrice) return { symbol: '↓', class: 'text-emerald-500 font-bold text-xs' };
-              return { symbol: '-', class: 'text-slate-400' };
+              return { symbol: '-', class: 'text-slate-400 dark:text-slate-500' };
           },
 
           applyFilters() {
@@ -140,9 +156,64 @@
               }
               
               this.filteredItems = out;
+              this.calculateChartMetrics(q);
               
               if (document.activeElement && typeof document.activeElement.blur === 'function') {
                   document.activeElement.blur();
+              }
+          },
+
+          calculateChartMetrics(isSearching) {
+              if (isSearching && this.filteredItems.length === 1) {
+                  let singleItem = this.filteredItems[0];
+                  this.chartTitle = `Live Price for: ${singleItem.name}`;
+                  
+                  let specificPrices = [
+                      { name: 'TruSea', avg: parseFloat(String(singleItem.truSeaPerKg).replace(/[^\d.]/g, '')) || 0, isBrand: true }
+                  ];
+                  
+                  if (singleItem.competitors) {
+                      Object.entries(singleItem.competitors).forEach(([key, compValue]) => {
+                          specificPrices.push({
+                              name: key,
+                              avg: parseFloat(String(compValue.price).replace(/[^\d.]/g, '')) || 0,
+                              isBrand: false
+                          });
+                      });
+                  }
+                  this.processAnalytics(specificPrices);
+              } else {
+                  this.chartTitle = isSearching ? `Average Market Match for: "${this.searchQuery}"` : 'Overall Market Average Price';
+                  
+                  let currentTabProducts = this.allMasterData[this.selectedDate] || [];
+                  let targetPool = this.filteredItems.length > 0 ? this.filteredItems : currentTabProducts;
+                  
+                  let compTotals = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
+                  let compCounts = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
+                  let totalTruSea = 0, countTruSea = 0;
+                  
+                  targetPool.forEach(item => {
+                      let parsedTruSea = parseFloat(String(item.truSeaPerKg).replace(/[^\d.]/g, ''));
+                      if (!isNaN(parsedTruSea)) { totalTruSea += parsedTruSea; countTruSea++; }
+                      
+                      if (item.competitors) {
+                          Object.entries(item.competitors).forEach(([key, compValue]) => {
+                              let priceVal = parseFloat(String(compValue.price).replace(/[^\d.]/g, ''));
+                              if (!isNaN(priceVal)) {
+                                  compTotals[key] = (compTotals[key] || 0) + priceVal;
+                                  compCounts[key] = (compCounts[key] || 0) + 1;
+                              }
+                          });
+                      }
+                  });
+                  
+                  let calculatedAverages = [{ name: 'TruSea', avg: countTruSea ? totalTruSea / countTruSea : 0, isBrand: true }];
+                  Object.keys(compTotals).forEach(key => {
+                      let finalAvg = compCounts[key] > 0 ? compTotals[key] / compCounts[key] : 0;
+                      calculatedAverages.push({ name: key, avg: finalAvg, isBrand: false });
+                  });
+                  
+                  this.processAnalytics(calculatedAverages);
               }
           },
 
@@ -163,14 +234,13 @@
               setTimeout(() => this.renderChart(averages), 100);
           },
 
-          chartAnimate(averages) {
-               // Internal structural mapping handler safely tracking updates
-          },
-
           renderChart(averages) {
               if (this.chartInstance) this.chartInstance.destroy();
               let canvasEl = document.getElementById('insightsChart');
               if (!canvasEl) return;
+              
+              let textColor = this.darkMode ? '#94a3b8' : '#475569';
+              let gridColor = this.darkMode ? 'rgba(51, 65, 85, 0.4)' : 'rgba(226, 232, 240, 0.8)';
               
               this.chartInstance = new Chart(canvasEl.getContext('2d'), {
                   type: 'bar',
@@ -197,17 +267,16 @@
                           duration: 1000,
                           easing: 'easeInOutQuart'
                       },
-                      transitions: {
-                          active: {
-                              animation: {
-                                  duration: 800
-                              }
-                          }
-                      },
                       plugins: { legend: { display: false } },
                       scales: {
-                          y: { ticks: { font: { size: 11 } } },
-                          x: { ticks: { font: { size: 12, weight: 'bold' } } }
+                          y: { 
+                              grid: { color: gridColor },
+                              ticks: { color: textColor, font: { size: 11 } } 
+                          },
+                          x: { 
+                              grid: { display: false },
+                              ticks: { color: textColor, font: { size: 12, weight: 'bold' } } 
+                          }
                       }
                   }
               });
@@ -215,42 +284,47 @@
       }" x-init="initEngine()">
 
     <div class="max-w-7xl mx-auto p-4 sm:p-6">
-        <header class="mb-4 border-b border-slate-200 pb-3 flex justify-between items-center">
+        <header class="mb-4 border-b border-slate-200 dark:border-slate-700 pb-3 flex justify-between items-center">
             <div>
-                <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">TruSea <span class="text-cyan-600 font-normal">Price Tracker</span></h1>
+                <h1 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">TruSea <span class="text-cyan-600 dark:text-cyan-400 font-normal">Price Tracker</span></h1>
             </div>
             
-            <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                <span class="relative flex h-2 w-2">
-                    <span :class="isSyncing ? 'animate-ping bg-amber-400' : 'bg-emerald-500'" class="absolute inline-flex h-full w-full rounded-full opacity-75"></span>
-                    <span :class="isSyncing ? 'bg-amber-500' : 'bg-emerald-500'" class="relative inline-flex rounded-full h-2 w-2"></span>
-                </span>
-                <span x-text="isSyncing ? 'Syncing...' : 'Auto Sync Active'"></span>
+            <div class="flex items-center gap-4">
+                <button @click="darkMode = !darkMode" class="p-2 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:opacity-90 transition">
+                    <svg x-show="!darkMode" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                    <svg x-show="darkMode" style="display: none;" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707-.707m12.728 0l-.707.707M6.343 6.343l-.707-.707M12 7a5 5 0 100 10 5 5 0 000-10z"/></svg>
+                </button>
+
+                <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    <span class="relative flex h-2 w-2">
+                        <span :class="isSyncing ? 'animate-ping bg-amber-400' : 'bg-emerald-500'" class="absolute inline-flex h-full w-full rounded-full opacity-75"></span>
+                        <span :class="isSyncing ? 'bg-amber-500' : 'bg-emerald-500'" class="relative inline-flex rounded-full h-2 w-2"></span>
+                    </span>
+                    <span x-text="isSyncing ? 'Syncing...' : 'Auto Sync Active'"></span>
+                </div>
             </div>
         </header>
 
-        <!-- Dynamic Date Tab Switcher Layout Component -->
-        <div x-show="!loading" class="mb-5 overflow-x-auto no-scrollbar flex items-center gap-2 pb-1.5 border-b border-slate-100">
+        <div x-show="!loading" class="mb-5 overflow-x-auto no-scrollbar flex items-center gap-2 pb-1.5 border-b border-slate-100 dark:border-slate-800">
             <template x-for="date in availableDates" :key="date">
                 <button @click="switchDateView(date)" 
-                        :class="selectedDate === date ? 'bg-cyan-600 text-white shadow-xs font-bold' : 'bg-white text-slate-600 hover:bg-slate-50 font-medium border border-slate-200'"
+                        :class="selectedDate === date ? 'bg-cyan-600 text-white shadow-xs font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium border border-slate-200 dark:border-slate-700'"
                         class="px-4 py-2 text-xs rounded-full whitespace-nowrap transition-all duration-200" 
                         x-text="date">
                 </button>
             </template>
         </div>
 
-        <!-- Search Form Setup with Dynamic placeholder -->
         <div class="mb-4 max-w-xl mx-auto">
             <form @submit.prevent="applyFilters()">
                 <div class="gemini-ai-search-container">
-                    <div class="flex items-center w-full bg-white rounded-full px-4 py-1.5 shadow-xs">
+                    <div class="flex items-center w-full bg-white dark:bg-slate-800 rounded-full px-4 py-1.5 shadow-xs">
                         <input x-model="searchQuery" 
                                type="text" 
                                enterkeyhint="search"
                                placeholder="search fish names and press enter" 
-                               class="w-full text-base bg-transparent border-none focus:outline-none text-slate-800 placeholder-slate-400 font-medium py-1">
-                        <button type="submit" class="bg-cyan-600 text-white rounded-full px-4 py-1.5 text-xs font-bold shadow-xs hover:bg-cyan-700 transition">
+                               class="w-full text-base bg-transparent border-none focus:outline-none text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 font-medium py-1">
+                        <button type="submit" class="bg-cyan-600 dark:bg-cyan-500 text-white rounded-full px-4 py-1.5 text-xs font-bold shadow-xs hover:bg-cyan-700 dark:hover:bg-cyan-600 transition">
                             Search
                         </button>
                     </div>
@@ -258,11 +332,10 @@
             </form>
         </div>
 
-        <!-- Category Filtering Chips Layout Section -->
         <div x-show="!loading" class="mb-6 flex flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-5xl mx-auto">
             <template x-for="cat in ['All', 'Prawns', 'Crabs', 'Fillets', 'Fish']" :key="cat">
-                <button @click="selectedCategory = cat; applyFilters();"
-                        :class="selectedCategory === cat ? 'bg-slate-800 text-white border-slate-800 font-bold' : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'"
+                <button @click="selectedCategory = cat; searchQuery = ''; applyFilters();"
+                        :class="selectedCategory === cat ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-slate-800 dark:border-slate-200 font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'"
                         class="px-3.5 py-1.5 text-xs rounded-full border transition font-medium"
                         x-text="cat">
                 </button>
@@ -270,66 +343,64 @@
         </div>
 
         <main class="space-y-6">
-            <div x-show="loading" class="text-center py-20 text-xs text-slate-400 font-semibold">Live Real-Time Active Sync Processing...</div>
+            <div x-show="loading" class="text-center py-20 text-xs text-slate-400 dark:text-slate-500 font-semibold">Live Real-Time Active Sync Processing...</div>
 
-            <!-- Dashboard Analytics -->
             <div x-show="!loading" class="grid grid-cols-1 lg:grid-cols-3 gap-4" style="display: none;">
                 <div class="lg:col-span-1 flex flex-col gap-3">
-                    <div class="bg-white p-4 rounded-xl border border-slate-200">
-                        <span class="text-xs uppercase font-bold text-red-500 block mb-1">🔴 Costly Market Vendor</span>
-                        <div class="text-base font-black text-slate-900" x-text="highestSeller"></div>
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <span class="text-xs uppercase font-bold text-red-500 dark:text-red-400 block mb-1">🔴 Costly Market Vendor</span>
+                        <div class="text-base font-black text-slate-900 dark:text-white" x-text="highestSeller"></div>
                     </div>
-                    <div class="bg-white p-4 rounded-xl border border-slate-200">
-                        <span class="text-xs uppercase font-bold text-emerald-600 block mb-1">🟢 Normal Market Vendor</span>
-                        <div class="text-base font-black text-slate-900" x-text="normalSeller"></div>
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <span class="text-xs uppercase font-bold text-emerald-600 dark:text-emerald-400 block mb-1">🟢 Normal Market Vendor</span>
+                        <div class="text-base font-black text-slate-900 dark:text-white" x-text="normalSeller"></div>
                     </div>
                 </div>
-                <div class="lg:col-span-2 bg-white p-4 rounded-xl border border-slate-200">
+                <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <div class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wider" x-text="chartTitle"></div>
                     <div class="relative h-[130px] w-full"><canvas id="insightsChart"></canvas></div>
                 </div>
             </div>
 
-            <!-- Per-KG Price Disclaimer -->
             <div x-show="!loading" class="max-w-3xl mx-auto text-center" style="display: none;">
-                <span class="inline-block text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-4 py-1.5">
-                    ⓘ Showing parameters specific to tab: <span class="font-bold text-cyan-600" x-text="selectedDate"></span> (Price per KG)
+                <span class="inline-block text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-4 py-1.5">
+                    ⓘ Showing parameters specific to tab: <span class="font-bold text-cyan-600 dark:text-cyan-400" x-text="selectedDate"></span> (Price per KG)
                 </span>
             </div>
 
-            <!-- Custom Compact Mobile Cards Grid Configuration -->
             <div x-show="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" style="display: none;">
                 <template x-for="item in filteredItems" :key="item.name">
-                    <div class="premium-glow-card p-6 flex flex-col justify-between">
+                    <div class="premium-glow-card bg-white dark:bg-slate-800 p-6 flex flex-col justify-between border border-slate-200 dark:border-slate-700">
                         <div>
-                            <h3 class="text-lg font-extrabold text-slate-900 mb-3 tracking-tight truncate" x-text="item.name"></h3>
+                            <h3 class="text-lg font-extrabold text-slate-900 dark:text-white mb-3 tracking-tight truncate" x-text="item.name"></h3>
                             
-                            <div class="space-y-2.5 mb-4 bg-[#FAFAFA] p-4 rounded-lg border border-slate-100 text-sm">
+                            <div class="space-y-2.5 mb-4 bg-[#FAFAFA] dark:bg-slate-900 p-4 rounded-lg border border-slate-100 dark:border-slate-800 text-sm">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-slate-500">Current TruSea Website Price</span>
-                                    <span class="font-bold text-slate-700" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
+                                    <span class="text-slate-500 dark:text-slate-400">Current TruSea Website Price</span>
+                                    <span class="font-bold text-slate-700 dark:text-slate-300" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
                                 </div>
-                                <div class="flex justify-between items-center border-t border-slate-200/60 pt-2.5">
-                                    <span class="text-slate-900 font-bold flex items-center gap-1.5">
+                                <div class="flex justify-between items-center border-t border-slate-200/60 dark:border-slate-700 pt-2.5">
+                                    <span class="text-slate-900 dark:text-white font-bold flex items-center gap-1.5">
                                         Today's Target TruSea Price
-                                        <span :class="getTrend(item).class" class="px-1.5 py-0.25 bg-slate-100 border rounded font-mono" x-text="getTrend(item).symbol"></span>
+                                        <span :class="getTrend(item).class" class="px-1.5 py-0.25 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded font-mono" x-text="getTrend(item).symbol"></span>
                                     </span>
-                                    <span class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
+                                    <span class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-400 dark:to-blue-400" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
                                 </div>
-                                <div class="flex justify-between items-center border-t border-slate-200/60 pt-2.5">
-                                    <span class="text-slate-500">Difference</span>
-                                    <span :class="parseFloat(item.difference) < 0 ? 'text-emerald-600' : 'text-red-500'" class="font-bold" x-text="item.difference !== '-' ? item.difference : '-'"></span>
+                                <div class="flex justify-between items-center border-t border-slate-200/60 dark:border-slate-700 pt-2.5">
+                                    <span class="text-slate-500 dark:text-slate-400">Difference</span>
+                                    <span :class="parseFloat(item.difference) < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'" class="font-bold" x-text="item.difference !== '-' ? item.difference : '-'"></span>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="border-t border-slate-100 pt-3 space-y-2.5 text-sm text-slate-600">
+                        <div class="border-t border-slate-100 dark:border-slate-700 pt-3 space-y-2.5 text-sm text-slate-600 dark:text-slate-400">
                             <template x-if="item.competitors">
                                 <template x-for="[compName, compVal] in Object.entries(item.competitors)" :key="compName">
-                                    <div class="flex justify-between items-center bg-[#FAFAFA] p-2.5 rounded-lg border border-slate-100">
-                                        <span class="font-bold text-slate-600" x-text="compName"></span>
+                                    <div class="flex justify-between items-center bg-[#FAFAFA] dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                                        <span class="font-bold text-slate-600 dark:text-slate-400" x-text="compName"></span>
                                         <div class="flex items-center gap-2">
-                                            <span class="font-extrabold text-slate-900" x-text="compVal.price !== '-' ? '₹' + compVal.price + '/kg' : '-'"></span>
-                                            <span :class="compVal.status.toLowerCase().includes('in stock') ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'" 
+                                            <span class="font-extrabold text-slate-900 dark:text-white" x-text="compVal.price !== '-' ? '₹' + compVal.price + '/kg' : '-'"></span>
+                                            <span :class="compVal.status.toLowerCase().includes('in stock') ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/60' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-900/60'" 
                                                   class="text-xs font-bold px-2 py-1 rounded border" x-text="compVal.status || 'Sold Out'"></span>
                                         </div>
                                     </div>
