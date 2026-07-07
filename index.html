@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TruSea Price Tracker</title>
+    <title>TruSea Price Tracker (Last 7 Days)</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2306b6d4'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 11v1c0 1.66 1.34 3 3 3v2.93zm5.9-3.41c-.14-.38-.45-.69-.83-.83L15 13v-2c0-1.1-.9-2-2-2h-2V5.08c2.93.43 5.29 2.54 5.92 5.42h-1.92c-.5 0-.9-.4-.9-.9V8h-1V7h2c1.1 0 2-.9 2-2V4.26c2.42 1.72 4 4.54 4 7.74 0 1.35-.28 2.63-.78 3.8l-1.32-.87z'/></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -59,6 +59,7 @@
           webAppUrl: 'https://script.google.com/macros/s/AKfycbwOJPIxvqYTAEpH-XT8FGCcCnifwHZJQJFt6HCL-bUZaeNoMUGyxag2nAjQxiEPDsyeAg/exec',
           searchQuery: '', rawProducts: [], filteredItems: [],
           highestSeller: 'Calculating...', normalSeller: 'Calculating...',
+          rollingDaysCount: 1,
           loading: true, isSyncing: false, errorMessage: '', chartInstance: null,
           
           async initEngine() {
@@ -66,7 +67,7 @@
               await this.fetchLivePrices();
               this.loading = false;
 
-              // AUTO SYNC: 30000ms (30 seconds) க்கு ஒருமுறை தானாக background-ல் sync ஆகும்
+              // AUTO SYNC INTERLOCK: background automatic pool loop execution
               setInterval(async () => {
                   await this.fetchLivePrices();
               }, 30000);
@@ -78,8 +79,12 @@
                   let cacheBuster = new Date().getTime();
                   let response = await fetch(`${this.webAppUrl}?_cb=${cacheBuster}`);
                   let resData = await response.json();
+                  
                   this.rawProducts = resData.data || [];
+                  this.rollingDaysCount = resData.meta.activeDaysInRollingTrack || 1;
+                  
                   this.applyFilters();
+                  this.processAnalytics(resData.averages || []);
               } catch (e) {
                   this.errorMessage = 'Syncing latest live dataset parameters...';
               } finally {
@@ -90,35 +95,10 @@
           applyFilters() {
               let q = this.searchQuery.toLowerCase().trim();
               this.filteredItems = q ? this.rawProducts.filter(i => i.name.toLowerCase().includes(q)) : this.rawProducts;
-              this.calculateMetrics();
           },
-          calculateMetrics() {
-              if (this.rawProducts.length === 0) return;
-              
-              let compTotals = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
-              let compCounts = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
-              let totalTruSea = 0, countTruSea = 0;
-              
-              this.rawProducts.forEach(item => {
-                  let parsedTruSea = parseFloat(String(item.truSeaPerKg).replace(/[^\d.]/g, ''));
-                  if (!isNaN(parsedTruSea)) { totalTruSea += parsedTruSea; countTruSea++; }
-                  
-                  if (item.competitors) {
-                      Object.entries(item.competitors).forEach(([key, compValue]) => {
-                          let priceVal = parseFloat(String(compValue.price).replace(/[^\d.]/g, ''));
-                          if (!isNaN(priceVal)) {
-                              compTotals[key] = (compTotals[key] || 0) + priceVal;
-                              compCounts[key] = (compCounts[key] || 0) + 1;
-                          }
-                      });
-                  }
-              });
-              
-              let averages = [{ name: 'TruSea', avg: countTruSea ? totalTruSea / countTruSea : 0, isBrand: true }];
-              Object.keys(compTotals).forEach(key => {
-                  let finalAvg = compCounts[key] > 0 ? compTotals[key] / compCounts[key] : 0;
-                  averages.push({ name: key, avg: finalAvg, isBrand: false });
-              });
+
+          processAnalytics(averages) {
+              if (!averages || averages.length === 0) return;
               
               let competitorsOnly = averages.filter(c => !c.isBrand && c.avg > 0);
               competitorsOnly.sort((a, b) => b.avg - a.avg);
@@ -130,6 +110,7 @@
               
               setTimeout(() => this.renderChart(averages), 100);
           },
+
           renderChart(averages) {
               if (this.chartInstance) this.chartInstance.destroy();
               let canvasEl = document.getElementById('insightsChart');
@@ -168,8 +149,11 @@
 
     <div class="max-w-7xl mx-auto p-4 sm:p-6">
         <header class="mb-6 border-b border-slate-200 pb-3 flex justify-between items-center">
-            <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">TruSea <span class="text-cyan-600 font-normal">Price Tracker</span></h1>
-            <!-- Live Auto Sync Status Indicator -->
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">TruSea <span class="text-cyan-600 font-normal">Price Tracker</span></h1>
+                <p class="text-xs text-slate-400 font-semibold mt-0.5" x-text="'Tracking window: Last ' + rollingDaysCount + ' available days metrics'"></p>
+            </div>
+            
             <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">
                 <span class="relative flex h-2 w-2">
                     <span :class="isSyncing ? 'animate-ping bg-amber-400' : 'bg-emerald-500'" class="absolute inline-flex h-full w-full rounded-full opacity-75"></span>
@@ -179,7 +163,6 @@
             </div>
         </header>
 
-        <!-- Search input workspace link matrix -->
         <div class="mb-6 max-w-xl mx-auto">
             <div class="gemini-ai-search-container">
                 <div class="flex items-center w-full bg-white rounded-full px-4 py-2.5 shadow-xs">
@@ -191,15 +174,14 @@
         <main class="space-y-6">
             <div x-show="loading" class="text-center py-20 text-xs text-slate-400 font-semibold">Live Real-Time Active Sync Processing...</div>
 
-            <!-- Dashboard Analytics -->
             <div x-show="!loading" class="grid grid-cols-1 lg:grid-cols-3 gap-4" style="display: none;">
                 <div class="lg:col-span-1 flex flex-col gap-3">
                     <div class="bg-white p-4 rounded-xl border border-slate-200">
-                        <span class="text-xs uppercase font-bold text-red-500 block mb-1">🔴 Costly Market Vendor</span>
+                        <span class="text-xs uppercase font-bold text-red-500 block mb-1">🔴 Costly Market Vendor (7-day Avg)</span>
                         <div class="text-base font-black text-slate-900" x-text="highestSeller"></div>
                     </div>
                     <div class="bg-white p-4 rounded-xl border border-slate-200">
-                        <span class="text-xs uppercase font-bold text-emerald-600 block mb-1">🟢 Normal Market Vendor</span>
+                        <span class="text-xs uppercase font-bold text-emerald-600 block mb-1">🟢 Normal Market Vendor (7-day Avg)</span>
                         <div class="text-base font-black text-slate-900" x-text="normalSeller"></div>
                     </div>
                 </div>
@@ -208,21 +190,18 @@
                 </div>
             </div>
 
-            <!-- Per-KG Price Disclaimer -->
             <div x-show="!loading" class="max-w-3xl mx-auto text-center" style="display: none;">
                 <span class="inline-block text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-4 py-1.5">
-                    ⓘ All prices shown below are <span class="font-bold text-slate-700">Price per KG (₹/kg)</span>, not per piece or per pack
+                    ⓘ Dashboard averages represent the last rolling 7 days. Individual cards show today's active values.
                 </span>
             </div>
 
-            <!-- Custom Compact Mobile Cards Grid Configuration -->
             <div x-show="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" style="display: none;">
                 <template x-for="item in filteredItems" :key="item.name">
                     <div class="premium-glow-card p-6 flex flex-col justify-between">
                         <div>
                             <h3 class="text-lg font-extrabold text-slate-900 mb-3 tracking-tight truncate" x-text="item.name"></h3>
                             
-                            <!-- First 3 Mandatory Structural Elements -->
                             <div class="space-y-2.5 mb-4 bg-[#FAFAFA] p-4 rounded-lg border border-slate-100 text-sm">
                                 <div class="flex justify-between items-center">
                                     <span class="text-slate-500">Current TruSea Website Price</span>
@@ -239,7 +218,6 @@
                             </div>
                         </div>
                         
-                        <!-- Competitor Price and Stock Status Block -->
                         <div class="border-t border-slate-100 pt-3 space-y-2.5 text-sm text-slate-600">
                             <template x-if="item.competitors">
                                 <template x-for="[compName, compVal] in Object.entries(item.competitors)" :key="compName">
