@@ -10,7 +10,6 @@
     <meta property="og:description" content="Live Real-Time Seafood Price Analysis & Competitor Tracking Dataset Parameters." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://abdur-s.github.io/trusea-price-tracker/" />
-    <meta property="og:image" content="https://abdur-s.github.io/trusea-price-tracker/logo.png" />
     <meta property="og:site_name" content="TruSea Tracker" />
     
     <!-- Twitter Card Meta Tags -->
@@ -18,8 +17,9 @@
     <meta name="twitter:title" content="TruSea Price Tracker" />
     <meta name="twitter:description" content="Live Real-Time Seafood Price Analysis & Competitor Tracking Dataset Parameters." />
 
-    <!-- Browser Tab Favicon matching the Fish Analytics Graph Logo Design -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='42' stroke='%230284c7' stroke-width='6' fill='none'/><path d='M25 75 L45 50 L58 62 L80 25' stroke='%230284c7' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' fill='none'/><path d='M70 25 L80 25 L80 35' stroke='%230284c7' stroke-width='7' stroke-linecap='round' fill='none'/><path d='M35 52 C38 42, 48 33, 58 35 C66 36, 73 45, 71 52 C65 52, 55 46, 42 50 Z' fill='%230ea5e9' stroke='%231e293b' stroke-width='2'/><path d='M25 54 C30 52, 35 56, 38 62 C34 68, 28 66, 25 54 Z' fill='%230ea5e9' stroke='%231e293b' stroke-width='2'/><rect x='32' y='68' width='6' height='10' fill='%230284c7'/><rect x='44' y='62' width='6' height='16' fill='%230284c7'/><rect x='56' y='55' width='6' height='23' fill='%230284c7'/><rect x='68' y='45' width='6' height='33' fill='%230284c7'/></svg>">
+    <!-- 3D Fish Emoji Favicon Configuration -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🐟</text></svg>">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -48,6 +48,15 @@
             content: ''; position: absolute; inset: -1px; border-radius: 9999px;
             background: conic-gradient(from var(--gemini-bar-angle), #3085ff, #00f2fe, #4facfe, #9b51e0, #ff7beb, #3085ff);
             animation: geminiBarRotate 5s linear infinite; filter: blur(6px); opacity: 0.2; pointer-events: none; z-index: 1;
+        }
+
+        /* Fluid Shimmer Fade Title Animation Keyframes */
+        @keyframes titleGlowPulse {
+            0%, 100% { opacity: 0.95; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.01); }
+        }
+        .animated-tracker-title {
+            animation: titleGlowPulse 4s ease-in-out infinite;
         }
 
         .premium-glow-card {
@@ -267,30 +276,14 @@
       }" x-init="initEngine()">
 
     <div class="max-w-7xl mx-auto p-4 sm:p-6">
-        <!-- Header Section -->
+        <!-- Header Section with 3D fish icon accent and crisp custom typography -->
         <header class="mb-4 border-b border-slate-200 pb-3 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <!-- High Fidelity Vector Translation of Fish Graph Logo image -->
-                <svg class="h-10 w-auto" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="50" cy="50" r="42" stroke="url(#logoCircleGrad)" stroke-width="5" fill="none"/>
-                    <rect x="35" y="70" width="6" height="10" rx="1.5" fill="#0284C7" opacity="0.8"/>
-                    <rect x="47" y="64" width="6" height="16" rx="1.5" fill="#0284C7" opacity="0.8"/>
-                    <rect x="59" y="56" width="6" height="24" rx="1.5" fill="#0284C7" opacity="0.9"/>
-                    <rect x="71" y="44" width="6" height="36" rx="1.5" fill="#0284C7"/>
-                    <path d="M22 78 L42 50 L56 64 L82 24" stroke="#0284C7" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M70 24 L82 24 L82 36" stroke="#0284C7" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M34 53 C38 41, 50 31, 62 34 C71 36, 78 46, 75 54 C67 54, 56 47, 42 51 Z" fill="#0EA5E9" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round"/>
-                    <path d="M22 55 C27 52, 33 57, 36 64 C31 71, 25 68, 22 55 Z" fill="#0EA5E9" stroke="#1E293B" stroke-width="2.5" stroke-linejoin="round"/>
-                    <path d="M52 68 L60 59 L68 68" stroke="#38BDF8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                    <defs>
-                        <linearGradient id="logoCircleGrad" x1="8" y1="8" x2="92" y2="92" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#0284C7"/>
-                            <stop offset="0.5" stop-color="#0EA5E9"/>
-                            <stop offset="1" stop-color="#0369A1"/>
-                        </linearGradient>
-                    </defs>
-                </svg>
-                <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">TruSea Price Tracker</h1>
+            <div class="flex items-center gap-2.5 animated-tracker-title select-none">
+                <!-- 3D Fish Emoji Element -->
+                <span class="text-3xl sm:text-4xl filter drop-shadow-xs">🐟</span>
+                <h1 class="text-xl sm:text-2xl font-medium tracking-tight text-slate-700">
+                    <span class="font-black text-blue-600">TruSea</span> Price Tracker
+                </h1>
             </div>
             
             <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">
