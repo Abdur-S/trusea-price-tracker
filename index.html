@@ -148,7 +148,6 @@
           },
 
           calculateChartMetrics(isSearching) {
-              // Exact Specific Fish Match Logic for Live Chart Updates
               if (isSearching && this.filteredItems.length === 1) {
                   let singleItem = this.filteredItems[0];
                   this.chartTitle = `Live Price for: ${singleItem.name}`;
@@ -168,7 +167,6 @@
                   }
                   this.processAnalytics(specificAverages);
               } else {
-                  // Fallback to Overall Tab Level Average if viewing multiple or searching broad terms
                   this.chartTitle = isSearching ? `Average Market Match for: "${this.searchQuery}"` : 'Overall Market Average Price';
                   
                   let currentTabProducts = this.allMasterData[this.selectedDate] || [];
@@ -282,6 +280,7 @@
             </div>
         </header>
 
+        <!-- Dynamic Date Tab Switcher Layout Component -->
         <div x-show="!loading" class="mb-5 overflow-x-auto no-scrollbar flex items-center gap-2 pb-1.5 border-b border-slate-100">
             <template x-for="date in availableDates" :key="date">
                 <button @click="switchDateView(date)" 
@@ -292,6 +291,7 @@
             </template>
         </div>
 
+        <!-- Search Form Setup with Dynamic placeholder -->
         <div class="mb-4 max-w-xl mx-auto">
             <form @submit.prevent="applyFilters()">
                 <div class="gemini-ai-search-container">
@@ -309,6 +309,7 @@
             </form>
         </div>
 
+        <!-- Category Filtering Chips Layout Section -->
         <div x-show="!loading" class="mb-6 flex flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-5xl mx-auto">
             <template x-for="cat in ['All', 'Prawns', 'Crabs', 'Fillets', 'Fish']" :key="cat">
                 <button @click="selectedCategory = cat; applyFilters();"
@@ -322,6 +323,7 @@
         <main class="space-y-6">
             <div x-show="loading" class="text-center py-20 text-xs text-slate-400 font-semibold">Live Real-Time Active Sync Processing...</div>
 
+            <!-- Dashboard Analytics -->
             <div x-show="!loading" class="grid grid-cols-1 lg:grid-cols-3 gap-4" style="display: none;">
                 <div class="lg:col-span-1 flex flex-col gap-3">
                     <div class="bg-white p-4 rounded-xl border border-slate-200">
@@ -334,17 +336,20 @@
                     </div>
                 </div>
                 <div class="lg:col-span-2 bg-white p-4 rounded-xl border border-slate-200">
+                    <!-- Dynamic Chart Title Holder Element -->
                     <div class="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider" x-text="chartTitle"></div>
                     <div class="relative h-[130px] w-full"><canvas id="insightsChart"></canvas></div>
                 </div>
             </div>
 
+            <!-- Per-KG Price Disclaimer -->
             <div x-show="!loading" class="max-w-3xl mx-auto text-center" style="display: none;">
                 <span class="inline-block text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-4 py-1.5">
                     ⓘ Showing parameters specific to tab: <span class="font-bold text-cyan-600" x-text="selectedDate"></span> (Price per KG)
                 </span>
             </div>
 
+            <!-- Custom Compact Mobile Cards Grid Configuration -->
             <div x-show="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" style="display: none;">
                 <template x-for="item in filteredItems" :key="item.name">
                     <div class="premium-glow-card p-6 flex flex-col justify-between">
