@@ -5,18 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TruSea Price Tracker</title>
     
-    <!-- Open Graph (OG) Meta Tags for Social Media Preview Cards -->
     <meta property="og:title" content="TruSea Price Tracker" />
     <meta property="og:description" content="Live Real-Time Seafood Price Analysis & Competitor Tracking Dataset Parameters." />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="TruSea Tracker" />
     
-    <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="TruSea Price Tracker" />
     <meta name="twitter:description" content="Live Real-Time Seafood Price Analysis & Competitor Tracking Dataset Parameters." />
 
-    <!-- 3D Fish Emoji Favicon Configuration -->
     <link class="js-favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🐟</text></svg>">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -55,7 +52,7 @@
         }
 
         @keyframes titleGlowPulse {
-            0%, 100__% { opacity: 0.95; transform: scale(1); }
+            0%, 100% { opacity: 0.95; transform: scale(1); }
             50% { opacity: 1; transform: scale(1.01); }
         }
         .animated-tracker-title {
@@ -111,16 +108,13 @@
               } else {
                   document.documentElement.classList.remove('dark');
               }
-
               this.loading = true;
               await this.fetchLivePrices(true);
               this.loading = false;
-
               setInterval(async () => {
                   await this.fetchLivePrices(false);
               }, 30000);
           },
-
           toggleTheme() {
               this.darkMode = !this.darkMode;
               localStorage.setItem('darkMode', this.darkMode);
@@ -133,7 +127,6 @@
                   this.processAnalytics(this.allMasterAverages[this.selectedDate] || []);
               }
           },
-
           async fetchLivePrices(isFirstLoad) {
               this.isSyncing = true;
               try {
@@ -157,60 +150,41 @@
                   this.isSyncing = false;
               }
           },
-
           switchDateView(dateLabel) {
               this.selectedDate = dateLabel;
               this.applyFilters();
               this.processAnalytics(this.allMasterAverages[dateLabel] || []);
           },
-
           getTrend(item) {
               let idx = this.availableDates.indexOf(this.selectedDate);
               let defaultTrend = { symbol: '➖', class: 'bg-slate-50 text-slate-500 border-slate-200' };
-              
               if (idx === -1 || idx === this.availableDates.length - 1) return defaultTrend;
-              
               let prevDate = this.availableDates[idx + 1];
               let prevItems = this.allMasterData[prevDate] || [];
               let prevItem = prevItems.find(p => p.name === item.name);
-              
               if (!prevItem || prevItem.truSeaPerKg === '-' || item.truSeaPerKg === '-') return defaultTrend;
-              
               let currentPrice = parseFloat(String(item.truSeaPerKg).replace(/[^\d.]/g, ''));
               let prevPrice = parseFloat(String(prevItem.truSeaPerKg).replace(/[^\d.]/g, ''));
-              
               if (isNaN(currentPrice) || isNaN(prevPrice)) return defaultTrend;
               if (currentPrice > prevPrice) return { symbol: '⬆️', class: 'bg-rose-50 text-rose-600 border-rose-200 font-bold' };
               if (currentPrice < prevPrice) return { symbol: '⬇️', class: 'bg-emerald-50 text-emerald-600 border-emerald-200 font-bold' };
               return defaultTrend;
           },
-
           applyFilters() {
               let currentTabProducts = this.allMasterData[this.selectedDate] || [];
-              let q = this.searchQuery.toLowerCase().trim();
-              
               let out = currentTabProducts;
-              
-              if (q) {
-                  out = out.filter(i => i.name.toLowerCase().includes(q));
-              }
-              
               if (this.selectedCategory !== 'All') {
                   let matchTerm = this.selectedCategory.toLowerCase();
                   if (matchTerm === 'prawns') matchTerm = 'prawn';
                   if (matchTerm === 'crabs') matchTerm = 'crab';
                   out = out.filter(i => i.name.toLowerCase().includes(matchTerm));
               }
-              
               this.filteredItems = out;
           },
-
           processAnalytics(averages) {
               if (!averages || averages.length === 0) return;
-              
               let competitorsOnly = averages.filter(c => !c.isBrand && c.avg > 0);
               competitorsOnly.sort((a, b) => b.avg - a.avg);
-              
               if (competitorsOnly.length > 0) {
                   this.highestSeller = competitorsOnly[0].name + ' (₹' + Math.round(competitorsOnly[0].avg) + '/KG)';
                   this.normalSeller = competitorsOnly[competitorsOnly.length - 1].name + ' (₹' + Math.round(competitorsOnly[competitorsOnly.length - 1].avg) + '/KG)';
@@ -218,19 +192,15 @@
                   this.highestSeller = 'N/A';
                   this.normalSeller = 'N/A';
               }
-              
               setTimeout(() => this.renderChart(averages), 100);
           },
-
           renderChart(averages) {
               if (this.chartInstance) this.chartInstance.destroy();
               let canvasEl = document.getElementById('insightsChart');
               if (!canvasEl) return;
-              
               let isDark = this.darkMode;
               let axisColor = isDark ? '#94a3b8' : '#64748b';
               let gridColor = isDark ? '#334155' : '#f1f5f9';
-              
               this.chartInstance = new Chart(canvasEl.getContext('2d'), {
                   type: 'bar',
                   data: {
@@ -262,18 +232,14 @@
                   }
               });
           },
-
           exportDataset(type) {
               if (type === 'pdf') {
                   window.print();
                   return;
               }
-              
               let csvContent = '';
               let headers = ['Fish Description', 'TenderCuts Price', 'Licious Price', 'Fresh Ma Price', 'FreshToHome Price', 'Supreme Price', 'Current TruSea Web Price', 'Todays Target Price'];
-              
               csvContent += headers.join(type === 'csv' ? ',' : '\t') + '\n';
-              
               this.filteredItems.forEach(item => {
                   let row = [
                       `"${item.name}"`,
@@ -287,7 +253,6 @@
                   ];
                   csvContent += row.join(type === 'csv' ? ',' : '\t') + '\n';
               });
-
               let blobType = type === 'csv' ? 'text/csv;charset=utf-8;' : 'application/vnd.ms-excel;charset=utf-8;';
               let extension = type === 'csv' ? '.csv' : '.xls';
               let blob = new Blob([csvContent], { type: blobType });
@@ -301,7 +266,6 @@
       }" x-init="initEngine()">
 
     <div class="max-w-7xl mx-auto p-4 sm:p-6">
-        <!-- Header Section -->
         <header class="mb-4 border-b border-slate-200 dark:border-slate-700 pb-3 flex justify-between items-center">
             <div class="flex items-center gap-2.5 animated-tracker-title select-none min-w-0">
                 <span class="text-2xl sm:text-4xl filter drop-shadow-xs flex-shrink-0">🐟</span>
@@ -329,7 +293,6 @@
             </div>
         </header>
 
-        <!-- Main Navigation View Tabs -->
         <div class="mb-5 flex border-b border-slate-200 dark:border-slate-700">
             <button @click="activeViewTab = 'dashboard'; applyFilters()" 
                     :class="activeViewTab === 'dashboard' ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold border-b-2' : 'text-slate-500 dark:text-slate-400 font-medium'"
@@ -343,12 +306,9 @@
             </button>
         </div>
 
-        <!-- Global Base Wrapper Loader Screen -->
         <div x-show="loading" class="text-center py-20 text-xs text-slate-400 dark:text-slate-500 font-semibold">Live Real-Time Active Sync Processing...</div>
 
-        <!-- Master View Handler Core Container Box -->
         <div x-show="!loading" style="display: none;">
-            <!-- Unified Date Tab Lineup (Shows on both layouts) -->
             <div class="mb-5 overflow-x-auto no-scrollbar flex items-center gap-2 pb-1.5">
                 <template x-for="date in availableDates" :key="date">
                     <button @click="switchDateView(date)" 
@@ -359,7 +319,6 @@
                 </template>
             </div>
 
-            <!-- Global Unified Filter Chips -->
             <div class="mb-6 flex flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-7xl mx-auto">
                 <template x-for="cat in ['All', 'Premium Slices', 'Regular Slices', 'Thick Slices', 'Fillets', 'Curry Cuts', 'Prawns', 'Crabs']" :key="cat">
                     <button @click="selectedCategory = cat; applyFilters();"
@@ -370,7 +329,6 @@
                 </template>
             </div>
 
-            <!-- VIEW 1: ANALYTICS DASHBOARD FRAME -->
             <div x-show="activeViewTab === 'dashboard'">
                 <main class="space-y-6">
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -436,7 +394,6 @@
                 </main>
             </div>
 
-            <!-- VIEW 2: TABULAR MATRIX VIEW -->
             <div x-show="activeViewTab === 'table'" class="space-y-4 print-table-wrapper">
                 <div class="flex justify-between items-center">
                     <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">
@@ -446,7 +403,7 @@
                     <div class="relative inline-block text-left">
                         <button @click="downloadMenuOpen = !downloadMenuOpen" @click.away="downloadMenuOpen = false" class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 text-xs rounded-lg shadow-sm transition">
                             📥 Export Options
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div x-show="downloadMenuOpen" style="display: none;" class="absolute right-0 mt-2 w-36 rounded-xl bg-white dark:bg-slate-800 shadow-lg border border-slate-100 dark:border-slate-700 z-50 overflow-hidden divide-y divide-slate-100 dark:divide-slate-700 text-xs">
                             <button @click="exportDataset('pdf')" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 font-medium">📄 Export PDF</button>
