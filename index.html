@@ -29,13 +29,6 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        @property --gemini-bar-angle {
-            syntax: '<angle>'; initial-value: 0deg; inherits: false;
-        }
-        @keyframes geminiBarRotate {
-            0% { --gemini-bar-angle: 0deg; } 100% { --gemini-bar-angle: 360deg; }
-        }
-
         @keyframes titleGlowPulse {
             0%, 100% { opacity: 0.95; transform: scale(1); }
             50% { opacity: 1; transform: scale(1.01); }
@@ -61,7 +54,7 @@
         .premium-glow-card:hover::before { opacity: 1; animation: cardGlowAnimation 3s linear infinite; }
         @keyframes cardGlowAnimation { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
-        /* Print CSS Configuration Rules for perfect PDF Auto-Alignment */
+        /* Print Media Layout configuration rules for exact alignment */
         @media print {
             body { background: white !important; color: black !important; padding: 0 !important; margin: 0 !important; }
             header, nav, button, .flex { display: none !important; }
@@ -69,14 +62,13 @@
             table { width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; font-size: 10px !important; }
             th, td { padding: 6px !important; border: 1px solid #cbd5e1 !important; word-wrap: break-word !important; }
             th { background-color: #f8fafc !important; color: black !important; font-weight: bold !important; }
-            .bg-blue-100\/50, .bg-blue-500\/10 { background-color: #f0fdfa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .bg-blue-100\/50, .bg-blue-500\/10 { background-color: #e0f2fe !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
     </style>
 </head>
 <body class="bg-[#F8FAFC] dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen pb-12 transition-colors duration-300"
       x-data="{
           webAppUrl: 'https://script.google.com/macros/s/AKfycbyeeaWjBFjCfEZ_KbWyvGBgAkLzxUaP2P8WrktZwUZClmn40pXPQdlpjUEycssZZ014Gw/exec',
-          searchQuery: '', 
           allMasterData: {}, 
           allMasterAverages: {},
           availableDates: [],
@@ -85,7 +77,7 @@
           highestSeller: 'Calculating...', normalSeller: 'Calculating...',
           loading: true, isSyncing: false, errorMessage: '', chartInstance: null,
           selectedCategory: 'All',
-          activeViewTab: 'dashboard', 
+          activeViewTab: 'dashboard',
           downloadMenuOpen: false,
           darkMode: localStorage.getItem('darkMode') === 'true',
           
@@ -95,16 +87,13 @@
               } else {
                   document.documentElement.classList.remove('dark');
               }
-
               this.loading = true;
               await this.fetchLivePrices(true);
               this.loading = false;
-
               setInterval(async () => {
                   await this.fetchLivePrices(false);
               }, 30000);
           },
-
           toggleTheme() {
               this.darkMode = !this.darkMode;
               localStorage.setItem('darkMode', this.darkMode);
@@ -117,7 +106,6 @@
                   this.processAnalytics(this.allMasterAverages[this.selectedDate] || []);
               }
           },
-
           async fetchLivePrices(isFirstLoad) {
               this.isSyncing = true;
               try {
@@ -141,54 +129,26 @@
                   this.isSyncing = false;
               }
           },
-
           switchDateView(dateLabel) {
               this.selectedDate = dateLabel;
               this.applyFilters();
               this.processAnalytics(this.allMasterAverages[dateLabel] || []);
           },
-
-          getTrend(item) {
-              let idx = this.availableDates.indexOf(this.selectedDate);
-              let defaultTrend = { symbol: '➖', class: 'bg-slate-50 text-slate-500 border-slate-200' };
-              
-              if (idx === -1 || idx === this.availableDates.length - 1) return defaultTrend;
-              
-              let prevDate = this.availableDates[idx + 1];
-              let prevItems = this.allMasterData[prevDate] || [];
-              let prevItem = prevItems.find(p => p.name === item.name);
-              
-              if (!prevItem || prevItem.truSeaPerKg === '-' || item.truSeaPerKg === '-') return defaultTrend;
-              
-              let currentPrice = parseFloat(String(item.truSeaPerKg).replace(/[^\d.]/g, ''));
-              let prevPrice = parseFloat(String(prevItem.truSeaPerKg).replace(/[^\d.]/g, ''));
-              
-              if (isNaN(currentPrice) || isNaN(prevPrice)) return defaultTrend;
-              if (currentPrice > prevPrice) return { symbol: '⬆️', class: 'bg-rose-50 text-rose-600 border-rose-200 font-bold' };
-              if (currentPrice < prevPrice) return { symbol: '⬇️', class: 'bg-emerald-50 text-emerald-600 border-emerald-200 font-bold' };
-              return defaultTrend;
-          },
-
           applyFilters() {
               let currentTabProducts = this.allMasterData[this.selectedDate] || [];
               let out = currentTabProducts;
-              
               if (this.selectedCategory !== 'All') {
                   let matchTerm = this.selectedCategory.toLowerCase();
                   if (matchTerm === 'prawns') matchTerm = 'prawn';
                   if (matchTerm === 'crabs') matchTerm = 'crab';
                   out = out.filter(i => i.name.toLowerCase().includes(matchTerm));
               }
-              
               this.filteredItems = out;
           },
-
           processAnalytics(averages) {
               if (!averages || averages.length === 0) return;
-              
               let competitorsOnly = averages.filter(c => !c.isBrand && c.avg > 0);
               competitorsOnly.sort((a, b) => b.avg - a.avg);
-              
               if (competitorsOnly.length > 0) {
                   this.highestSeller = competitorsOnly[0].name + ' (₹' + Math.round(competitorsOnly[0].avg) + '/KG)';
                   this.normalSeller = competitorsOnly[competitorsOnly.length - 1].name + ' (₹' + Math.round(competitorsOnly[competitorsOnly.length - 1].avg) + '/KG)';
@@ -196,19 +156,15 @@
                   this.highestSeller = 'N/A';
                   this.normalSeller = 'N/A';
               }
-              
               setTimeout(() => this.renderChart(averages), 100);
           },
-
           renderChart(averages) {
               if (this.chartInstance) this.chartInstance.destroy();
               let canvasEl = document.getElementById('insightsChart');
               if (!canvasEl) return;
-              
               let isDark = this.darkMode;
               let axisColor = isDark ? '#94a3b8' : '#64748b';
               let gridColor = isDark ? '#334155' : '#f1f5f9';
-              
               this.chartInstance = new Chart(canvasEl.getContext('2d'), {
                   type: 'bar',
                   data: {
@@ -240,18 +196,14 @@
                   }
               });
           },
-
           exportDataset(type) {
               if (type === 'pdf') {
                   window.print();
                   return;
               }
-              
               let csvContent = '';
               let headers = ['Fish Description', 'TenderCuts Price', 'Licious Price', 'Fresh Ma Price', 'FreshToHome Price', 'Supreme Price', 'Current TruSea Web Price', 'Todays Target Price'];
-              
               csvContent += headers.join(type === 'csv' ? ',' : '\t') + '\n';
-              
               this.filteredItems.forEach(item => {
                   let row = [
                       `"${item.name}"`,
@@ -265,7 +217,6 @@
                   ];
                   csvContent += row.join(type === 'csv' ? ',' : '\t') + '\n';
               });
-
               let blobType = type === 'csv' ? 'text/csv;charset=utf-8;' : 'application/vnd.ms-excel;charset=utf-8;';
               let extension = type === 'csv' ? '.csv' : '.xls';
               let blob = new Blob([csvContent], { type: blobType });
@@ -373,7 +324,6 @@
                                         <div class="flex justify-between items-center border-t border-slate-200/60 dark:border-slate-700/60 pt-2.5">
                                             <span class="text-slate-900 dark:text-slate-200 font-bold flex items-center gap-1.5">
                                                 Today's Target TruSea Price
-                                                <span :class="getTrend(item).class" class="px-2 py-0.5 rounded border text-[10px] flex items-center justify-center min-w-[24px]" x-text="getTrend(item).symbol"></span>
                                             </span>
                                             <span class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-400 dark:to-blue-400" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
                                         </div>
