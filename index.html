@@ -89,7 +89,7 @@
           highestSeller: 'Calculating...', normalSeller: 'Calculating...',
           loading: true, isSyncing: false, errorMessage: '', chartInstance: null,
           selectedCategory: 'All',
-          activeViewTab: 'dashboard', // Controls view switching between 'dashboard' and 'table'
+          activeViewTab: 'dashboard', 
           darkMode: localStorage.getItem('darkMode') === 'true',
           
           async initEngine() {
@@ -439,7 +439,7 @@
                                                 <span class="font-bold text-slate-600 dark:text-slate-300" x-text="compName"></span>
                                                 <div class="flex items-center gap-2 max-w-[65%] text-right">
                                                     <span class="font-extrabold text-slate-900 dark:text-slate-100 whitespace-nowrap" 
-                                                          x-show="!compVal.status.toLowerCase().includes('not available')" 
+                                                          x-show="!compVal.status.toLowerCase().includes('not available') && !compVal.status.toLowerCase().includes('sold out')" 
                                                           x-text="compVal.price !== '-' ? '₹' + compVal.price + '/kg' : '-'"></span>
                                                     <span :class="{
                                                             'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900': compVal.status.toLowerCase().includes('in stock'),
@@ -464,64 +464,79 @@
             <div class="space-y-4">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">
-                        📋 Live Master Dataset Spreadsheet Matrix • Active Sheet: <span class="text-blue-600 dark:text-blue-400 font-bold" x-text="availableDates[0]"></span>
+                        📋 Master Price Matrix • Active Sheet: <span class="text-blue-600 dark:text-blue-400 font-bold" x-text="availableDates[0]"></span>
                     </p>
                     
-                    <input x-model="searchQuery" @input="applyFilters()" type="text" placeholder="Filter tabular fishes..." 
+                    <input x-model="searchQuery" @input="applyFilters()" type="text" placeholder="Filter table fishes..." 
                            class="px-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none text-slate-700 dark:text-slate-200 w-full sm:w-64">
                 </div>
 
-                <div class="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs bg-white dark:bg-slate-800">
-                    <table class="w-full border-collapse text-left text-xs">
+                <div class="w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800">
+                    <table class="w-full table-auto border-collapse text-left text-[11px] sm:text-xs">
                         <thead>
                             <tr class="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider">
-                                <th class="p-3.5 whitespace-nowrap min-w-[180px]">Fish Description</th>
-                                <th class="p-3.5 whitespace-nowrap text-center">TenderCuts Price</th>
-                                <th class="p-3.5 whitespace-nowrap text-center">Licious Price</th>
-                                <th class="p-3.5 whitespace-nowrap text-center">Fresh Ma Price</th>
-                                <th class="p-3.5 whitespace-nowrap text-center">FreshToHome Price</th>
-                                <th class="p-3.5 whitespace-nowrap text-center">Supreme Price</th>
-                                <th class="p-3.5 whitespace-nowrap text-center bg-blue-50/40 dark:bg-blue-950/20 border-l border-slate-200 dark:border-slate-700/60">Current TruSea Web Price</th>
-                                <th class="p-3.5 whitespace-nowrap text-center bg-blue-50/60 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-black">Today's Target Price</th>
+                                <th class="p-3">Fish Description</th>
+                                <th class="p-3 text-center">TenderCuts</th>
+                                <th class="p-3 text-center">Licious</th>
+                                <th class="p-3 text-center">Fresh Ma</th>
+                                <th class="p-3 text-center">FreshToHome</th>
+                                <th class="p-3 text-center">Supreme</th>
+                                <th class="p-3 text-center bg-blue-100/70 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-l border-slate-200 dark:border-slate-700 font-extrabold">Current TruSea Web</th>
+                                <th class="p-3 text-center bg-blue-600 dark:bg-blue-600 text-white font-black rounded-tr-xl">Today's Target Price</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 dark:divide-slate-700/60 font-medium text-slate-700 dark:text-slate-300">
                             <template x-for="item in filteredItems" :key="item.name">
                                 <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
-                                    <td class="p-3.5 font-bold text-slate-900 dark:text-slate-100 truncate" x-text="item.name"></td>
+                                    <td class="p-2.5 font-bold text-slate-900 dark:text-slate-100 max-w-[160px] sm:max-w-none truncate" x-text="item.name"></td>
                                     
-                                    <td class="p-3.5 text-center font-mono">
-                                        <span x-text="item.competitors['TenderCuts'] && item.competitors['TenderCuts'].price !== '-' ? '₹' + item.competitors['TenderCuts'].price : '-'"></span>
+                                    <td class="p-2.5 text-center font-mono">
+                                        <span x-show="!item.competitors['TenderCuts'].status.toLowerCase().includes('not available') && !item.competitors['TenderCuts'].status.toLowerCase().includes('sold out')" 
+                                              x-text="item.competitors['TenderCuts'] && item.competitors['TenderCuts'].price !== '-' ? '₹' + item.competitors['TenderCuts'].price : '-'"></span>
+                                        <span class="text-[10px] text-rose-600 font-bold" x-show="item.competitors['TenderCuts'].status.toLowerCase().includes('sold out')">Sold Out</span>
+                                        <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['TenderCuts'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
-                                    <td class="p-3.5 text-center font-mono">
-                                        <span x-text="item.competitors['Licious'] && item.competitors['Licious'].price !== '-' ? '₹' + item.competitors['Licious'].price : '-'"></span>
+                                    <td class="p-2.5 text-center font-mono">
+                                        <span x-show="!item.competitors['Licious'].status.toLowerCase().includes('not available') && !item.competitors['Licious'].status.toLowerCase().includes('sold out')"
+                                              x-text="item.competitors['Licious'] && item.competitors['Licious'].price !== '-' ? '₹' + item.competitors['Licious'].price : '-'"></span>
+                                        <span class="text-[10px] text-rose-600 font-bold" x-show="item.competitors['Licious'].status.toLowerCase().includes('sold out')">Sold Out</span>
+                                        <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Licious'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
-                                    <td class="p-3.5 text-center font-mono">
-                                        <span x-text="item.competitors['Fresh Ma'] && item.competitors['Fresh Ma'].price !== '-' ? '₹' + item.competitors['Fresh Ma'].price : '-'"></span>
+                                    <td class="p-2.5 text-center font-mono">
+                                        <span x-show="!item.competitors['Fresh Ma'].status.toLowerCase().includes('not available') && !item.competitors['Fresh Ma'].status.toLowerCase().includes('sold out')"
+                                              x-text="item.competitors['Fresh Ma'] && item.competitors['Fresh Ma'].price !== '-' ? '₹' + item.competitors['Fresh Ma'].price : '-'"></span>
+                                        <span class="text-[10px] text-rose-600 font-bold" x-show="item.competitors['Fresh Ma'].status.toLowerCase().includes('sold out')">Sold Out</span>
+                                        <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Fresh Ma'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
-                                    <td class="p-3.5 text-center font-mono">
-                                        <span x-text="item.competitors['Fresh To Home'] && item.competitors['Fresh To Home'].price !== '-' ? '₹' + item.competitors['Fresh To Home'].price : '-'"></span>
+                                    <td class="p-2.5 text-center font-mono">
+                                        <span x-show="!item.competitors['Fresh To Home'].status.toLowerCase().includes('not available') && !item.competitors['Fresh To Home'].status.toLowerCase().includes('sold out')"
+                                              x-text="item.competitors['Fresh To Home'] && item.competitors['Fresh To Home'].price !== '-' ? '₹' + item.competitors['Fresh To Home'].price : '-'"></span>
+                                        <span class="text-[10px] text-rose-600 font-bold" x-show="item.competitors['Fresh To Home'].status.toLowerCase().includes('sold out')">Sold Out</span>
+                                        <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Fresh To Home'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
-                                    <td class="p-3.5 text-center font-mono">
-                                        <span x-text="item.competitors['Supreme Sea Foods'] && item.competitors['Supreme Sea Foods'].price !== '-' ? '₹' + item.competitors['Supreme Sea Foods'].price : '-'"></span>
+                                    <td class="p-2.5 text-center font-mono">
+                                        <span x-show="!item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('not available') && !item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('sold out')"
+                                              x-text="item.competitors['Supreme Sea Foods'] && item.competitors['Supreme Sea Foods'].price !== '-' ? '₹' + item.competitors['Supreme Sea Foods'].price : '-'"></span>
+                                        <span class="text-[10px] text-rose-600 font-bold" x-show="item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('sold out')">Sold Out</span>
+                                        <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
-                                    <td class="p-3.5 text-center font-mono bg-blue-50/20 dark:bg-blue-950/10 border-l border-slate-200 dark:border-slate-700/60 font-semibold text-slate-600 dark:text-slate-400">
+                                    <td class="p-2.5 text-center font-mono bg-blue-100/50 dark:bg-blue-950/20 border-l border-slate-200 dark:border-slate-700 font-bold text-blue-900 dark:text-blue-300">
                                         <span x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
                                     </td>
                                     
-                                    <td class="p-3.5 text-center font-mono bg-blue-50/40 dark:bg-blue-950/20 font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-400 dark:to-cyan-400 text-sm">
+                                    <td class="p-2.5 text-center font-mono bg-blue-500/10 dark:bg-blue-500/20 font-black text-blue-600 dark:text-blue-400 text-xs sm:text-sm">
                                         <span x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
                                     </td>
                                 </tr>
                             </template>
                             <template x-if="filteredItems.length === 0">
                                 <tr>
-                                    <td colspan="8" class="p-8 text-center text-slate-400 font-medium">No seafood matching parameters found in this sheet query.</td>
+                                    <td colspan="8" class="p-8 text-center text-slate-400 font-medium">No seafood data elements discovered matching filters.</td>
                                 </tr>
                             </template>
                         </tbody>
