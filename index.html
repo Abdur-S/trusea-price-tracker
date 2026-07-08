@@ -268,7 +268,7 @@
                           legend: { display: false },
                           tooltip: {
                               enabled: true,
-                              backgroundColor: '#1e293b',
+                              backgroundColor: isDark ? '#334155' : '#1e293b',
                               titleColor: '#ffffff',
                               titleFont: { size: 13, weight: 'bold' },
                               bodyColor: '#38bdf8',
@@ -419,7 +419,7 @@
                             <template x-if="item.competitors">
                                 <template x-for="[compName, compVal] in Object.entries(item.competitors)" :key="compName">
                                     <div class="flex justify-between items-center bg-[#FAFAFA] dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
-                                        <span class="font-bold text-slate-600 dark:text-slate-300" x-text="compName"></span>
+                                        <span class="font-bold text-slate-600 dark:text-slate-400" x-text="compName"></span>
                                         <div class="flex items-center gap-2 max-w-[65%] text-right">
                                             <span class="font-extrabold text-slate-900 dark:text-slate-100 whitespace-nowrap" 
                                                   x-show="!compVal.status.toLowerCase().includes('not available')" 
@@ -429,7 +429,8 @@
                                                     'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-900': compVal.status.toLowerCase().includes('sold out'),
                                                     'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-600': compVal.status.toLowerCase().includes('not available')
                                                   }" 
-                                                  class="text-xs font-bold px-2 py-1 rounded border inline-block" \n                                                  x-text="compVal.status"></span>
+                                                  class="text-xs font-bold px-2 py-1 rounded border inline-block" 
+                                                  x-text="compVal.status"></span>
                                         </div>
                                     </div>
                                 </template>
