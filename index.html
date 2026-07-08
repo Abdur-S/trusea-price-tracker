@@ -5,20 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TruSea Price Tracker</title>
     
-    <!-- Open Graph (OG) Meta Tags for Social Media Preview Cards -->
     <meta property="og:title" content="TruSea Price Tracker" />
     <meta property="og:description" content="Live Real-Time Seafood Price Analysis & Competitor Tracking Dataset Parameters." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://abdur-s.github.io/trusea-price-tracker/" />
     <meta property="og:site_name" content="TruSea Tracker" />
     
-    <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="TruSea Price Tracker" />
     <meta name="twitter:description" content="Live Real-Time Seafood Price Analysis & Competitor Tracking Dataset Parameters." />
 
-    <!-- 3D Fish Emoji Favicon Configuration -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🐟</text></svg>">
+    <link class="js-favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🐟</text></svg>">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -275,7 +271,6 @@
       }" x-init="initEngine()">
 
     <div class="max-w-7xl mx-auto p-4 sm:p-6">
-        <!-- Header Section with 3D fish icon accent and crisp custom typography -->
         <header class="mb-4 border-b border-slate-200 pb-3 flex justify-between items-center">
             <div class="flex items-center gap-2.5 animated-tracker-title select-none">
                 <span class="text-3xl sm:text-4xl filter drop-shadow-xs">🐟</span>
@@ -293,7 +288,6 @@
             </div>
         </header>
 
-        <!-- Dynamic Date Tab Switcher Layout Component -->
         <div x-show="!loading" class="mb-5 overflow-x-auto no-scrollbar flex items-center gap-2 pb-1.5 border-b border-slate-100">
             <template x-for="date in availableDates" :key="date">
                 <button @click="switchDateView(date)" 
@@ -304,7 +298,6 @@
             </template>
         </div>
 
-        <!-- Search Form Setup -->
         <div class="mb-4 max-w-xl mx-auto">
             <form @submit.prevent="applyFilters()">
                 <div class="gemini-ai-search-container">
@@ -322,7 +315,6 @@
             </form>
         </div>
 
-        <!-- Category Filtering Chips Layout Section -->
         <div x-show="!loading" class="mb-6 flex flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-5xl mx-auto">
             <template x-for="cat in ['All', 'Prawns', 'Crabs', 'Fillets', 'Fish']" :key="cat">
                 <button @click="selectedCategory = cat; applyFilters();"
@@ -336,7 +328,6 @@
         <main class="space-y-6">
             <div x-show="loading" class="text-center py-20 text-xs text-slate-400 font-semibold">Live Real-Time Active Sync Processing...</div>
 
-            <!-- Dashboard Analytics -->
             <div x-show="!loading" class="grid grid-cols-1 lg:grid-cols-3 gap-4" style="display: none;">
                 <div class="lg:col-span-1 flex flex-col gap-3">
                     <div class="bg-white p-4 rounded-xl border border-slate-200">
@@ -353,14 +344,12 @@
                 </div>
             </div>
 
-            <!-- Per-KG Price Disclaimer -->
             <div x-show="!loading" class="max-w-3xl mx-auto text-center" style="display: none;">
                 <span class="inline-block text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-4 py-1.5">
                     ⓘ Showing parameters specific to tab: <span class="font-bold text-cyan-600" x-text="selectedDate"></span> (Price per KG)
                 </span>
             </div>
 
-            <!-- Custom Compact Mobile Cards Grid Configuration -->
             <div x-show="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" style="display: none;">
                 <template x-for="item in filteredItems" :key="item.name">
                     <div class="premium-glow-card p-6 flex flex-col justify-between">
@@ -386,19 +375,15 @@
                             </div>
                         </div>
                         
-                        <!-- Competitor Price and New Status Block -->
                         <div class="border-t border-slate-100 pt-3 space-y-2.5 text-sm text-slate-600">
                             <template x-if="item.competitors">
                                 <template x-for="[compName, compVal] in Object.entries(item.competitors)" :key="compName">
                                     <div class="flex justify-between items-center bg-[#FAFAFA] p-2.5 rounded-lg border border-slate-100">
                                         <span class="font-bold text-slate-600" x-text="compName"></span>
                                         <div class="flex items-center gap-2 max-w-[65%] text-right">
-                                            <!-- Conditionally render price text only if product is listed/available -->
                                             <span class="font-extrabold text-slate-900 whitespace-nowrap" 
                                                   x-show="!compVal.status.toLowerCase().includes('not available')" 
                                                   x-text="compVal.price !== '-' ? '₹' + compVal.price + '/kg' : '-'"></span>
-                                            
-                                            <!-- Adaptive Color Coding for In Stock, Sold Out, and Not Available statuses -->
                                             <span :class="{
                                                     'bg-emerald-50 text-emerald-700 border-emerald-200': compVal.status.toLowerCase().includes('in stock'),
                                                     'bg-rose-50 text-rose-700 border-rose-200': compVal.status.toLowerCase().includes('sold out'),
