@@ -17,7 +17,13 @@
     <link class="js-favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🐟</text></svg>">
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        // Tailwind configuration configuration to toggle dark mode class dynamically
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
+    <script remove-me defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
@@ -47,7 +53,7 @@
         }
 
         @keyframes titleGlowPulse {
-            0%, 100% { opacity: 0.95; transform: scale(1); }
+            0%, 100__% { opacity: 0.95; transform: scale(1); }
             50% { opacity: 1; transform: scale(1.01); }
         }
         .animated-tracker-title {
@@ -55,7 +61,7 @@
         }
 
         .premium-glow-card {
-            position: relative; background: #ffffff !important; border-radius: 1rem; z-index: 1; border: 1px solid #e2e8f0;
+            position: relative; border-radius: 1rem; z-index: 1;
             transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1);
         }
         .premium-glow-card::before {
@@ -65,14 +71,14 @@
             -webkit-mask-composite: xor; mask-composite: exclude; z-index: 2; opacity: 0; transition: opacity 0.3s ease;
         }
         .premium-glow-card:hover {
-            transform: translateY(-4px) scale(1.015); border-color: transparent;
+            transform: translateY(-4px) scale(1.015);
             box-shadow: 0 15px 25px rgba(0, 242, 254, 0.12), 0 8px 15px rgba(155, 81, 224, 0.05);
         }
         .premium-glow-card:hover::before { opacity: 1; animation: cardGlowAnimation 3s linear infinite; }
         @keyframes cardGlowAnimation { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
     </style>
 </head>
-<body class="bg-[#F8FAFC] text-slate-800 font-sans antialiased min-h-screen pb-12"
+<body class="bg-[#F8FAFC] dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen pb-12 transition-colors duration-300"
       x-data="{
           webAppUrl: 'https://script.google.com/macros/s/AKfycbyeeaWjBFjCfEZ_KbWyvGBgAkLzxUaP2P8WrktZwUZClmn40pXPQdlpjUEycssZZ014Gw/exec',
           searchQuery: '', 
@@ -84,8 +90,16 @@
           highestSeller: 'Calculating...', normalSeller: 'Calculating...',
           loading: true, isSyncing: false, errorMessage: '', chartInstance: null,
           selectedCategory: 'All',
+          darkMode: localStorage.getItem('darkMode') === 'true',
           
           async initEngine() {
+              // Synchronize theme configuration parameters on boot logic
+              if (this.darkMode) {
+                  document.documentElement.classList.add('dark');
+              } else {
+                  document.documentElement.classList.remove('dark');
+              }
+
               this.loading = true;
               await this.fetchLivePrices(true);
               this.loading = false;
@@ -93,6 +107,20 @@
               setInterval(async () => {
                   await this.fetchLivePrices(false);
               }, 30000);
+          },
+
+          toggleTheme() {
+              this.darkMode = !this.darkMode;
+              localStorage.setItem('darkMode', this.darkMode);
+              if (this.darkMode) {
+                  document.documentElement.classList.add('dark');
+              } else {
+                  document.documentElement.classList.remove('dark');
+              }
+              // Force redraw of chart parameters with correct axis color palettes
+              if (this.availableDates.length > 0) {
+                  this.processAnalytics(this.allMasterAverages[this.selectedDate] || []);
+              }
           },
 
           async fetchLivePrices(isFirstLoad) {
@@ -126,7 +154,7 @@
 
           getTrend(item) {
               let idx = this.availableDates.indexOf(this.selectedDate);
-              let defaultTrend = { symbol: '➖', class: 'bg-slate-50 text-slate-500 border-slate-200' };
+              let defaultTrend = { symbol: '➖', class: 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700' };
               
               if (idx === -1 || idx === this.availableDates.length - 1) return defaultTrend;
               
@@ -140,8 +168,8 @@
               let prevPrice = parseFloat(String(prevItem.truSeaPerKg).replace(/[^\d.]/g, ''));
               
               if (isNaN(currentPrice) || isNaN(prevPrice)) return defaultTrend;
-              if (currentPrice > prevPrice) return { symbol: '⬆️', class: 'bg-rose-50 text-rose-600 border-rose-200 font-bold' };
-              if (currentPrice < prevPrice) return { symbol: '⬇️', class: 'bg-emerald-50 text-emerald-600 border-emerald-200 font-bold' };
+              if (currentPrice > prevPrice) return { symbol: '⬆️', class: 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900 font-bold' };
+              if (currentPrice < prevPrice) return { symbol: '⬇️', class: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900 font-bold' };
               return defaultTrend;
           },
 
@@ -188,6 +216,10 @@
               let canvasEl = document.getElementById('insightsChart');
               if (!canvasEl) return;
               
+              let isDark = this.darkMode;
+              let axisColor = isDark ? '#94a3b8' : '#64748b';
+              let gridColor = isDark ? '#334155' : '#f1f5f9';
+              
               this.chartInstance = new Chart(canvasEl.getContext('2d'), {
                   type: 'bar',
                   data: {
@@ -218,7 +250,7 @@
                           maxBarThickness: 32,
                           borderWidth: 0,
                           hoverBorderWidth: 2,
-                          hoverBorderColor: '#1e293b'
+                          hoverBorderColor: isDark ? '#ffffff' : '#1e293b'
                       }]
                   },
                   options: { 
@@ -239,7 +271,7 @@
                           legend: { display: false },
                           tooltip: {
                               enabled: true,
-                              backgroundColor: '#1e293b',
+                              backgroundColor: isDark ? '#334155' : '#1e293b',
                               titleColor: '#ffffff',
                               titleFont: { size: 13, weight: 'bold' },
                               bodyColor: '#38bdf8',
@@ -257,12 +289,12 @@
                       },
                       scales: {
                           y: { 
-                              grid: { color: '#f1f5f9' },
-                              ticks: { font: { size: 11, fontColor: '#64748b' } } 
+                              grid: { color: gridColor },
+                              ticks: { color: axisColor, font: { size: 11 } } 
                           },
                           x: { 
                               grid: { display: false },
-                              ticks: { font: { size: 12, weight: 'bold' } } 
+                              ticks: { color: axisColor, font: { size: 12, weight: 'bold' } } 
                           }
                       }
                   }
@@ -271,27 +303,38 @@
       }" x-init="initEngine()">
 
     <div class="max-w-7xl mx-auto p-4 sm:p-6">
-        <header class="mb-4 border-b border-slate-200 pb-3 flex justify-between items-center">
+        <header class="mb-4 border-b border-slate-200 dark:border-slate-700 pb-3 flex justify-between items-center">
             <div class="flex items-center gap-2.5 animated-tracker-title select-none">
                 <span class="text-3xl sm:text-4xl filter drop-shadow-xs">🐟</span>
-                <h1 class="text-xl sm:text-2xl font-medium tracking-tight text-slate-700">
-                    <span class="font-black text-blue-600">TruSea</span> Price Tracker
+                <h1 class="text-xl sm:text-2xl font-medium tracking-tight text-slate-700 dark:text-slate-300">
+                    <span class="font-black text-blue-600 dark:text-blue-500">TruSea</span> Price Tracker
                 </h1>
             </div>
             
-            <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                <span class="relative flex h-2 w-2">
-                    <span :class="isSyncing ? 'animate-ping bg-amber-400' : 'bg-emerald-500'" class="absolute inline-flex h-full w-full rounded-full opacity-75"></span>
-                    <span :class="isSyncing ? 'bg-amber-500' : 'bg-emerald-500'" class="relative inline-flex rounded-full h-2 w-2"></span>
-                </span>
-                <span x-text="isSyncing ? 'Syncing...' : 'Auto Sync Active'"></span>
+            <div class="flex items-center gap-4">
+                <button @click="toggleTheme()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Toggle Dark/Light Mode">
+                    <template x-if="!darkMode">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                    </template>
+                    <template x-if="darkMode">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.243 17.657l.707.707M6.343 6.343l.707-.707M14.142 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                    </template>
+                </button>
+
+                <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    <span class="relative flex h-2 w-2">
+                        <span :class="isSyncing ? 'animate-ping bg-amber-400' : 'bg-emerald-500'" class="absolute inline-flex h-full w-full rounded-full opacity-75"></span>
+                        <span :class="isSyncing ? 'bg-amber-500' : 'bg-emerald-500'" class="relative inline-flex rounded-full h-2 w-2"></span>
+                    </span>
+                    <span x-text="isSyncing ? 'Syncing...' : 'Auto Sync Active'"></span>
+                </div>
             </div>
         </header>
 
-        <div x-show="!loading" class="mb-5 overflow-x-auto no-scrollbar flex items-center gap-2 pb-1.5 border-b border-slate-100">
+        <div x-show="!loading" class="mb-5 overflow-x-auto no-scrollbar flex items-center gap-2 pb-1.5 border-b border-slate-100 dark:border-slate-800">
             <template x-for="date in availableDates" :key="date">
                 <button @click="switchDateView(date)" 
-                        :class="selectedDate === date ? 'bg-cyan-600 text-white shadow-xs font-bold' : 'bg-white text-slate-600 hover:bg-slate-50 font-medium border border-slate-200'"
+                        :class="selectedDate === date ? 'bg-cyan-600 text-white shadow-xs font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium border border-slate-200 dark:border-slate-700'"
                         class="px-4 py-2 text-xs rounded-full whitespace-nowrap transition-all duration-200" 
                         x-text="date">
                 </button>
@@ -301,12 +344,12 @@
         <div class="mb-4 max-w-xl mx-auto">
             <form @submit.prevent="applyFilters()">
                 <div class="gemini-ai-search-container">
-                    <div class="flex items-center w-full bg-white rounded-full px-4 py-1.5 shadow-xs">
+                    <div class="flex items-center w-full bg-white dark:bg-slate-800 rounded-full px-4 py-1.5 shadow-xs">
                         <input x-model="searchQuery" 
                                type="text" 
                                enterkeyhint="search"
                                placeholder="search fish names and press enter" 
-                               class="w-full text-base bg-transparent border-none focus:outline-none text-slate-800 placeholder-slate-400 font-medium py-1">
+                               class="w-full text-base bg-transparent border-none focus:outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 font-medium py-1">
                         <button type="submit" class="bg-cyan-600 text-white rounded-full px-4 py-1.5 text-xs font-bold shadow-xs hover:bg-cyan-700 transition">
                             Search
                         </button>
@@ -318,7 +361,7 @@
         <div x-show="!loading" class="mb-6 flex flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-5xl mx-auto">
             <template x-for="cat in ['All', 'Prawns', 'Crabs', 'Fillets', 'Fish']" :key="cat">
                 <button @click="selectedCategory = cat; applyFilters();"
-                        :class="selectedCategory === cat ? 'bg-slate-800 text-white border-slate-800 font-bold' : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'"
+                        :class="selectedCategory === cat ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-slate-800 dark:border-slate-200 font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'"
                         class="px-3.5 py-1.5 text-xs rounded-full border transition font-medium"
                         x-text="cat">
                 </button>
@@ -326,68 +369,68 @@
         </div>
 
         <main class="space-y-6">
-            <div x-show="loading" class="text-center py-20 text-xs text-slate-400 font-semibold">Live Real-Time Active Sync Processing...</div>
+            <div x-show="loading" class="text-center py-20 text-xs text-slate-400 dark:text-slate-500 font-semibold">Live Real-Time Active Sync Processing...</div>
 
             <div x-show="!loading" class="grid grid-cols-1 lg:grid-cols-3 gap-4" style="display: none;">
                 <div class="lg:col-span-1 flex flex-col gap-3">
-                    <div class="bg-white p-4 rounded-xl border border-slate-200">
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                         <span class="text-xs uppercase font-bold text-red-500 block mb-1">🔴 Costly Market Vendor</span>
-                        <div class="text-base font-black text-slate-900" x-text="highestSeller"></div>
+                        <div class="text-base font-black text-slate-900 dark:text-slate-100" x-text="highestSeller"></div>
                     </div>
-                    <div class="bg-white p-4 rounded-xl border border-slate-200">
-                        <span class="text-xs uppercase font-bold text-emerald-600 block mb-1">🟢 Normal Market Vendor</span>
-                        <div class="text-base font-black text-slate-900" x-text="normalSeller"></div>
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <span class="text-xs uppercase font-bold text-emerald-600 dark:text-emerald-500 block mb-1">🟢 Normal Market Vendor</span>
+                        <div class="text-base font-black text-slate-900 dark:text-slate-100" x-text="normalSeller"></div>
                     </div>
                 </div>
-                <div class="lg:col-span-2 bg-white p-4 rounded-xl border border-slate-200">
+                <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                     <div class="relative h-[130px] w-full"><canvas id="insightsChart"></canvas></div>
                 </div>
             </div>
 
             <div x-show="!loading" class="max-w-3xl mx-auto text-center" style="display: none;">
-                <span class="inline-block text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-4 py-1.5">
-                    ⓘ Showing parameters specific to tab: <span class="font-bold text-cyan-600" x-text="selectedDate"></span> (Price per KG)
+                <span class="inline-block text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-4 py-1.5">
+                    ⓘ Showing parameters specific to tab: <span class="font-bold text-cyan-600 dark:text-cyan-400" x-text="selectedDate"></span> (Price per KG)
                 </span>
             </div>
 
             <div x-show="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" style="display: none;">
                 <template x-for="item in filteredItems" :key="item.name">
-                    <div class="premium-glow-card p-6 flex flex-col justify-between">
+                    <div class="premium-glow-card p-6 flex flex-col justify-between border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
                         <div>
-                            <h3 class="text-lg font-extrabold text-slate-900 mb-3 tracking-tight truncate" x-text="item.name"></h3>
+                            <h3 class="text-lg font-extrabold text-slate-900 dark:text-slate-100 mb-3 tracking-tight truncate" x-text="item.name"></h3>
                             
-                            <div class="space-y-2.5 mb-4 bg-[#FAFAFA] p-4 rounded-lg border border-slate-100 text-sm">
+                            <div class="space-y-2.5 mb-4 bg-[#FAFAFA] dark:bg-slate-900 p-4 rounded-lg border border-slate-100 dark:border-slate-800 text-sm">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-slate-500">Current TruSea Website Price</span>
-                                    <span class="font-bold text-slate-700" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
+                                    <span class="text-slate-500 dark:text-slate-400">Current TruSea Website Price</span>
+                                    <span class="font-bold text-slate-700 dark:text-slate-300" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
                                 </div>
-                                <div class="flex justify-between items-center border-t border-slate-200/60 pt-2.5">
-                                    <span class="text-slate-900 font-bold flex items-center gap-1.5">
+                                <div class="flex justify-between items-center border-t border-slate-200/60 dark:border-slate-700/60 pt-2.5">
+                                    <span class="text-slate-900 dark:text-slate-200 font-bold flex items-center gap-1.5">
                                         Today's Target TruSea Price
                                         <span :class="getTrend(item).class" class="px-2 py-0.5 rounded border text-[10px] flex items-center justify-center min-w-[24px] tracking-tighter" x-text="getTrend(item).symbol"></span>
                                     </span>
-                                    <span class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
+                                    <span class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-400 dark:to-blue-400" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
                                 </div>
-                                <div class="flex justify-between items-center border-t border-slate-200/60 pt-2.5">
-                                    <span class="text-slate-500">Difference</span>
-                                    <span :class="parseFloat(item.difference) < 0 ? 'text-emerald-600' : 'text-red-500'" class="font-bold" x-text="item.difference !== '-' ? item.difference : '-'"></span>
+                                <div class="flex justify-between items-center border-t border-slate-200/60 dark:border-slate-700/60 pt-2.5">
+                                    <span class="text-slate-500 dark:text-slate-400">Difference</span>
+                                    <span :class="parseFloat(item.difference) < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'" class="font-bold" x-text="item.difference !== '-' ? item.difference : '-'"></span>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="border-t border-slate-100 pt-3 space-y-2.5 text-sm text-slate-600">
+                        <div class="border-t border-slate-100 dark:border-slate-700 pt-3 space-y-2.5 text-sm text-slate-600 dark:text-slate-300">
                             <template x-if="item.competitors">
                                 <template x-for="[compName, compVal] in Object.entries(item.competitors)" :key="compName">
-                                    <div class="flex justify-between items-center bg-[#FAFAFA] p-2.5 rounded-lg border border-slate-100">
-                                        <span class="font-bold text-slate-600" x-text="compName"></span>
+                                    <div class="flex justify-between items-center bg-[#FAFAFA] dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                                        <span class="font-bold text-slate-600 dark:text-slate-400" x-text="compName"></span>
                                         <div class="flex items-center gap-2 max-w-[65%] text-right">
-                                            <span class="font-extrabold text-slate-900 whitespace-nowrap" 
+                                            <span class="font-extrabold text-slate-900 dark:text-slate-100 whitespace-nowrap" 
                                                   x-show="!compVal.status.toLowerCase().includes('not available')" 
                                                   x-text="compVal.price !== '-' ? '₹' + compVal.price + '/kg' : '-'"></span>
                                             <span :class="{
-                                                    'bg-emerald-50 text-emerald-700 border-emerald-200': compVal.status.toLowerCase().includes('in stock'),
-                                                    'bg-rose-50 text-rose-700 border-rose-200': compVal.status.toLowerCase().includes('sold out'),
-                                                    'bg-slate-100 text-slate-500 border-slate-300': compVal.status.toLowerCase().includes('not available')
+                                                    'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900': compVal.status.toLowerCase().includes('in stock'),
+                                                    'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-900': compVal.status.toLowerCase().includes('sold out'),
+                                                    'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-600': compVal.status.toLowerCase().includes('not available')
                                                   }" 
                                                   class="text-xs font-bold px-2 py-1 rounded border inline-block" 
                                                   x-text="compVal.status"></span>
