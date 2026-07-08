@@ -89,6 +89,7 @@
           highestSeller: 'Calculating...', normalSeller: 'Calculating...',
           loading: true, isSyncing: false, errorMessage: '', chartInstance: null,
           selectedCategory: 'All',
+          activeViewTab: 'dashboard', // Controls view switching between 'dashboard' and 'table'
           darkMode: localStorage.getItem('darkMode') === 'true',
           
           async initEngine() {
@@ -135,7 +136,8 @@
                       this.selectedDate = this.availableDates[0];
                   }
                   
-                  this.switchDateView(this.selectedDate);
+                  this.applyFilters();
+                  this.processAnalytics(this.allMasterAverages[this.selectedDate] || []);
               } catch (e) {
                   this.errorMessage = 'Syncing latest live dataset parameters...';
               } finally {
@@ -151,7 +153,7 @@
 
           getTrend(item) {
               let idx = this.availableDates.indexOf(this.selectedDate);
-              let defaultTrend = { symbol: '➖', class: 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700' };
+              let defaultTrend = { symbol: '➖', class: 'bg-slate-50 text-slate-500 border-slate-200' };
               
               if (idx === -1 || idx === this.availableDates.length - 1) return defaultTrend;
               
@@ -165,8 +167,8 @@
               let prevPrice = parseFloat(String(prevItem.truSeaPerKg).replace(/[^\d.]/g, ''));
               
               if (isNaN(currentPrice) || isNaN(prevPrice)) return defaultTrend;
-              if (currentPrice > prevPrice) return { symbol: '⬆️', class: 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900 font-bold' };
-              if (currentPrice < prevPrice) return { symbol: '⬇️', class: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900 font-bold' };
+              if (currentPrice > prevPrice) return { symbol: '⬆️', class: 'bg-rose-50 text-rose-600 border-rose-200 font-bold' };
+              if (currentPrice < prevPrice) return { symbol: '⬇️', class: 'bg-emerald-50 text-emerald-600 border-emerald-200 font-bold' };
               return defaultTrend;
           },
 
@@ -268,7 +270,7 @@
                           legend: { display: false },
                           tooltip: {
                               enabled: true,
-                              backgroundColor: isDark ? '#334155' : '#1e293b',
+                              backgroundColor: '#1e293b',
                               titleColor: '#ffffff',
                               titleFont: { size: 13, weight: 'bold' },
                               bodyColor: '#38bdf8',
@@ -328,118 +330,205 @@
             </div>
         </header>
 
-        <div x-show="!loading" class="mb-5 overflow-x-auto no-scrollbar flex items-center gap-2 pb-1.5 border-b border-slate-100 dark:border-slate-800">
-            <template x-for="date in availableDates" :key="date">
-                <button @click="switchDateView(date)" 
-                        :class="selectedDate === date ? 'bg-cyan-600 text-white shadow-xs font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium border border-slate-200 dark:border-slate-700'"
-                        class="px-4 py-2 text-xs rounded-full whitespace-nowrap transition-all duration-200" 
-                        x-text="date">
-                </button>
-            </template>
+        <div class="mb-5 flex border-b border-slate-200 dark:border-slate-700">
+            <button @click="activeViewTab = 'dashboard'; switchDateView(availableDates[0])" 
+                    :class="activeViewTab === 'dashboard' ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold border-b-2' : 'text-slate-500 dark:text-slate-400 font-medium'"
+                    class="px-5 py-2.5 text-sm transition-all">
+                📊 Analytics Dashboard
+            </button>
+            <button @click="activeViewTab = 'table'; selectedDate = availableDates[0]; applyFilters();" 
+                    :class="activeViewTab === 'table' ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold border-b-2' : 'text-slate-500 dark:text-slate-400 font-medium'"
+                    class="px-5 py-2.5 text-sm transition-all flex items-center gap-2">
+                📋 Full Comparative Table <span class="bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400 font-bold text-[10px] px-1.5 py-0.5 rounded-full uppercase tracking-wider">Latest</span>
+            </button>
         </div>
 
-        <div class="mb-4 max-w-xl mx-auto">
-            <form @submit.prevent="applyFilters()">
-                <div class="gemini-ai-search-container">
-                    <div class="flex items-center w-full bg-white dark:bg-slate-800 rounded-full px-4 py-1.5 shadow-xs">
-                        <input x-model="searchQuery" 
-                               type="text" 
-                               enterkeyhint="search"
-                               placeholder="search fish names and press enter" 
-                               class="w-full text-base bg-transparent border-none focus:outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 font-medium py-1">
-                        <button type="submit" class="bg-cyan-600 text-white rounded-full px-4 py-1.5 text-xs font-bold shadow-xs hover:bg-cyan-700 transition">
-                            Search
+        <template x-if="activeViewTab === 'dashboard'">
+            <div>
+                <div x-show="!loading" class="mb-5 overflow-x-auto no-scrollbar flex items-center gap-2 pb-1.5">
+                    <template x-for="date in availableDates" :key="date">
+                        <button @click="switchDateView(date)" 
+                                :class="selectedDate === date ? 'bg-cyan-600 text-white shadow-xs font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium border border-slate-200 dark:border-slate-700'"
+                                class="px-4 py-2 text-xs rounded-full whitespace-nowrap transition-all duration-200" 
+                                x-text="date">
                         </button>
-                    </div>
+                    </template>
                 </div>
-            </form>
-        </div>
 
-        <div x-show="!loading" class="mb-6 flex flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-5xl mx-auto">
-            <template x-for="cat in ['All', 'Prawns', 'Crabs', 'Fillets', 'Fish']" :key="cat">
-                <button @click="selectedCategory = cat; applyFilters();"
-                        :class="selectedCategory === cat ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-slate-800 dark:border-slate-200 font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'"
-                        class="px-3.5 py-1.5 text-xs rounded-full border transition font-medium"
-                        x-text="cat">
-                </button>
-            </template>
-        </div>
-
-        <main class="space-y-6">
-            <div x-show="loading" class="text-center py-20 text-xs text-slate-400 dark:text-slate-500 font-semibold">Live Real-Time Active Sync Processing...</div>
-
-            <div x-show="!loading" class="grid grid-cols-1 lg:grid-cols-3 gap-4" style="display: none;">
-                <div class="lg:col-span-1 flex flex-col gap-3">
-                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                        <span class="text-xs uppercase font-bold text-red-500 block mb-1">🔴 Costly Market Vendor</span>
-                        <div class="text-base font-black text-slate-900 dark:text-slate-100" x-text="highestSeller"></div>
-                    </div>
-                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                        <span class="text-xs uppercase font-bold text-emerald-600 dark:text-emerald-500 block mb-1">🟢 Normal Market Vendor</span>
-                        <div class="text-base font-black text-slate-900 dark:text-slate-100" x-text="normalSeller"></div>
-                    </div>
-                </div>
-                <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                    <div class="relative h-[130px] w-full"><canvas id="insightsChart"></canvas></div>
-                </div>
-            </div>
-
-            <div x-show="!loading" class="max-w-3xl mx-auto text-center" style="display: none;">
-                <span class="inline-block text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-4 py-1.5">
-                    ⓘ Showing parameters specific to tab: <span class="font-bold text-cyan-600 dark:text-cyan-400" x-text="selectedDate"></span> (Price per KG)
-                </span>
-            </div>
-
-            <div x-show="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" style="display: none;">
-                <template x-for="item in filteredItems" :key="item.name">
-                    <div class="premium-glow-card p-6 flex flex-col justify-between border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-                        <div>
-                            <h3 class="text-lg font-extrabold text-slate-900 dark:text-slate-100 mb-3 tracking-tight truncate" x-text="item.name"></h3>
-                            
-                            <div class="space-y-2.5 mb-4 bg-[#FAFAFA] dark:bg-slate-900 p-4 rounded-lg border border-slate-100 dark:border-slate-800 text-sm">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-slate-500 dark:text-slate-400">Current TruSea Website Price</span>
-                                    <span class="font-bold text-slate-700 dark:text-slate-300" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
-                                </div>
-                                <div class="flex justify-between items-center border-t border-slate-200/60 dark:border-slate-700/60 pt-2.5">
-                                    <span class="text-slate-900 dark:text-slate-200 font-bold flex items-center gap-1.5">
-                                        Today's Target TruSea Price
-                                        <span :class="getTrend(item).class" class="px-2 py-0.5 rounded border text-[10px] flex items-center justify-center min-w-[24px] tracking-tighter" x-text="getTrend(item).symbol"></span>
-                                    </span>
-                                    <span class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-400 dark:to-blue-400" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
-                                </div>
-                                <div class="flex justify-between items-center border-t border-slate-200/60 dark:border-slate-700/60 pt-2.5">
-                                    <span class="text-slate-500 dark:text-slate-400">Difference</span>
-                                    <span :class="parseFloat(item.difference) < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'" class="font-bold" x-text="item.difference !== '-' ? item.difference : '-'"></span>
-                                </div>
+                <div class="mb-4 max-w-xl mx-auto">
+                    <form @submit.prevent="applyFilters()">
+                        <div class="gemini-ai-search-container">
+                            <div class="flex items-center w-full bg-white dark:bg-slate-800 rounded-full px-4 py-1.5 shadow-xs">
+                                <input x-model="searchQuery" 
+                                       type="text" 
+                                       enterkeyhint="search"
+                                       placeholder="search fish names and press enter" 
+                                       class="w-full text-base bg-transparent border-none focus:outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 font-medium py-1">
+                                <button type="submit" class="bg-cyan-600 text-white rounded-full px-4 py-1.5 text-xs font-bold shadow-xs hover:bg-cyan-700 transition">
+                                    Search
+                                </button>
                             </div>
                         </div>
-                        
-                        <div class="border-t border-slate-100 dark:border-slate-700 pt-3 space-y-2.5 text-sm text-slate-600 dark:text-slate-300">
-                            <template x-if="item.competitors">
-                                <template x-for="[compName, compVal] in Object.entries(item.competitors)" :key="compName">
-                                    <div class="flex justify-between items-center bg-[#FAFAFA] dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
-                                        <span class="font-bold text-slate-600 dark:text-slate-400" x-text="compName"></span>
-                                        <div class="flex items-center gap-2 max-w-[65%] text-right">
-                                            <span class="font-extrabold text-slate-900 dark:text-slate-100 whitespace-nowrap" 
-                                                  x-show="!compVal.status.toLowerCase().includes('not available')" 
-                                                  x-text="compVal.price !== '-' ? '₹' + compVal.price + '/kg' : '-'"></span>
-                                            <span :class="{
-                                                    'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900': compVal.status.toLowerCase().includes('in stock'),
-                                                    'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-900': compVal.status.toLowerCase().includes('sold out'),
-                                                    'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-600': compVal.status.toLowerCase().includes('not available')
-                                                  }" 
-                                                  class="text-xs font-bold px-2 py-1 rounded border inline-block" 
-                                                  x-text="compVal.status"></span>
-                                        </div>
-                                    </div>
-                                </template>
-                            </template>
+                    </form>
+                </div>
+
+                <div x-show="!loading" class="mb-6 flex flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-5xl mx-auto">
+                    <template x-for="cat in ['All', 'Prawns', 'Crabs', 'Fillets', 'Fish']" :key="cat">
+                        <button @click="selectedCategory = cat; applyFilters();"
+                                :class="selectedCategory === cat ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-slate-800 dark:border-slate-200 font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'"
+                                class="px-3.5 py-1.5 text-xs rounded-full border transition font-medium"
+                                x-text="cat">
+                        </button>
+                    </template>
+                </div>
+
+                <main class="space-y-6">
+                    <div x-show="loading" class="text-center py-20 text-xs text-slate-400 dark:text-slate-500 font-semibold">Live Real-Time Active Sync Processing...</div>
+
+                    <div x-show="!loading" class="grid grid-cols-1 lg:grid-cols-3 gap-4" style="display: none;">
+                        <div class="lg:col-span-1 flex flex-col gap-3">
+                            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <span class="text-xs uppercase font-bold text-red-500 block mb-1">🔴 Costly Market Vendor</span>
+                                <div class="text-base font-black text-slate-900 dark:text-slate-100" x-text="highestSeller"></div>
+                            </div>
+                            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <span class="text-xs uppercase font-bold text-emerald-600 dark:text-emerald-500 block mb-1">🟢 Normal Market Vendor</span>
+                                <div class="text-base font-black text-slate-900 dark:text-slate-100" x-text="normalSeller"></div>
+                            </div>
+                        </div>
+                        <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <div class="relative h-[130px] w-full"><canvas id="insightsChart"></canvas></div>
                         </div>
                     </div>
-                </template>
+
+                    <div x-show="!loading" class="max-w-3xl mx-auto text-center" style="display: none;">
+                        <span class="inline-block text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-4 py-1.5">
+                            ⓘ Showing parameters specific to tab: <span class="font-bold text-cyan-600 dark:text-cyan-400" x-text="selectedDate"></span> (Price per KG)
+                        </span>
+                    </div>
+
+                    <div x-show="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" style="display: none;">
+                        <template x-for="item in filteredItems" :key="item.name">
+                            <div class="premium-glow-card p-6 flex flex-col justify-between border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                                <div>
+                                    <h3 class="text-lg font-extrabold text-slate-900 dark:text-slate-100 mb-3 tracking-tight truncate" x-text="item.name"></h3>
+                                    
+                                    <div class="space-y-2.5 mb-4 bg-[#FAFAFA] dark:bg-slate-900 p-4 rounded-lg border border-slate-100 dark:border-slate-800 text-sm">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-slate-500 dark:text-slate-400">Current TruSea Website Price</span>
+                                            <span class="font-bold text-slate-700 dark:text-slate-300" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
+                                        </div>
+                                        <div class="flex justify-between items-center border-t border-slate-200/60 dark:border-slate-700/60 pt-2.5">
+                                            <span class="text-slate-900 dark:text-slate-200 font-bold flex items-center gap-1.5">
+                                                Today's Target TruSea Price
+                                                <span :class="getTrend(item).class" class="px-2 py-0.5 rounded border text-[10px] flex items-center justify-center min-w-[24px] tracking-tighter" x-text="getTrend(item).symbol"></span>
+                                            </span>
+                                            <span class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-400 dark:to-blue-400" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
+                                        </div>
+                                        <div class="flex justify-between items-center border-t border-slate-200/60 dark:border-slate-700/60 pt-2.5">
+                                            <span class="text-slate-500 dark:text-slate-400">Difference</span>
+                                            <span :class="parseFloat(item.difference) < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'" class="font-bold" x-text="item.difference !== '-' ? item.difference : '-'"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="border-t border-slate-100 dark:border-slate-700 pt-3 space-y-2.5 text-sm text-slate-600 dark:text-slate-300">
+                                    <template x-if="item.competitors">
+                                        <template x-for="[compName, compVal] in Object.entries(item.competitors)" :key="compName">
+                                            <div class="flex justify-between items-center bg-[#FAFAFA] dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                                                <span class="font-bold text-slate-600 dark:text-slate-300" x-text="compName"></span>
+                                                <div class="flex items-center gap-2 max-w-[65%] text-right">
+                                                    <span class="font-extrabold text-slate-900 dark:text-slate-100 whitespace-nowrap" 
+                                                          x-show="!compVal.status.toLowerCase().includes('not available')" 
+                                                          x-text="compVal.price !== '-' ? '₹' + compVal.price + '/kg' : '-'"></span>
+                                                    <span :class="{
+                                                            'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900': compVal.status.toLowerCase().includes('in stock'),
+                                                            'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-900': compVal.status.toLowerCase().includes('sold out'),
+                                                            'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-600': compVal.status.toLowerCase().includes('not available')
+                                                          }" 
+                                                          class="text-xs font-bold px-2 py-1 rounded border inline-block" 
+                                                          x-text="compVal.status"></span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </main>
             </div>
-        </main>
+        </template>
+
+        <template x-if="activeViewTab === 'table'">
+            <div class="space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">
+                        📋 Live Master Dataset Spreadsheet Matrix • Active Sheet: <span class="text-blue-600 dark:text-blue-400 font-bold" x-text="availableDates[0]"></span>
+                    </p>
+                    
+                    <input x-model="searchQuery" @input="applyFilters()" type="text" placeholder="Filter tabular fishes..." 
+                           class="px-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none text-slate-700 dark:text-slate-200 w-full sm:w-64">
+                </div>
+
+                <div class="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs bg-white dark:bg-slate-800">
+                    <table class="w-full border-collapse text-left text-xs">
+                        <thead>
+                            <tr class="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider">
+                                <th class="p-3.5 whitespace-nowrap min-w-[180px]">Fish Description</th>
+                                <th class="p-3.5 whitespace-nowrap text-center">TenderCuts Price</th>
+                                <th class="p-3.5 whitespace-nowrap text-center">Licious Price</th>
+                                <th class="p-3.5 whitespace-nowrap text-center">Fresh Ma Price</th>
+                                <th class="p-3.5 whitespace-nowrap text-center">FreshToHome Price</th>
+                                <th class="p-3.5 whitespace-nowrap text-center">Supreme Price</th>
+                                <th class="p-3.5 whitespace-nowrap text-center bg-blue-50/40 dark:bg-blue-950/20 border-l border-slate-200 dark:border-slate-700/60">Current TruSea Web Price</th>
+                                <th class="p-3.5 whitespace-nowrap text-center bg-blue-50/60 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-black">Today's Target Price</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-700/60 font-medium text-slate-700 dark:text-slate-300">
+                            <template x-for="item in filteredItems" :key="item.name">
+                                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
+                                    <td class="p-3.5 font-bold text-slate-900 dark:text-slate-100 truncate" x-text="item.name"></td>
+                                    
+                                    <td class="p-3.5 text-center font-mono">
+                                        <span x-text="item.competitors['TenderCuts'] && item.competitors['TenderCuts'].price !== '-' ? '₹' + item.competitors['TenderCuts'].price : '-'"></span>
+                                    </td>
+                                    
+                                    <td class="p-3.5 text-center font-mono">
+                                        <span x-text="item.competitors['Licious'] && item.competitors['Licious'].price !== '-' ? '₹' + item.competitors['Licious'].price : '-'"></span>
+                                    </td>
+                                    
+                                    <td class="p-3.5 text-center font-mono">
+                                        <span x-text="item.competitors['Fresh Ma'] && item.competitors['Fresh Ma'].price !== '-' ? '₹' + item.competitors['Fresh Ma'].price : '-'"></span>
+                                    </td>
+                                    
+                                    <td class="p-3.5 text-center font-mono">
+                                        <span x-text="item.competitors['Fresh To Home'] && item.competitors['Fresh To Home'].price !== '-' ? '₹' + item.competitors['Fresh To Home'].price : '-'"></span>
+                                    </td>
+                                    
+                                    <td class="p-3.5 text-center font-mono">
+                                        <span x-text="item.competitors['Supreme Sea Foods'] && item.competitors['Supreme Sea Foods'].price !== '-' ? '₹' + item.competitors['Supreme Sea Foods'].price : '-'"></span>
+                                    </td>
+                                    
+                                    <td class="p-3.5 text-center font-mono bg-blue-50/20 dark:bg-blue-950/10 border-l border-slate-200 dark:border-slate-700/60 font-semibold text-slate-600 dark:text-slate-400">
+                                        <span x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
+                                    </td>
+                                    
+                                    <td class="p-3.5 text-center font-mono bg-blue-50/40 dark:bg-blue-950/20 font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-400 dark:to-cyan-400 text-sm">
+                                        <span x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
+                                    </td>
+                                </tr>
+                            </template>
+                            <template x-if="filteredItems.length === 0">
+                                <tr>
+                                    <td colspan="8" class="p-8 text-center text-slate-400 font-medium">No seafood matching parameters found in this sheet query.</td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </template>
     </div>
 </body>
 </html>
