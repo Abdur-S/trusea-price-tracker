@@ -208,7 +208,7 @@
           },
 
           exportCSV() {
-              let headers = ['Fish Description', 'TenderCuts', 'Licious', 'Fresh Ma', 'FreshToHome', 'Supreme', 'Current TruSea Website Price', "Today's TruSea Target Price"];
+              let headers = ['Fish Description', 'TenderCuts', 'Licious', 'Fresh Ma', 'FreshToHome', 'Supreme', 'Current TruSea Website Price', 'Today\'s TruSea Target Price'];
               let rows = this.filteredItems.map(item => [
                   item.name,
                   this.formatCompCell(item.competitors['TenderCuts']),
@@ -219,8 +219,9 @@
                   item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-',
                   item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'
               ]);
-              let csvContent = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
-              let blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+              let dq = String.fromCharCode(34);
+              let csvContent = [headers, ...rows].map(r => r.map(v => dq + String(v).split(dq).join(dq + dq) + dq).join(',')).join('\n');
+              let blob = new Blob([String.fromCharCode(65279) + csvContent], { type: 'text/csv;charset=utf-8;' });
               let url = URL.createObjectURL(blob);
               let a = document.createElement('a');
               a.href = url;
