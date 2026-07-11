@@ -153,19 +153,25 @@
               this.processAnalytics(this.allMasterAverages[dateLabel] || []);
           },
 
-          getCompColorClass(item, comp) {
-              if (!comp) return 'text-slate-700 dark:text-slate-300';
-              let status = (comp.status || '').toLowerCase();
-              if (status.includes('sold out')) return 'text-orange-600 dark:text-orange-400 font-bold';
-              if (status.includes('not available')) return 'text-slate-400 dark:text-slate-500';
+          getTruSeaPriceColorClass(item) {
+              let compPrices = Object.values(item.competitors || {})
+                  .map(c => {
+                      let s = (c.status || '').toLowerCase();
+                      if (s.includes('sold out') || s.includes('not available')) return null;
+                      let p = parseFloat(String(c.price).replace(/[^\d.]/g, ''));
+                      return isNaN(p) ? null : p;
+                  })
+                  .filter(p => p !== null);
 
-              let compPrice = parseFloat(String(comp.price).replace(/[^\d.]/g, ''));
+              if (compPrices.length === 0) return 'text-[#6B7280] dark:text-[#9CA3AF]';
+
+              let avgCompPrice = compPrices.reduce((a, b) => a + b, 0) / compPrices.length;
               let truSeaPrice = parseFloat(String(item.currentTruSeaWebPrice).replace(/[^\d.]/g, ''));
 
-              if (isNaN(compPrice) || isNaN(truSeaPrice)) return 'text-slate-700 dark:text-slate-300';
-              if (compPrice < truSeaPrice) return 'text-emerald-600 dark:text-emerald-400 font-bold';
-              if (compPrice > truSeaPrice) return 'text-red-600 dark:text-red-400 font-bold';
-              return 'text-slate-700 dark:text-slate-300';
+              if (isNaN(truSeaPrice)) return 'text-[#6B7280] dark:text-[#9CA3AF]';
+              if (truSeaPrice < avgCompPrice) return 'text-[#16A34A] dark:text-[#4ADE80] font-bold';
+              if (truSeaPrice > avgCompPrice) return 'text-[#DC2626] dark:text-[#F87171] font-bold';
+              return 'text-[#6B7280] dark:text-[#9CA3AF] font-bold';
           },
 
           getTrend(item) {
@@ -594,49 +600,49 @@
                                     <td class="p-2.5 font-bold text-slate-900 dark:text-slate-100 whitespace-normal break-words sticky left-0 z-10 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 shadow-[2px_0_4px_rgba(0,0,0,0.06)] w-[160px] min-w-[160px] max-w-[160px]" x-text="item.name"></td>
                                     
                                     <td class="p-2.5 text-center font-mono">
-                                        <span :class="getCompColorClass(item, item.competitors['TenderCuts'])"
+                                        <span class="text-[#16A34A] dark:text-[#4ADE80] transition-colors duration-300"
                                               x-show="!item.competitors['TenderCuts'].status.toLowerCase().includes('not available') && !item.competitors['TenderCuts'].status.toLowerCase().includes('sold out')" 
                                               x-text="item.competitors['TenderCuts'] && item.competitors['TenderCuts'].price !== '-' ? '₹' + item.competitors['TenderCuts'].price : '-'"></span>
-                                        <span class="text-[10px] text-orange-600 dark:text-orange-400 font-bold" x-show="item.competitors['TenderCuts'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['TenderCuts'].price !== '-' ? ' (₹' + item.competitors['TenderCuts'].price + '/kg)' : '')"></span>
+                                        <span class="text-[10px] text-[#F97316] dark:text-[#FB923C] font-bold transition-colors duration-300" x-show="item.competitors['TenderCuts'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['TenderCuts'].price !== '-' ? ' (₹' + item.competitors['TenderCuts'].price + '/kg)' : '')"></span>
                                         <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['TenderCuts'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
                                     <td class="p-2.5 text-center font-mono">
-                                        <span :class="getCompColorClass(item, item.competitors['Licious'])"
+                                        <span class="text-[#16A34A] dark:text-[#4ADE80] transition-colors duration-300"
                                               x-show="!item.competitors['Licious'].status.toLowerCase().includes('not available') && !item.competitors['Licious'].status.toLowerCase().includes('sold out')"
                                               x-text="item.competitors['Licious'] && item.competitors['Licious'].price !== '-' ? '₹' + item.competitors['Licious'].price : '-'"></span>
-                                        <span class="text-[10px] text-orange-600 dark:text-orange-400 font-bold" x-show="item.competitors['Licious'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Licious'].price !== '-' ? ' (₹' + item.competitors['Licious'].price + '/kg)' : '')"></span>
+                                        <span class="text-[10px] text-[#F97316] dark:text-[#FB923C] font-bold transition-colors duration-300" x-show="item.competitors['Licious'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Licious'].price !== '-' ? ' (₹' + item.competitors['Licious'].price + '/kg)' : '')"></span>
                                         <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Licious'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
                                     <td class="p-2.5 text-center font-mono">
-                                        <span :class="getCompColorClass(item, item.competitors['Fresh Ma'])"
+                                        <span class="text-[#16A34A] dark:text-[#4ADE80] transition-colors duration-300"
                                               x-show="!item.competitors['Fresh Ma'].status.toLowerCase().includes('not available') && !item.competitors['Fresh Ma'].status.toLowerCase().includes('sold out')"
                                               x-text="item.competitors['Fresh Ma'] && item.competitors['Fresh Ma'].price !== '-' ? '₹' + item.competitors['Fresh Ma'].price : '-'"></span>
-                                        <span class="text-[10px] text-orange-600 dark:text-orange-400 font-bold" x-show="item.competitors['Fresh Ma'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Fresh Ma'].price !== '-' ? ' (₹' + item.competitors['Fresh Ma'].price + '/kg)' : '')"></span>
+                                        <span class="text-[10px] text-[#F97316] dark:text-[#FB923C] font-bold transition-colors duration-300" x-show="item.competitors['Fresh Ma'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Fresh Ma'].price !== '-' ? ' (₹' + item.competitors['Fresh Ma'].price + '/kg)' : '')"></span>
                                         <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Fresh Ma'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
                                     <td class="p-2.5 text-center font-mono">
-                                        <span :class="getCompColorClass(item, item.competitors['Fresh To Home'])"
+                                        <span class="text-[#16A34A] dark:text-[#4ADE80] transition-colors duration-300"
                                               x-show="!item.competitors['Fresh To Home'].status.toLowerCase().includes('not available') && !item.competitors['Fresh To Home'].status.toLowerCase().includes('sold out')"
                                               x-text="item.competitors['Fresh To Home'] && item.competitors['Fresh To Home'].price !== '-' ? '₹' + item.competitors['Fresh To Home'].price : '-'"></span>
-                                        <span class="text-[10px] text-orange-600 dark:text-orange-400 font-bold" x-show="item.competitors['Fresh To Home'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Fresh To Home'].price !== '-' ? ' (₹' + item.competitors['Fresh To Home'].price + '/kg)' : '')"></span>
+                                        <span class="text-[10px] text-[#F97316] dark:text-[#FB923C] font-bold transition-colors duration-300" x-show="item.competitors['Fresh To Home'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Fresh To Home'].price !== '-' ? ' (₹' + item.competitors['Fresh To Home'].price + '/kg)' : '')"></span>
                                         <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Fresh To Home'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
                                     <td class="p-2.5 text-center font-mono">
-                                        <span :class="getCompColorClass(item, item.competitors['Supreme Sea Foods'])"
+                                        <span class="text-[#16A34A] dark:text-[#4ADE80] transition-colors duration-300"
                                               x-show="!item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('not available') && !item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('sold out')"
                                               x-text="item.competitors['Supreme Sea Foods'] && item.competitors['Supreme Sea Foods'].price !== '-' ? '₹' + item.competitors['Supreme Sea Foods'].price : '-'"></span>
-                                        <span class="text-[10px] text-orange-600 dark:text-orange-400 font-bold" x-show="item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Supreme Sea Foods'].price !== '-' ? ' (₹' + item.competitors['Supreme Sea Foods'].price + '/kg)' : '')"></span>
+                                        <span class="text-[10px] text-[#F97316] dark:text-[#FB923C] font-bold transition-colors duration-300" x-show="item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Supreme Sea Foods'].price !== '-' ? ' (₹' + item.competitors['Supreme Sea Foods'].price + '/kg)' : '')"></span>
                                         <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
                                     <td class="p-2.5 text-center font-mono bg-blue-100/50 dark:bg-blue-950/20 border-l border-slate-200 dark:border-slate-700 font-bold text-blue-900 dark:text-blue-300">
-                                        <span x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
+                                        <span class="transition-colors duration-300" :class="getTruSeaPriceColorClass(item)" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
                                     </td>
-                                    
+
                                     <td class="p-2.5 text-center font-mono bg-blue-500/10 dark:bg-blue-500/20 font-black text-blue-600 dark:text-blue-400 text-xs sm:text-sm">
                                         <span x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
                                     </td>
