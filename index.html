@@ -135,7 +135,7 @@
         <!-- TAB 1: ANALYTICS DASHBOARD -->
         <template x-if="activeViewTab === 'dashboard'">
             <div>
-                <!-- ANALYTICS CARDS & MARKET RANKING LIST -->
+                <!-- ANALYTICS CARDS & COSTLY VENDOR RANKINGS -->
                 <div x-show="!isSearchActive" class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
                     <!-- COSTLY & NORMAL VENDORS -->
                     <div class="lg:col-span-1 flex flex-col gap-3">
@@ -149,10 +149,10 @@
                         </div>
                     </div>
 
-                    <!-- MARKET PRICE LEADERBOARD INCLUDING TRUSEA -->
+                    <!-- COSTLY VENDOR LEADERBOARD -->
                     <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                         <div class="flex justify-between items-center mb-3 border-b border-slate-100 dark:border-slate-700 pb-2">
-                            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">🏆 Market Price Leaderboard (Avg Per KG)</h2>
+                            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">🔥 Costly Vendor Rankings (Highest to Lowest Avg Price/KG)</h2>
                             <span class="text-[10px] text-blue-600 dark:text-blue-400 font-bold" x-text="'Showing: ' + selectedDate"></span>
                         </div>
 
@@ -173,13 +173,18 @@
                                                 'bg-emerald-500': !comp.isBrand && index >= 3
                                               }" 
                                               x-text="'#' + (index + 1)"></span>
-                                        <span class="text-sm font-extrabold flex items-center gap-1.5"
-                                              :class="comp.isBrand ? 'text-cyan-700 dark:text-cyan-300' : 'text-slate-800 dark:text-slate-200'">
-                                            <span x-text="comp.name"></span>
+                                        
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="text-sm font-extrabold" :class="comp.isBrand ? 'text-cyan-700 dark:text-cyan-300' : 'text-slate-800 dark:text-slate-200'" x-text="comp.name"></span>
+                                            
                                             <template x-if="comp.isBrand">
                                                 <span class="bg-cyan-600 text-white text-[9px] px-1.5 py-0.2 rounded font-black tracking-wide">TRUSEA</span>
                                             </template>
-                                        </span>
+                                            
+                                            <template x-if="!comp.isBrand && index === 0">
+                                                <span class="bg-rose-500 text-white text-[8px] px-1.5 py-0.2 rounded font-black uppercase tracking-wider">MOST EXPENSIVE</span>
+                                            </template>
+                                        </div>
                                     </div>
                                     <div>
                                         <span class="text-sm font-black font-mono" 
@@ -427,7 +432,6 @@
                     this.computeAnalytics();
                 },
 
-                // DYNAMIC BENCHMARKING (Includes TruSea + Competitors)
                 computeAnalytics() {
                     var items = this.filteredItems || [];
                     
@@ -466,20 +470,21 @@
 
                     var rankings = [];
 
-                    // 1. Add TruSea
+                    // TruSea Benchmark Entry
                     if (truMatchedCount > 0) {
                         var truAvg = Math.round(truMatchedTotal / truMatchedCount);
-                        rankings.push({ name: 'TruSea', avg: truAvg, count: truMatchedCount, isBrand: true });
+                        rankings.push({ name: 'TruSea', avg: truAvg, isBrand: true });
                     }
 
-                    // 2. Add Competitors
+                    // Competitors Entries
                     Object.keys(compTotals).forEach(function(k) {
                         if (compCounts[k] > 0) {
                             var avg = Math.round(compTotals[k] / compCounts[k]);
-                            rankings.push({ name: k, avg: avg, count: compCounts[k], isBrand: false });
+                            rankings.push({ name: k, avg: avg, isBrand: false });
                         }
                     });
 
+                    // Sort Descending (Highest Avg Price First)
                     rankings.sort((a, b) => b.avg - a.avg);
                     this.competitorRankings = rankings;
 
