@@ -135,7 +135,7 @@
         <!-- TAB 1: ANALYTICS DASHBOARD -->
         <template x-if="activeViewTab === 'dashboard'">
             <div>
-                <!-- ANALYTICS CARDS & MARKET PRICE LEADERBOARD -->
+                <!-- ANALYTICS CARDS & COSTLY VENDOR RANKINGS -->
                 <div x-show="!isSearchActive" class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
                     <!-- COSTLY & NORMAL VENDORS -->
                     <div class="lg:col-span-1 flex flex-col gap-3">
@@ -149,7 +149,7 @@
                         </div>
                     </div>
 
-                    <!-- LEADERBOARD RANKINGS -->
+                    <!-- COSTLY VENDOR LEADERBOARD -->
                     <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                         <div class="flex justify-between items-center mb-3 border-b border-slate-100 dark:border-slate-700 pb-2">
                             <h2 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">🔥 Market Price Leaderboard (Avg Price/KG)</h2>
@@ -432,32 +432,20 @@
                     this.computeAnalytics();
                 },
 
+                // ACCURATE BENCHMARK MATCHING (LIKE-FOR-LIKE COMPARISON)
                 computeAnalytics() {
                     var items = this.filteredItems || [];
                     
                     var compTotals = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
                     var compCounts = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
 
-                    var truTotal = 0;
-                    var truCount = 0;
+                    var truMatchedTotal = 0;
+                    var truMatchedCount = 0;
 
                     items.forEach(function(item) {
-                        // 1. TruSea: Only calculate on active available fishes listed on website
-                        var webStr = String(item.currentTruSeaWebPrice || '').trim();
-                        var targetStr = String(item.truSeaPerKg || '').trim();
+                        var tPrice = parseFloat(String(item.truSeaPerKg || item.currentTruSeaWebPrice).replace(/[^\d.]/g, ''));
+                        var itemHasCompetitorInStock = false;
 
-                        if (webStr !== '-' && webStr !== '' && !/not|sold|na/i.test(webStr)) {
-                            var tPrice = parseFloat(targetStr.replace(/[^\d.]/g, ''));
-                            if (isNaN(tPrice) || tPrice <= 0) {
-                                tPrice = parseFloat(webStr.replace(/[^\d.]/g, ''));
-                            }
-                            if (!isNaN(tPrice) && tPrice > 0 && tPrice < 10000) {
-                                truTotal += tPrice;
-                                truCount++;
-                            }
-                        }
-
-                        // 2. Competitors: Calculate strictly on available in-stock items
                         if (item.competitors) {
                             Object.keys(item.competitors).forEach(function(compName) {
                                 var c = item.competitors[compName];
@@ -468,14 +456,21 @@
                                         if (!isNaN(p) && p > 0 && p < 10000) {
                                             compTotals[compName] += p;
                                             compCounts[compName]++;
+                                            itemHasCompetitorInStock = true;
                                         }
                                     }
                                 }
                             });
                         }
+
+                        // Calculate TruSea's average strictly on the matching items where competitors are in stock
+                        if (!isNaN(tPrice) && tPrice > 0 && itemHasCompetitorInStock) {
+                            truMatchedTotal += tPrice;
+                            truMatchedCount++;
+                        }
                     });
 
-                    // Competitors list for Vendor Cards
+                    // 1. Competitors Only list for Costly & Normal Vendor cards
                     var competitorsOnly = [];
                     Object.keys(compTotals).forEach(function(k) {
                         if (compCounts[k] > 0) {
@@ -486,7 +481,6 @@
 
                     competitorsOnly.sort((a, b) => b.avg - a.avg);
 
-                    // Update Vendor Cards (Competitors Only)
                     if (competitorsOnly.length > 0) {
                         this.highestSeller = competitorsOnly[0].name + ' (₹' + competitorsOnly[0].avg + '/KG)';
                         this.normalSeller = competitorsOnly[competitorsOnly.length - 1].name + ' (₹' + competitorsOnly[competitorsOnly.length - 1].avg + '/KG)';
@@ -495,18 +489,17 @@
                         this.normalSeller = 'N/A';
                     }
 
-                    // Complete Leaderboard List (Including TruSea)
+                    // 2. Full Leaderboard List (Matched TruSea + Competitors)
                     var rankings = [...competitorsOnly];
 
-                    if (truCount > 0) {
-                        var truAvg = Math.round(truTotal / truCount);
-                        rankings.push({ name: 'TruSea', avg: truAvg, count: truCount, isBrand: true });
+                    if (truMatchedCount > 0) {
+                        var truAvg = Math.round(truMatchedTotal / truMatchedCount);
+                        rankings.push({ name: 'TruSea', avg: truAvg, count: truMatchedCount, isBrand: true });
                     }
 
-                    // Sort descending (highest avg price to lowest)
+                    // Sort Descending (Highest Avg Price First)
                     rankings.sort((a, b) => b.avg - a.avg);
 
-                    // Set relative competitor rank indexes for badges
                     var compRank = 0;
                     rankings.forEach(function(r) {
                         if (!r.isBrand) {
