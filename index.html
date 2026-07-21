@@ -151,7 +151,7 @@
                         </div>
                     </div>
                     <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                        <!-- Canvas Container for Re-creating Context Cleanly -->
+                        <!-- Canvas Container -->
                         <div id="chartContainer" class="relative h-[200px] w-full">
                             <canvas id="insightsChart"></canvas>
                         </div>
@@ -186,10 +186,10 @@
                                         </div>
                                         <div class="flex items-center gap-2">
                                             <span class="font-extrabold text-slate-900 dark:text-slate-100" 
-                                                  x-show="compVal.status === 'In Stock'" 
+                                                  x-show="!compVal.status.toLowerCase().includes('not available') && !compVal.status.toLowerCase().includes('sold out')" 
                                                   x-text="compVal.price !== '-' ? '₹' + compVal.price + '/kg' : '-'"></span>
                                             <span :class="{
-                                                    'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900': compVal.status === 'In Stock',
+                                                    'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900': !compVal.status.toLowerCase().includes('not available') && !compVal.status.toLowerCase().includes('sold out'),
                                                     'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900 font-bold': compVal.status.toLowerCase().includes('sold out'),
                                                     'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700': compVal.status.toLowerCase().includes('not available')
                                                   }" 
@@ -259,7 +259,7 @@
                                                 
                                                 <template x-if="item.competitors[compName]">
                                                     <div>
-                                                        <span x-show="item.competitors[compName].status === 'In Stock'" class="text-emerald-600 dark:text-emerald-400 font-bold" x-text="item.competitors[compName].price !== '-' ? '₹' + item.competitors[compName].price + '/kg' : '-'"></span>
+                                                        <span x-show="!item.competitors[compName].status.toLowerCase().includes('not available') && !item.competitors[compName].status.toLowerCase().includes('sold out')" class="text-emerald-600 dark:text-emerald-400 font-bold" x-text="item.competitors[compName].price !== '-' ? '₹' + item.competitors[compName].price + '/kg' : '-'"></span>
                                                         <span x-show="item.competitors[compName].status.toLowerCase().includes('sold out')" class="text-red-600 dark:text-red-400 font-bold text-[10px]" x-text="item.competitors[compName].status"></span>
                                                         <span x-show="item.competitors[compName].status.toLowerCase().includes('not available')" class="text-slate-400 text-[10px]">Not Available</span>
                                                     </div>
@@ -335,7 +335,6 @@
                         let response = await fetch(this.webAppUrl + '?_cb=' + cacheBuster);
                         let resData = await response.json();
                         
-                        // Save fresh response to localStorage cache
                         localStorage.setItem('truSeaCachedData', JSON.stringify(resData));
 
                         this.allMasterData = resData.dataByDate || {};
@@ -396,7 +395,7 @@
                     this.updateAnalyticsAndChart();
                 },
 
-                // DYNAMIC BENCHMARK AVERAGE (Calculates Avg strictly on currently showing fishes)
+                // ACCURATE BENCHMARK AVERAGE PARSER
                 updateAnalyticsAndChart() {
                     if (this.activeViewTab !== 'dashboard' || this.isSearchActive) return;
 
@@ -423,11 +422,14 @@
                         if (item.competitors) {
                             Object.keys(item.competitors).forEach(function(compName) {
                                 var c = item.competitors[compName];
-                                if (c && c.status === 'In Stock') {
-                                    var p = parseFloat(String(c.price).replace(/[^\d.]/g, ''));
-                                    if (!isNaN(p) && p > 0) {
-                                        totals[compName] += p;
-                                        counts[compName]++;
+                                if (c && c.price && c.price !== '-' && c.price !== '') {
+                                    var sLower = (c.status || '').toLowerCase();
+                                    if (!sLower.includes('not available') && !sLower.includes('sold out')) {
+                                        var p = parseFloat(String(c.price).replace(/[^\d.]/g, ''));
+                                        if (!isNaN(p) && p > 0 && p < 10000) {
+                                            totals[compName] += p;
+                                            counts[compName]++;
+                                        }
                                     }
                                 }
                             });
@@ -460,7 +462,6 @@
                     var container = document.getElementById('chartContainer');
                     if (!container) return;
 
-                    // Cleanly reset canvas to prevent blank/invisible chart context bug
                     container.innerHTML = '<canvas id="insightsChart"></canvas>';
                     var canvasEl = document.getElementById('insightsChart');
 
