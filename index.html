@@ -19,7 +19,6 @@
         tailwind.config = { darkMode: 'class' }
     </script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -136,8 +135,9 @@
         <!-- TAB 1: ANALYTICS DASHBOARD -->
         <template x-if="activeViewTab === 'dashboard'">
             <div>
-                <!-- ANALYTICS CARDS & ANIMATED BAR CHART -->
+                <!-- ANALYTICS CARDS & COMPETITOR RANKING LIST -->
                 <div x-show="!isSearchActive" class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                    <!-- COSTLY & NORMAL VENDORS -->
                     <div class="lg:col-span-1 flex flex-col gap-3">
                         <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                             <span class="text-xs uppercase font-bold text-red-500 block mb-1">🔴 COSTLY MARKET VENDOR</span>
@@ -148,9 +148,37 @@
                             <div class="text-base font-black text-slate-900 dark:text-slate-100" x-text="normalSeller"></div>
                         </div>
                     </div>
+
+                    <!-- COMPETITOR MARKET RANKING LIST -->
                     <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                        <div id="chartContainer" class="relative h-[200px] w-full">
-                            <canvas id="insightsChart"></canvas>
+                        <div class="flex justify-between items-center mb-3 border-b border-slate-100 dark:border-slate-700 pb-2">
+                            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">🏆 Competitor Price Leaderboard (Avg Per KG)</h2>
+                            <span class="text-[10px] text-blue-600 dark:text-blue-400 font-bold" x-text="'Showing: ' + selectedDate"></span>
+                        </div>
+
+                        <div class="space-y-2">
+                            <template x-for="(comp, index) in competitorRankings" :key="comp.name">
+                                <div class="flex justify-between items-center bg-[#FAFAFA] dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                                    <div class="flex items-center gap-2.5">
+                                        <span class="text-xs font-black px-2 py-0.5 rounded text-white" 
+                                              :class="{
+                                                'bg-rose-500': index === 0,
+                                                'bg-orange-500': index === 1,
+                                                'bg-amber-500': index === 2,
+                                                'bg-emerald-500': index >= 3
+                                              }" 
+                                              x-text="'#' + (index + 1)"></span>
+                                        <span class="text-sm font-extrabold text-slate-800 dark:text-slate-200" x-text="comp.name"></span>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-xs text-slate-400" x-text="comp.count + ' items available'"></span>
+                                        <span class="text-sm font-black text-slate-900 dark:text-slate-100 font-mono" x-text="'₹' + comp.avg + '/KG'"></span>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="competitorRankings.length === 0">
+                                <div class="text-center py-6 text-xs text-slate-400">No competitor pricing available for current selection.</div>
+                            </template>
                         </div>
                     </div>
                 </div>
@@ -285,7 +313,7 @@
                 filteredItems: [],
                 highestSeller: 'Loading...', 
                 normalSeller: 'Loading...',
-                chartInstance: null,
+                competitorRankings: [],
                 selectedCategory: 'All',
                 truSeaFilter: 'all',
                 activeViewTab: 'dashboard', 
@@ -319,7 +347,6 @@
                     localStorage.setItem('darkMode', this.darkMode);
                     if (this.darkMode) document.documentElement.classList.add('dark');
                     else document.documentElement.classList.remove('dark');
-                    this.updateAnalyticsAndChart();
                 },
 
                 async fetchLivePrices(isFirstLoad) {
@@ -345,15 +372,6 @@
 
                 switchDateView(dateLabel) {
                     this.selectedDate = dateLabel;
-                    // Reset Chart Canvas Instantly to Blank State Before Animation
-                    var container = document.getElementById('chartContainer');
-                    if (container) {
-                        container.innerHTML = '<canvas id="insightsChart"></canvas>';
-                    }
-                    if (this.chartInstance) {
-                        this.chartInstance.destroy();
-                        this.chartInstance = null;
-                    }
                     this.applyFilters();
                 },
 
@@ -394,31 +412,17 @@
                     }
                     
                     this.filteredItems = items;
-                    this.updateAnalyticsAndChart();
+                    this.computeAnalytics();
                 },
 
-                // DYNAMIC MATCHED BENCHMARK AVERAGE (Active in-stock fishes only)
-                updateAnalyticsAndChart() {
-                    if (this.activeViewTab !== 'dashboard' || this.isSearchActive) return;
-
+                // DYNAMIC BENCHMARKING (In-Stock Competitors Only)
+                computeAnalytics() {
                     var items = this.filteredItems || [];
-                    if (items.length === 0) {
-                        this.highestSeller = 'N/A';
-                        this.normalSeller = 'N/A';
-                        this.renderChart([]);
-                        return;
-                    }
-
+                    
                     var compTotals = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
                     var compCounts = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
 
-                    var truMatchedTotal = 0;
-                    var truMatchedCount = 0;
-
                     items.forEach(function(item) {
-                        var tPrice = parseFloat(String(item.truSeaPerKg).replace(/[^\d.]/g, ''));
-                        var itemHasActiveComp = false;
-
                         if (item.competitors) {
                             Object.keys(item.competitors).forEach(function(compName) {
                                 var c = item.competitors[compName];
@@ -429,101 +433,31 @@
                                         if (!isNaN(p) && p > 0 && p < 10000) {
                                             compTotals[compName] += p;
                                             compCounts[compName]++;
-                                            itemHasActiveComp = true;
                                         }
                                     }
                                 }
                             });
                         }
+                    });
 
-                        if (!isNaN(tPrice) && tPrice > 0 && itemHasActiveComp) {
-                            truMatchedTotal += tPrice;
-                            truMatchedCount++;
+                    var rankings = [];
+                    Object.keys(compTotals).forEach(function(k) {
+                        if (compCounts[k] > 0) {
+                            var avg = Math.round(compTotals[k] / compCounts[k]);
+                            rankings.push({ name: k, avg: avg, count: compCounts[k] });
                         }
                     });
 
-                    var truAvg = truMatchedCount > 0 ? Math.round(truMatchedTotal / truMatchedCount) : 0;
-                    var averages = [{ name: 'TruSea', avg: truAvg, isBrand: true }];
+                    rankings.sort((a, b) => b.avg - a.avg);
+                    this.competitorRankings = rankings;
 
-                    Object.keys(compTotals).forEach(function(k) {
-                        var avg = compCounts[k] > 0 ? Math.round(compTotals[k] / compCounts[k]) : 0;
-                        averages.push({ name: k, avg: avg, isBrand: false });
-                    });
-
-                    var competitors = averages.filter(c => !c.isBrand && c.avg > 0);
-                    competitors.sort((a, b) => b.avg - a.avg);
-
-                    if (competitors.length > 0) {
-                        this.highestSeller = competitors[0].name + ' (₹' + competitors[0].avg + '/KG)';
-                        this.normalSeller = competitors[competitors.length - 1].name + ' (₹' + competitors[competitors.length - 1].avg + '/KG)';
+                    if (rankings.length > 0) {
+                        this.highestSeller = rankings[0].name + ' (₹' + rankings[0].avg + '/KG)';
+                        this.normalSeller = rankings[rankings.length - 1].name + ' (₹' + rankings[rankings.length - 1].avg + '/KG)';
                     } else {
                         this.highestSeller = 'N/A';
                         this.normalSeller = 'N/A';
                     }
-
-                    setTimeout(() => {
-                        this.renderChart(averages);
-                    }, 50);
-                },
-
-                renderChart(averages) {
-                    var container = document.getElementById('chartContainer');
-                    if (!container) return;
-
-                    container.innerHTML = '<canvas id="insightsChart"></canvas>';
-                    var canvasEl = document.getElementById('insightsChart');
-
-                    if (this.chartInstance) {
-                        this.chartInstance.destroy();
-                        this.chartInstance = null;
-                    }
-
-                    if (!averages || averages.length === 0) return;
-
-                    var isDark = this.darkMode;
-                    var labels = averages.map(c => c.name);
-                    var dataVals = averages.map(c => c.avg);
-
-                    this.chartInstance = new Chart(canvasEl, {
-                        type: 'bar',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Avg Price (₹/KG)',
-                                data: dataVals,
-                                backgroundColor: ['#00f2fe', '#7c3aed', '#4f46e5', '#10b981', '#f59e0b', '#3b82f6'],
-                                borderRadius: 8,
-                                maxBarThickness: 36
-                            }]
-                        },
-                        options: { 
-                            responsive: true, 
-                            maintainAspectRatio: false,
-                            animation: {
-                                duration: 1000,
-                                easing: 'easeInOutQuart'
-                            },
-                            plugins: { 
-                                legend: { display: false },
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(ctx) { return ' Avg Price: ₹' + ctx.parsed.y + '/KG'; }
-                                    }
-                                }
-                            },
-                            scales: {
-                                y: { 
-                                    beginAtZero: true,
-                                    grid: { color: isDark ? '#334155' : '#f1f5f9' }, 
-                                    ticks: { color: isDark ? '#94a3b8' : '#64748b' } 
-                                },
-                                x: { 
-                                    grid: { display: false }, 
-                                    ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { weight: 'bold' } } 
-                                }
-                            }
-                        }
-                    });
                 },
 
                 exportExcel() {
