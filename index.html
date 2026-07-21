@@ -81,7 +81,7 @@
 </head>
 <body class="bg-[#F8FAFC] dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen pb-12 transition-colors duration-300"
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbykHP68SmEsFKadqUPt85D0elpJCL-EvFe5XVE5gwsrzHEHhVvcVBjf8vaNZfyASxbS/exec',
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbws8S6dE4_nX6Xx71bhwcJBnuUYDaVsYpwTS2NOfhEpaHpAM0LV5BL8_sBrMT8WqO36MQ/exec',
           searchQuery: '', 
           allMasterData: {}, 
           allMasterAverages: {},
@@ -237,9 +237,10 @@
           },
 
           exportCSV() {
-              let headers = ['Fish Description', 'TenderCuts', 'Licious', 'Fresh Ma', 'FreshToHome', 'Supreme', 'Current TruSea Website Price', 'Today\'s TruSea Target Price'];
+              let headers = ['Fish Description', 'Offer Status', 'TenderCuts', 'Licious', 'Fresh Ma', 'FreshToHome', 'Supreme', 'Current TruSea Website Price', 'Today\'s TruSea Target Price'];
               let rows = this.filteredItems.map(item => [
                   item.name,
+                  item.hasOffer ? 'YES' : 'NO',
                   this.formatCompCell(item.competitors['TenderCuts']),
                   this.formatCompCell(item.competitors['Licious']),
                   this.formatCompCell(item.competitors['Fresh Ma']),
@@ -316,16 +317,6 @@
                               if (name.includes('supreme')) return '#3b82f6';
                               return '#cbd5e1';
                           }),
-                          hoverBackgroundColor: averages.map(c => {
-                              if (c.isBrand) return '#00f2fe';
-                              let name = c.name.toLowerCase();
-                              if (name.includes('licious')) return '#4f46e5';
-                              if (name.includes('tender')) return '#7c3aed';
-                              if (name.includes('fresh ma')) return '#10b981';
-                              if (name.includes('fresh to home')) return '#f59e0b';
-                              if (name.includes('supreme')) return '#3b82f6';
-                              return '#cbd5e1';
-                          }),
                           borderRadius: 8,
                           maxBarThickness: 32,
                           borderWidth: 0,
@@ -336,29 +327,12 @@
                   options: { 
                       responsive: true, 
                       maintainAspectRatio: false,
-                      onHover: (event, chartElement) => {
-                          event.native.target.style.cursor = chartElement.length ? 'pointer' : 'default';
-                      },
-                      interaction: {
-                          mode: 'index',
-                          intersect: false
-                      },
-                      animation: {
-                          duration: 1100,
-                          easing: 'easeInOutBack'
-                      },
                       plugins: { 
                           legend: { display: false },
                           tooltip: {
                               enabled: true,
                               backgroundColor: '#1e293b',
                               titleColor: '#ffffff',
-                              titleFont: { size: 13, weight: 'bold' },
-                              bodyColor: '#38bdf8',
-                              bodyFont: { size: 14, weight: 'black' },
-                              padding: 12,
-                              cornerRadius: 8,
-                              displayColors: false,
                               callbacks: {
                                   label: function(context) {
                                       let value = context.parsed.y || 0;
@@ -442,7 +416,6 @@
                             <div class="flex items-center w-full bg-white dark:bg-slate-800 rounded-full px-4 py-1.5 shadow-xs">
                                 <input x-model="searchQuery" 
                                        type="text" 
-                                       enterkeyhint="search"
                                        placeholder="search fish names and press enter" 
                                        class="w-full text-base bg-transparent border-none focus:outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 font-medium py-1">
                                 <button type="submit" class="bg-cyan-600 text-white rounded-full px-4 py-1.5 text-xs font-bold shadow-xs hover:bg-cyan-700 transition">
@@ -492,7 +465,12 @@
                         <template x-for="item in filteredItems" :key="item.name">
                             <div class="premium-glow-card p-6 flex flex-col justify-between border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
                                 <div>
-                                    <h3 class="text-lg font-extrabold text-slate-900 dark:text-slate-100 mb-3 tracking-tight" x-text="item.name"></h3>
+                                    <div class="flex justify-between items-start gap-2 mb-3">
+                                        <h3 class="text-lg font-extrabold text-slate-900 dark:text-slate-100 tracking-tight" x-text="item.name"></h3>
+                                        <template x-if="item.hasOffer">
+                                            <span class="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse whitespace-nowrap">🔥 Offer</span>
+                                        </template>
+                                    </div>
                                     
                                     <div class="space-y-2.5 mb-4 bg-[#FAFAFA] dark:bg-slate-900 p-4 rounded-lg border border-slate-100 dark:border-slate-800 text-sm">
                                         <div class="flex justify-between items-center">
@@ -579,8 +557,6 @@
                     </div>
                 </div>
 
-                <p class="sm:hidden text-[10px] text-slate-400 dark:text-slate-500 text-center font-medium">← Swipe table sideways to see all competitors →</p>
-
                 <div id="priceMatrixTable" class="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800">
                     <table class="w-full table-auto border-collapse text-left text-[11px] sm:text-xs">
                         <thead>
@@ -591,57 +567,54 @@
                                 <th class="p-3 text-center">Fresh Ma</th>
                                 <th class="p-3 text-center">FreshToHome</th>
                                 <th class="p-3 text-center">Supreme</th>
-                                <th class="p-3 text-center bg-blue-100/70 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-l border-slate-200 dark:border-slate-700 font-extrabold">Current TruSea Website Price</th>
-                                <th class="p-3 text-center bg-blue-600 dark:bg-blue-600 text-white font-black rounded-tr-xl">Today's TruSea Target Price</th>
+                                <th class="p-3 text-center bg-blue-100/70 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-l border-slate-200 dark:border-slate-700 font-extrabold">Current TruSea Price</th>
+                                <th class="p-3 text-center bg-blue-600 dark:bg-blue-600 text-white font-black rounded-tr-xl">Today's Target Price</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 dark:divide-slate-700/60 font-medium text-slate-700 dark:text-slate-300">
                             <template x-for="item in filteredItems" :key="item.name">
                                 <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
-                                    <td class="p-2.5 font-bold text-slate-900 dark:text-slate-100 whitespace-normal break-words sticky left-0 z-10 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 shadow-[2px_0_4px_rgba(0,0,0,0.06)] w-[160px] min-w-[160px] max-w-[160px]" x-text="item.name"></td>
+                                    <td class="p-2.5 font-bold text-slate-900 dark:text-slate-100 whitespace-normal break-words sticky left-0 z-10 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 shadow-[2px_0_4px_rgba(0,0,0,0.06)] w-[160px] min-w-[160px] max-w-[160px]">
+                                        <div class="flex flex-col items-start gap-1">
+                                            <span x-text="item.name"></span>
+                                            <template x-if="item.hasOffer">
+                                                <span class="bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded uppercase tracking-wider">🔥 OFFER</span>
+                                            </template>
+                                        </div>
+                                    </td>
                                     
                                     <td class="p-2.5 text-center font-mono">
-                                        <span class="text-[#16A34A] dark:text-[#4ADE80] transition-colors duration-300"
-                                              x-show="!item.competitors['TenderCuts'].status.toLowerCase().includes('not available') && !item.competitors['TenderCuts'].status.toLowerCase().includes('sold out')" 
-                                              x-text="item.competitors['TenderCuts'] && item.competitors['TenderCuts'].price !== '-' ? '₹' + item.competitors['TenderCuts'].price : '-'"></span>
-                                        <span class="text-[10px] text-[#F97316] dark:text-[#FB923C] font-bold transition-colors duration-300" x-show="item.competitors['TenderCuts'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['TenderCuts'].price !== '-' ? ' (₹' + item.competitors['TenderCuts'].price + '/kg)' : '')"></span>
+                                        <span class="text-[#16A34A] dark:text-[#4ADE80]" x-show="!item.competitors['TenderCuts'].status.toLowerCase().includes('not available') && !item.competitors['TenderCuts'].status.toLowerCase().includes('sold out')" x-text="item.competitors['TenderCuts'] && item.competitors['TenderCuts'].price !== '-' ? '₹' + item.competitors['TenderCuts'].price : '-'"></span>
+                                        <span class="text-[10px] text-[#F97316] font-bold" x-show="item.competitors['TenderCuts'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['TenderCuts'].price !== '-' ? ' (₹' + item.competitors['TenderCuts'].price + '/kg)' : '')"></span>
                                         <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['TenderCuts'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
                                     <td class="p-2.5 text-center font-mono">
-                                        <span class="text-[#16A34A] dark:text-[#4ADE80] transition-colors duration-300"
-                                              x-show="!item.competitors['Licious'].status.toLowerCase().includes('not available') && !item.competitors['Licious'].status.toLowerCase().includes('sold out')"
-                                              x-text="item.competitors['Licious'] && item.competitors['Licious'].price !== '-' ? '₹' + item.competitors['Licious'].price : '-'"></span>
-                                        <span class="text-[10px] text-[#F97316] dark:text-[#FB923C] font-bold transition-colors duration-300" x-show="item.competitors['Licious'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Licious'].price !== '-' ? ' (₹' + item.competitors['Licious'].price + '/kg)' : '')"></span>
+                                        <span class="text-[#16A34A] dark:text-[#4ADE80]" x-show="!item.competitors['Licious'].status.toLowerCase().includes('not available') && !item.competitors['Licious'].status.toLowerCase().includes('sold out')" x-text="item.competitors['Licious'] && item.competitors['Licious'].price !== '-' ? '₹' + item.competitors['Licious'].price : '-'"></span>
+                                        <span class="text-[10px] text-[#F97316] font-bold" x-show="item.competitors['Licious'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Licious'].price !== '-' ? ' (₹' + item.competitors['Licious'].price + '/kg)' : '')"></span>
                                         <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Licious'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
                                     <td class="p-2.5 text-center font-mono">
-                                        <span class="text-[#16A34A] dark:text-[#4ADE80] transition-colors duration-300"
-                                              x-show="!item.competitors['Fresh Ma'].status.toLowerCase().includes('not available') && !item.competitors['Fresh Ma'].status.toLowerCase().includes('sold out')"
-                                              x-text="item.competitors['Fresh Ma'] && item.competitors['Fresh Ma'].price !== '-' ? '₹' + item.competitors['Fresh Ma'].price : '-'"></span>
-                                        <span class="text-[10px] text-[#F97316] dark:text-[#FB923C] font-bold transition-colors duration-300" x-show="item.competitors['Fresh Ma'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Fresh Ma'].price !== '-' ? ' (₹' + item.competitors['Fresh Ma'].price + '/kg)' : '')"></span>
+                                        <span class="text-[#16A34A] dark:text-[#4ADE80]" x-show="!item.competitors['Fresh Ma'].status.toLowerCase().includes('not available') && !item.competitors['Fresh Ma'].status.toLowerCase().includes('sold out')" x-text="item.competitors['Fresh Ma'] && item.competitors['Fresh Ma'].price !== '-' ? '₹' + item.competitors['Fresh Ma'].price : '-'"></span>
+                                        <span class="text-[10px] text-[#F97316] font-bold" x-show="item.competitors['Fresh Ma'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Fresh Ma'].price !== '-' ? ' (₹' + item.competitors['Fresh Ma'].price + '/kg)' : '')"></span>
                                         <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Fresh Ma'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
                                     <td class="p-2.5 text-center font-mono">
-                                        <span class="text-[#16A34A] dark:text-[#4ADE80] transition-colors duration-300"
-                                              x-show="!item.competitors['Fresh To Home'].status.toLowerCase().includes('not available') && !item.competitors['Fresh To Home'].status.toLowerCase().includes('sold out')"
-                                              x-text="item.competitors['Fresh To Home'] && item.competitors['Fresh To Home'].price !== '-' ? '₹' + item.competitors['Fresh To Home'].price : '-'"></span>
-                                        <span class="text-[10px] text-[#F97316] dark:text-[#FB923C] font-bold transition-colors duration-300" x-show="item.competitors['Fresh To Home'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Fresh To Home'].price !== '-' ? ' (₹' + item.competitors['Fresh To Home'].price + '/kg)' : '')"></span>
+                                        <span class="text-[#16A34A] dark:text-[#4ADE80]" x-show="!item.competitors['Fresh To Home'].status.toLowerCase().includes('not available') && !item.competitors['Fresh To Home'].status.toLowerCase().includes('sold out')" x-text="item.competitors['Fresh To Home'] && item.competitors['Fresh To Home'].price !== '-' ? '₹' + item.competitors['Fresh To Home'].price : '-'"></span>
+                                        <span class="text-[10px] text-[#F97316] font-bold" x-show="item.competitors['Fresh To Home'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Fresh To Home'].price !== '-' ? ' (₹' + item.competitors['Fresh To Home'].price + '/kg)' : '')"></span>
                                         <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Fresh To Home'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
                                     <td class="p-2.5 text-center font-mono">
-                                        <span class="text-[#16A34A] dark:text-[#4ADE80] transition-colors duration-300"
-                                              x-show="!item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('not available') && !item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('sold out')"
-                                              x-text="item.competitors['Supreme Sea Foods'] && item.competitors['Supreme Sea Foods'].price !== '-' ? '₹' + item.competitors['Supreme Sea Foods'].price : '-'"></span>
-                                        <span class="text-[10px] text-[#F97316] dark:text-[#FB923C] font-bold transition-colors duration-300" x-show="item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Supreme Sea Foods'].price !== '-' ? ' (₹' + item.competitors['Supreme Sea Foods'].price + '/kg)' : '')"></span>
+                                        <span class="text-[#16A34A] dark:text-[#4ADE80]" x-show="!item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('not available') && !item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('sold out')" x-text="item.competitors['Supreme Sea Foods'] && item.competitors['Supreme Sea Foods'].price !== '-' ? '₹' + item.competitors['Supreme Sea Foods'].price : '-'"></span>
+                                        <span class="text-[10px] text-[#F97316] font-bold" x-show="item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Supreme Sea Foods'].price !== '-' ? ' (₹' + item.competitors['Supreme Sea Foods'].price + '/kg)' : '')"></span>
                                         <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
                                     <td class="p-2.5 text-center font-mono bg-blue-100/50 dark:bg-blue-950/20 border-l border-slate-200 dark:border-slate-700 font-bold text-blue-900 dark:text-blue-300">
-                                        <span class="transition-colors duration-300" :class="getTruSeaPriceColorClass(item)" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
+                                        <span :class="getTruSeaPriceColorClass(item)" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
                                     </td>
 
                                     <td class="p-2.5 text-center font-mono bg-blue-500/10 dark:bg-blue-500/20 font-black text-blue-600 dark:text-blue-400 text-xs sm:text-sm">
