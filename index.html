@@ -5,22 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TruSea Price Tracker</title>
     
-    <meta property="og:title" content="TruSea Price Tracker" />
-    <meta property="og:description" content="Live Real-Time Seafood Price Analysis & Competitor Tracking Dataset Parameters." />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="TruSea Tracker" />
-    
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="TruSea Price Tracker" />
-    <meta name="twitter:description" content="Live Real-Time Seafood Price Analysis & Competitor Tracking Dataset Parameters." />
-
-    <link class="js-favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🐟</text></svg>">
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class'
-        }
+        tailwind.config = { darkMode: 'class' }
     </script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -31,15 +18,10 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        @property --gemini-bar-angle {
-            syntax: '<angle>'; initial-value: 0deg; inherits: false;
-        }
-        @keyframes geminiBarRotate {
-            0% { --gemini-bar-angle: 0deg; } 100% { --gemini-bar-angle: 360deg; }
-        }
-        .gemini-ai-search-container {
-            position: relative; width: 100%; border-radius: 9999px; padding: 2px; z-index: 10;
-        }
+        @property --gemini-bar-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+        @keyframes geminiBarRotate { 0% { --gemini-bar-angle: 0deg; } 100% { --gemini-bar-angle: 360deg; } }
+        
+        .gemini-ai-search-container { position: relative; width: 100%; border-radius: 9999px; padding: 2px; z-index: 10; }
         .gemini-ai-search-container::before {
             content: ''; position: absolute; inset: 0; border-radius: 9999px; padding: 2px;
             background: conic-gradient(from var(--gemini-bar-angle), #3085ff, #00f2fe, #4facfe, #9b51e0, #ff7beb, #3085ff);
@@ -47,41 +29,20 @@
             -webkit-mask-composite: xor; mask-composite: exclude;
             animation: geminiBarRotate 5s linear infinite; pointer-events: none; z-index: 2;
         }
-        .gemini-ai-search-container::after {
-            content: ''; position: absolute; inset: -1px; border-radius: 9999px;
-            background: conic-gradient(from var(--gemini-bar-angle), #3085ff, #00f2fe, #4facfe, #9b51e0, #ff7beb, #3085ff);
-            animation: geminiBarRotate 5s linear infinite; filter: blur(6px); opacity: 0.2; pointer-events: none; z-index: 1;
-        }
-
-        @keyframes titleGlowPulse {
-            0%, 100% { opacity: 0.95; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.01); }
-        }
-        .animated-tracker-title {
-            animation: titleGlowPulse 4s ease-in-out infinite;
-        }
 
         .premium-glow-card {
             position: relative; border-radius: 1rem; z-index: 1;
-            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-        .premium-glow-card::before {
-            content: ''; position: absolute; inset: -1px; border-radius: 1rem; padding: 1.5px;
-            background: linear-gradient(135deg, #00f2fe, #4facfe, #9b51e0, #ff7beb, #00f2fe);
-            background-size: 300% 300%; -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor; mask-composite: exclude; z-index: 2; opacity: 0; transition: opacity 0.3s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .premium-glow-card:hover {
-            transform: translateY(-4px) scale(1.015);
-            box-shadow: 0 15px 25px rgba(0, 242, 254, 0.12), 0 8px 15px rgba(155, 81, 224, 0.05);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px rgba(0, 242, 254, 0.12);
         }
-        .premium-glow-card:hover::before { opacity: 1; animation: cardGlowAnimation 3s linear infinite; }
-        @keyframes cardGlowAnimation { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
     </style>
 </head>
-<body class="bg-[#F8FAFC] dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen pb-12 transition-colors duration-300"
+<body class="bg-[#F8FAFC] dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen pb-12"
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbws8S6dE4_nX6Xx71bhwcJBnuUYDaVsYpwTS2NOfhEpaHpAM0LV5BL8_sBrMT8WqO36MQ/exec',
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbzPUDtRh1h7hB5b3xGe-niVsvd7t8ITkYvvbO9Wy13I2WM24Y1bDfn2QWzCCSH4oerM-A/exec',
           searchQuery: '', 
           allMasterData: {}, 
           allMasterAverages: {},
@@ -89,36 +50,24 @@
           selectedDate: '',
           filteredItems: [],
           highestSeller: 'Calculating...', normalSeller: 'Calculating...',
-          loading: true, isSyncing: false, errorMessage: '', chartInstance: null,
+          loading: true, isSyncing: false, chartInstance: null,
           selectedCategory: 'All',
           truSeaFilter: 'all',
           activeViewTab: 'dashboard', 
           darkMode: localStorage.getItem('darkMode') === 'true',
           
           async initEngine() {
-              if (this.darkMode) {
-                  document.documentElement.classList.add('dark');
-              } else {
-                  document.documentElement.classList.remove('dark');
-              }
-
+              if (this.darkMode) document.documentElement.classList.add('dark');
               this.loading = true;
               await this.fetchLivePrices(true);
               this.loading = false;
-
-              setInterval(async () => {
-                  await this.fetchLivePrices(false);
-              }, 30000);
           },
 
           toggleTheme() {
               this.darkMode = !this.darkMode;
               localStorage.setItem('darkMode', this.darkMode);
-              if (this.darkMode) {
-                  document.documentElement.classList.add('dark');
-              } else {
-                  document.documentElement.classList.remove('dark');
-              }
+              if (this.darkMode) document.documentElement.classList.add('dark');
+              else document.documentElement.classList.remove('dark');
               if (this.availableDates.length > 0) {
                   this.processAnalytics(this.allMasterAverages[this.selectedDate] || []);
               }
@@ -142,7 +91,7 @@
                   this.applyFilters();
                   this.processAnalytics(this.allMasterAverages[this.selectedDate] || []);
               } catch (e) {
-                  this.errorMessage = 'Syncing latest live dataset parameters...';
+                  console.error(e);
               } finally {
                   this.isSyncing = false;
               }
@@ -154,136 +103,47 @@
               this.processAnalytics(this.allMasterAverages[dateLabel] || []);
           },
 
-          getTruSeaPriceColorClass(item) {
-              let compPrices = Object.values(item.competitors || {})
-                  .map(c => {
-                      let s = (c.status || '').toLowerCase();
-                      if (s.includes('sold out') || s.includes('not available')) return null;
-                      let p = parseFloat(String(c.price).replace(/[^\d.]/g, ''));
-                      return isNaN(p) ? null : p;
-                  })
-                  .filter(p => p !== null);
-
-              if (compPrices.length === 0) return 'text-[#6B7280] dark:text-[#9CA3AF]';
-
-              let avgCompPrice = compPrices.reduce((a, b) => a + b, 0) / compPrices.length;
-              let truSeaPrice = parseFloat(String(item.currentTruSeaWebPrice).replace(/[^\d.]/g, ''));
-
-              if (isNaN(truSeaPrice)) return 'text-[#6B7280] dark:text-[#9CA3AF]';
-              if (truSeaPrice < avgCompPrice) return 'text-[#16A34A] dark:text-[#4ADE80] font-bold';
-              if (truSeaPrice > avgCompPrice) return 'text-[#DC2626] dark:text-[#F87171] font-bold';
-              return 'text-[#6B7280] dark:text-[#9CA3AF] font-bold';
-          },
-
           getTrend(item) {
               let idx = this.availableDates.indexOf(this.selectedDate);
               let defaultTrend = { symbol: '➖', class: 'bg-slate-50 text-slate-500 border-slate-200' };
-              
               if (idx === -1 || idx === this.availableDates.length - 1) return defaultTrend;
               
               let prevDate = this.availableDates[idx + 1];
-              let prevItems = this.allMasterData[prevDate] || [];
-              let prevItem = prevItems.find(p => p.name === item.name);
-              
+              let prevItem = (this.allMasterData[prevDate] || []).find(p => p.name === item.name);
               if (!prevItem || prevItem.truSeaPerKg === '-' || item.truSeaPerKg === '-') return defaultTrend;
               
-              let currentPrice = parseFloat(String(item.truSeaPerKg).replace(/[^\d.]/g, ''));
-              let prevPrice = parseFloat(String(prevItem.truSeaPerKg).replace(/[^\d.]/g, ''));
+              let curr = parseFloat(String(item.truSeaPerKg).replace(/[^\d.]/g, ''));
+              let prev = parseFloat(String(prevItem.truSeaPerKg).replace(/[^\d.]/g, ''));
               
-              if (isNaN(currentPrice) || isNaN(prevPrice)) return defaultTrend;
-              if (currentPrice > prevPrice) return { symbol: '⬆️', class: 'bg-rose-50 text-rose-600 border-rose-200 font-bold' };
-              if (currentPrice < prevPrice) return { symbol: '⬇️', class: 'bg-emerald-50 text-emerald-600 border-emerald-200 font-bold' };
+              if (isNaN(curr) || isNaN(prev)) return defaultTrend;
+              if (curr > prev) return { symbol: '⬆️', class: 'bg-rose-50 text-rose-600 border-rose-200 font-bold' };
+              if (curr < prev) return { symbol: '⬇️', class: 'bg-emerald-50 text-emerald-600 border-emerald-200 font-bold' };
               return defaultTrend;
           },
 
-          matchesCategory(itemName, category) {
-              if (category === 'All') return true;
-              let nameLower = itemName.toLowerCase();
-              let words = category.toLowerCase().split(/\s+/).map(w => w.replace(/s$/, ''));
-              return words.every(w => nameLower.includes(w));
-          },
-
           applyFilters() {
-              let currentTabProducts = this.allMasterData[this.selectedDate] || [];
+              let items = this.allMasterData[this.selectedDate] || [];
               let q = this.searchQuery.toLowerCase().trim();
               
-              let out = currentTabProducts;
-              
-              if (q) {
-                  out = out.filter(i => i.name.toLowerCase().includes(q));
-              }
-              
+              if (q) items = items.filter(i => i.name.toLowerCase().includes(q));
               if (this.selectedCategory !== 'All') {
-                  out = out.filter(i => this.matchesCategory(i.name, this.selectedCategory));
+                  items = items.filter(i => i.name.toLowerCase().includes(this.selectedCategory.toLowerCase().replace(/s$/, '')));
               }
-              
               if (this.truSeaFilter === 'priced') {
-                  out = out.filter(i => i.truSeaPerKg && i.truSeaPerKg.toString().trim() !== '' && i.truSeaPerKg !== '-');
+                  items = items.filter(i => i.truSeaPerKg && i.truSeaPerKg !== '-');
               }
               
-              this.filteredItems = out;
-              
-              if (document.activeElement && typeof document.activeElement.blur === 'function') {
-                  document.activeElement.blur();
-              }
-          },
-
-          formatCompCell(comp) {
-              if (!comp) return '-';
-              let s = (comp.status || '').toLowerCase();
-              if (s.includes('sold out')) return 'Sold Out';
-              if (s.includes('not available')) return 'Not Available';
-              return comp.price !== '-' ? '₹' + comp.price : '-';
-          },
-
-          exportCSV() {
-              let headers = ['Fish Description', 'Offer Status', 'TenderCuts', 'Licious', 'Fresh Ma', 'FreshToHome', 'Supreme', 'Current TruSea Website Price', 'Today\'s TruSea Target Price'];
-              let rows = this.filteredItems.map(item => [
-                  item.name,
-                  item.hasOffer ? 'YES' : 'NO',
-                  this.formatCompCell(item.competitors['TenderCuts']),
-                  this.formatCompCell(item.competitors['Licious']),
-                  this.formatCompCell(item.competitors['Fresh Ma']),
-                  this.formatCompCell(item.competitors['Fresh To Home']),
-                  this.formatCompCell(item.competitors['Supreme Sea Foods']),
-                  item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-',
-                  item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'
-              ]);
-              let dq = String.fromCharCode(34);
-              let csvContent = [headers, ...rows].map(r => r.map(v => dq + String(v).split(dq).join(dq + dq) + dq).join(',')).join('\n');
-              let blob = new Blob([String.fromCharCode(65279) + csvContent], { type: 'text/csv;charset=utf-8;' });
-              let url = URL.createObjectURL(blob);
-              let a = document.createElement('a');
-              a.href = url;
-              a.download = `TruSea_Price_Matrix_${(this.selectedDate || 'export').replace(/\s+/g, '_')}.csv`;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
-          },
-
-          exportPDF() {
-              let element = document.getElementById('priceMatrixTable');
-              if (!element) return;
-              let opt = {
-                  margin: 0.3,
-                  filename: `TruSea_Price_Matrix_${(this.selectedDate || 'export').replace(/\s+/g, '_')}.pdf`,
-                  image: { type: 'jpeg', quality: 0.98 },
-                  html2canvas: { scale: 2, useCORS: true },
-                  jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' }
-              };
-              html2pdf().set(opt).from(element).save();
+              this.filteredItems = items;
           },
 
           processAnalytics(averages) {
               if (!averages || averages.length === 0) return;
+              let competitors = averages.filter(c => !c.isBrand && c.avg > 0);
+              competitors.sort((a, b) => b.avg - a.avg);
               
-              let competitorsOnly = averages.filter(c => !c.isBrand && c.avg > 0);
-              competitorsOnly.sort((a, b) => b.avg - a.avg);
-              
-              if (competitorsOnly.length > 0) {
-                  this.highestSeller = competitorsOnly[0].name + ' (₹' + Math.round(competitorsOnly[0].avg) + '/KG)';
-                  this.normalSeller = competitorsOnly[competitorsOnly.length - 1].name + ' (₹' + Math.round(competitorsOnly[competitorsOnly.length - 1].avg) + '/KG)';
+              if (competitors.length > 0) {
+                  this.highestSeller = competitors[0].name + ' (₹' + Math.round(competitors[0].avg) + '/KG)';
+                  this.normalSeller = competitors[competitors.length - 1].name + ' (₹' + Math.round(competitors[competitors.length - 1].avg) + '/KG)';
               } else {
                   this.highestSeller = 'N/A';
                   this.normalSeller = 'N/A';
@@ -298,58 +158,24 @@
               if (!canvasEl) return;
               
               let isDark = this.darkMode;
-              let axisColor = isDark ? '#94a3b8' : '#64748b';
-              let gridColor = isDark ? '#334155' : '#f1f5f9';
-              
               this.chartInstance = new Chart(canvasEl.getContext('2d'), {
                   type: 'bar',
                   data: {
                       labels: averages.map(c => c.name),
                       datasets: [{
                           data: averages.map(c => Math.round(c.avg)),
-                          backgroundColor: averages.map(c => {
-                              if (c.isBrand) return '#00f2fe';
-                              let name = c.name.toLowerCase();
-                              if (name.includes('licious')) return '#4f46e5';
-                              if (name.includes('tender')) return '#7c3aed';
-                              if (name.includes('fresh ma')) return '#10b981';
-                              if (name.includes('fresh to home')) return '#f59e0b';
-                              if (name.includes('supreme')) return '#3b82f6';
-                              return '#cbd5e1';
-                          }),
+                          backgroundColor: ['#00f2fe', '#7c3aed', '#4f46e5', '#10b981', '#f59e0b', '#3b82f6'],
                           borderRadius: 8,
-                          maxBarThickness: 32,
-                          borderWidth: 0,
-                          hoverBorderWidth: 2,
-                          hoverBorderColor: isDark ? '#ffffff' : '#1e293b'
+                          maxBarThickness: 32
                       }]
                   },
                   options: { 
                       responsive: true, 
                       maintainAspectRatio: false,
-                      plugins: { 
-                          legend: { display: false },
-                          tooltip: {
-                              enabled: true,
-                              backgroundColor: '#1e293b',
-                              titleColor: '#ffffff',
-                              callbacks: {
-                                  label: function(context) {
-                                      let value = context.parsed.y || 0;
-                                      return ' Avg Price: ₹' + value.toLocaleString('en-IN') + '/KG';
-                                  }
-                              }
-                          }
-                      },
+                      plugins: { legend: { display: false } },
                       scales: {
-                          y: { 
-                              grid: { color: gridColor },
-                              ticks: { color: axisColor, font: { size: 11 } } 
-                          },
-                          x: { 
-                              grid: { display: false },
-                              ticks: { color: axisColor, font: { size: 12, weight: 'bold' } } 
-                          }
+                          y: { grid: { color: isDark ? '#334155' : '#f1f5f9' }, ticks: { color: isDark ? '#94a3b8' : '#64748b' } },
+                          x: { grid: { display: false }, ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { weight: 'bold' } } }
                       }
                   }
               });
@@ -358,278 +184,125 @@
 
     <div class="max-w-7xl mx-auto p-4 sm:p-6">
         <header class="mb-4 border-b border-slate-200 dark:border-slate-700 pb-3 flex justify-between items-center">
-            <div class="flex items-center gap-2.5 animated-tracker-title select-none min-w-0">
-                <span class="text-2xl sm:text-4xl filter drop-shadow-xs flex-shrink-0">🐟</span>
-                <h1 class="text-xl sm:text-2xl font-medium tracking-tight text-slate-700 dark:text-slate-300 truncate">
-                    <span class="font-black text-blue-600 dark:text-blue-500">TruSea</span> Price Tracker
-                </h1>
-            </div>
-            
-            <div class="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-                <button @click="toggleTheme()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Toggle Dark/Light Mode">
-                    <template x-if="!darkMode">
-                        <svg class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-                    </template>
-                    <template x-if="darkMode">
-                        <svg class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.243 17.657l.707.707M6.343 6.343l.707-.707M14.142 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                    </template>
-                </button>
-
-                <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-lg border border-slate-100 dark:border-slate-800/80 sm:bg-transparent sm:dark:bg-transparent sm:border-0 sm:p-0">
-                    <span class="relative flex h-2 w-2">
-                        <span :class="isSyncing ? 'animate-ping bg-amber-400' : 'bg-emerald-500'" class="absolute inline-flex h-full w-full rounded-full opacity-75"></span>
-                        <span :class="isSyncing ? 'bg-amber-500' : 'bg-emerald-500'" class="relative inline-flex rounded-full h-2 w-2"></span>
-                    </span>
-                    <span class="hidden sm:inline" x-text="isSyncing ? 'Syncing...' : 'Auto Sync Active'"></span>
-                </div>
-            </div>
+            <h1 class="text-xl sm:text-2xl font-medium text-slate-700 dark:text-slate-300">
+                <span class="font-black text-blue-600 dark:text-blue-500">TruSea</span> Price Tracker
+            </h1>
+            <button @click="toggleTheme()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">🌙/☀️</button>
         </header>
 
         <div class="mb-5 flex border-b border-slate-200 dark:border-slate-700">
             <button @click="activeViewTab = 'dashboard'; switchDateView(availableDates[0])" 
-                    :class="activeViewTab === 'dashboard' ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold border-b-2' : 'text-slate-500 dark:text-slate-400 font-medium'"
-                    class="px-5 py-2.5 text-sm transition-all">
-                📊 Analytics Dashboard
-            </button>
-            <button @click="activeViewTab = 'table'; selectedDate = availableDates[0]; applyFilters();" 
-                    :class="activeViewTab === 'table' ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold border-b-2' : 'text-slate-500 dark:text-slate-400 font-medium'"
-                    class="px-5 py-2.5 text-sm transition-all flex items-center gap-2">
-                📋 Full Comparative Table <span class="bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400 font-bold text-[10px] px-1.5 py-0.5 rounded-full uppercase tracking-wider">Latest</span>
-            </button>
+                    :class="activeViewTab === 'dashboard' ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold border-b-2' : 'text-slate-500'"
+                    class="px-5 py-2.5 text-sm">📊 Analytics Dashboard</button>
+            <button @click="activeViewTab = 'table'; applyFilters();" 
+                    :class="activeViewTab === 'table' ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold border-b-2' : 'text-slate-500'"
+                    class="px-5 py-2.5 text-sm">📋 Full Comparative Table</button>
         </div>
 
         <template x-if="activeViewTab === 'dashboard'">
             <div>
-                <div x-show="!loading" class="mb-5 overflow-x-auto no-scrollbar flex items-center gap-2 pb-1.5">
+                <div class="mb-5 flex gap-2 overflow-x-auto no-scrollbar">
                     <template x-for="date in availableDates" :key="date">
                         <button @click="switchDateView(date)" 
-                                :class="selectedDate === date ? 'bg-cyan-600 text-white shadow-xs font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium border border-slate-200 dark:border-slate-700'"
-                                class="px-4 py-2 text-xs rounded-full whitespace-nowrap transition-all duration-200" 
-                                x-text="date">
-                        </button>
+                                :class="selectedDate === date ? 'bg-cyan-600 text-white font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 border'"
+                                class="px-4 py-2 text-xs rounded-full whitespace-nowrap" x-text="date"></button>
                     </template>
                 </div>
 
-                <div class="mb-4 max-w-xl mx-auto">
-                    <form @submit.prevent="applyFilters()">
-                        <div class="gemini-ai-search-container">
-                            <div class="flex items-center w-full bg-white dark:bg-slate-800 rounded-full px-4 py-1.5 shadow-xs">
-                                <input x-model="searchQuery" 
-                                       type="text" 
-                                       placeholder="search fish names and press enter" 
-                                       class="w-full text-base bg-transparent border-none focus:outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 font-medium py-1">
-                                <button type="submit" class="bg-cyan-600 text-white rounded-full px-4 py-1.5 text-xs font-bold shadow-xs hover:bg-cyan-700 transition">
-                                    Search
-                                </button>
-                            </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                    <div class="lg:col-span-1 flex flex-col gap-3">
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border">
+                            <span class="text-xs uppercase font-bold text-red-500 block">🔴 Costly Market Vendor</span>
+                            <div class="text-base font-black text-slate-900 dark:text-slate-100" x-text="highestSeller"></div>
                         </div>
-                    </form>
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border">
+                            <span class="text-xs uppercase font-bold text-emerald-600 block">🟢 Normal Market Vendor</span>
+                            <div class="text-base font-black text-slate-900 dark:text-slate-100" x-text="normalSeller"></div>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 rounded-xl border">
+                        <div class="relative h-[180px] w-full"><canvas id="insightsChart"></canvas></div>
+                    </div>
                 </div>
 
-                <div x-show="!loading" class="mb-6 flex flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-5xl mx-auto">
-                    <template x-for="cat in ['All', 'Premium Slices', 'Regular Slices', 'Thick Slices', 'Fillets', 'Curry Cuts', 'Cleaned Whole Fish', 'Cubes', 'Prawns', 'Crabs']" :key="cat">
-                        <button @click="selectedCategory = cat; applyFilters();"
-                                :class="selectedCategory === cat ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-slate-800 dark:border-slate-200 font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'"
-                                class="px-3.5 py-1.5 text-xs rounded-full border transition font-medium"
-                                x-text="cat">
-                        </button>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <template x-for="item in filteredItems" :key="item.name">
+                        <div class="premium-glow-card p-6 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl">
+                            <h3 class="text-lg font-extrabold text-slate-900 dark:text-slate-100 mb-3" x-text="item.name"></h3>
+                            
+                            <div class="space-y-2 mb-4 bg-[#FAFAFA] dark:bg-slate-900 p-4 rounded-lg text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-slate-500">Current TruSea Web Price</span>
+                                    <span class="font-bold" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
+                                </div>
+                                <div class="flex justify-between border-t pt-2">
+                                    <span class="font-bold">Today's Target TruSea Price</span>
+                                    <span class="text-lg font-black text-cyan-600" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="border-t pt-3 space-y-2.5 text-sm">
+                                <template x-for="[compName, compVal] in Object.entries(item.competitors)" :key="compName">
+                                    <div class="flex justify-between items-center bg-[#FAFAFA] dark:bg-slate-900 p-2.5 rounded-lg border">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="font-bold text-slate-700 dark:text-slate-300" x-text="compName"></span>
+                                            <!-- PER COMPETITOR OFFER BADGE -->
+                                            <template x-if="compVal.hasOffer">
+                                                <span class="bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider animate-pulse">🔥 OFFER</span>
+                                            </template>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-extrabold" x-show="!compVal.status.toLowerCase().includes('not available') && !compVal.status.toLowerCase().includes('sold out')" x-text="compVal.price !== '-' ? '₹' + compVal.price + '/kg' : '-'"></span>
+                                            <span :class="{
+                                                    'bg-emerald-50 text-emerald-700 border-emerald-200': !compVal.status.toLowerCase().includes('sold out') && !compVal.status.toLowerCase().includes('not available'),
+                                                    'bg-rose-50 text-rose-700 border-rose-200': compVal.status.toLowerCase().includes('sold out'),
+                                                    'bg-slate-100 text-slate-500': compVal.status.toLowerCase().includes('not available')
+                                                  }" 
+                                                  class="text-xs font-bold px-2 py-1 rounded border" 
+                                                  x-text="compVal.status"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
                     </template>
                 </div>
-
-                <main class="space-y-6">
-                    <div x-show="loading" class="text-center py-20 text-xs text-slate-400 dark:text-slate-500 font-semibold">Live Real-Time Active Sync Processing...</div>
-
-                    <div x-show="!loading" class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        <div class="lg:col-span-1 flex flex-col gap-3">
-                            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                                <span class="text-xs uppercase font-bold text-red-500 block mb-1">🔴 Costly Market Vendor</span>
-                                <div class="text-base font-black text-slate-900 dark:text-slate-100" x-text="highestSeller"></div>
-                            </div>
-                            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                                <span class="text-xs uppercase font-bold text-emerald-600 dark:text-emerald-500 block mb-1">🟢 Normal Market Vendor</span>
-                                <div class="text-base font-black text-slate-900 dark:text-slate-100" x-text="normalSeller"></div>
-                            </div>
-                        </div>
-                        <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                            <div class="relative h-[180px] w-full"><canvas id="insightsChart"></canvas></div>
-                        </div>
-                    </div>
-
-                    <div x-show="!loading" class="max-w-3xl mx-auto text-center">
-                        <span class="inline-block text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-4 py-1.5">
-                            ⓘ Showing parameters specific to tab: <span class="font-bold text-cyan-600 dark:text-cyan-400" x-text="selectedDate"></span> (Price per KG)
-                        </span>
-                    </div>
-
-                    <div x-show="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        <template x-for="item in filteredItems" :key="item.name">
-                            <div class="premium-glow-card p-6 flex flex-col justify-between border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-                                <div>
-                                    <div class="flex justify-between items-start gap-2 mb-3">
-                                        <h3 class="text-lg font-extrabold text-slate-900 dark:text-slate-100 tracking-tight" x-text="item.name"></h3>
-                                        <template x-if="item.hasOffer">
-                                            <span class="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse whitespace-nowrap">🔥 Offer</span>
-                                        </template>
-                                    </div>
-                                    
-                                    <div class="space-y-2.5 mb-4 bg-[#FAFAFA] dark:bg-slate-900 p-4 rounded-lg border border-slate-100 dark:border-slate-800 text-sm">
-                                        <div class="flex justify-between items-center">
-                                            <span class="text-slate-500 dark:text-slate-400">Current TruSea Website Price</span>
-                                            <span class="font-bold text-slate-700 dark:text-slate-300" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
-                                        </div>
-                                        <div class="flex justify-between items-center border-t border-slate-200/60 dark:border-slate-700/60 pt-2.5">
-                                            <span class="text-slate-900 dark:text-slate-200 font-bold flex items-center gap-1.5">
-                                                Today's Target TruSea Price
-                                                <span :class="getTrend(item).class" class="px-2 py-0.5 rounded border text-[10px] flex items-center justify-center min-w-[24px] tracking-tighter" x-text="getTrend(item).symbol"></span>
-                                            </span>
-                                            <span class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-400 dark:to-blue-400" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
-                                        </div>
-                                        <div class="flex justify-between items-center border-t border-slate-200/60 dark:border-slate-700/60 pt-2.5">
-                                            <span class="text-slate-500 dark:text-slate-400">Difference</span>
-                                            <span :class="parseFloat(item.difference) < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'" class="font-bold" x-text="item.difference !== '-' ? item.difference : '-'"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="border-t border-slate-100 dark:border-slate-700 pt-3 space-y-2.5 text-sm text-slate-600 dark:text-slate-300">
-                                    <template x-if="item.competitors">
-                                        <template x-for="[compName, compVal] in Object.entries(item.competitors)" :key="compName">
-                                            <div class="flex justify-between items-center bg-[#FAFAFA] dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
-                                                <span class="font-bold text-slate-600 dark:text-slate-300" x-text="compName"></span>
-                                                <div class="flex items-center gap-2 max-w-[65%] text-right">
-                                                    <span class="font-extrabold text-slate-900 dark:text-slate-100 whitespace-nowrap" 
-                                                          x-show="!compVal.status.toLowerCase().includes('not available') && !compVal.status.toLowerCase().includes('sold out')" 
-                                                          x-text="compVal.price !== '-' ? '₹' + compVal.price + '/kg' : '-'"></span>
-                                                    <span :class="{
-                                                            'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900': compVal.status.toLowerCase().includes('in stock'),
-                                                            'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-900': compVal.status.toLowerCase().includes('sold out'),
-                                                            'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-600': compVal.status.toLowerCase().includes('not available')
-                                                          }" 
-                                                          class="text-xs font-bold px-2 py-1 rounded border inline-block" 
-                                                          x-text="compVal.status"></span>
-                                                </div>
-                                            </div>
-                                        </template>
-                                    </template>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </main>
             </div>
         </template>
 
         <template x-if="activeViewTab === 'table'">
-            <div class="space-y-4">
-                <div class="flex flex-col gap-3">
-                    <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">
-                        📋 Master Price Matrix • Active Sheet: <span class="text-blue-600 dark:text-blue-400 font-bold" x-text="availableDates[0]"></span>
-                    </p>
-
-                    <div class="flex flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-                        <template x-for="cat in ['All', 'Premium Slices', 'Regular Slices', 'Thick Slices', 'Fillets', 'Curry Cuts', 'Cleaned Whole Fish', 'Cubes', 'Prawns', 'Crabs']" :key="cat">
-                            <button @click="selectedCategory = cat; applyFilters();"
-                                    :class="selectedCategory === cat ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-slate-800 dark:border-slate-200 font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'"
-                                    class="px-3.5 py-1.5 text-xs rounded-full border transition font-medium whitespace-nowrap"
-                                    x-text="cat">
-                            </button>
-                        </template>
-                    </div>
-
-                    <span class="inline-block w-fit text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-4 py-1.5">
-                        ⓘ All prices shown below are Price per KG (₹/kg), not per piece or per pack
-                    </span>
-
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full p-1 w-fit">
-                            <button @click="truSeaFilter = 'all'; applyFilters();"
-                                    :class="truSeaFilter === 'all' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow font-bold' : 'text-slate-500 dark:text-slate-400 font-medium'"
-                                    class="px-3.5 py-1.5 text-xs rounded-full transition whitespace-nowrap">All Fish</button>
-                            <button @click="truSeaFilter = 'priced'; applyFilters();"
-                                    :class="truSeaFilter === 'priced' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow font-bold' : 'text-slate-500 dark:text-slate-400 font-medium'"
-                                    class="px-3.5 py-1.5 text-xs rounded-full transition whitespace-nowrap">Only TruSea Priced</button>
-                        </div>
-
-                        <div class="flex items-center gap-2">
-                            <button @click="exportCSV()" class="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition whitespace-nowrap">⬇️ Export Excel</button>
-                            <button @click="exportPDF()" class="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition whitespace-nowrap">⬇️ Export PDF</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="priceMatrixTable" class="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800">
-                    <table class="w-full table-auto border-collapse text-left text-[11px] sm:text-xs">
-                        <thead>
-                            <tr class="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider">
-                                <th class="p-3 sticky left-0 z-20 bg-slate-50 dark:bg-slate-900/60 border-r border-slate-200 dark:border-slate-700 shadow-[2px_0_4px_rgba(0,0,0,0.06)] w-[160px] min-w-[160px] max-w-[160px]">Fish Description</th>
-                                <th class="p-3 text-center">TenderCuts</th>
-                                <th class="p-3 text-center">Licious</th>
-                                <th class="p-3 text-center">Fresh Ma</th>
-                                <th class="p-3 text-center">FreshToHome</th>
-                                <th class="p-3 text-center">Supreme</th>
-                                <th class="p-3 text-center bg-blue-100/70 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-l border-slate-200 dark:border-slate-700 font-extrabold">Current TruSea Price</th>
-                                <th class="p-3 text-center bg-blue-600 dark:bg-blue-600 text-white font-black rounded-tr-xl">Today's Target Price</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100 dark:divide-slate-700/60 font-medium text-slate-700 dark:text-slate-300">
-                            <template x-for="item in filteredItems" :key="item.name">
-                                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
-                                    <td class="p-2.5 font-bold text-slate-900 dark:text-slate-100 whitespace-normal break-words sticky left-0 z-10 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 shadow-[2px_0_4px_rgba(0,0,0,0.06)] w-[160px] min-w-[160px] max-w-[160px]">
-                                        <div class="flex flex-col items-start gap-1">
-                                            <span x-text="item.name"></span>
-                                            <template x-if="item.hasOffer">
-                                                <span class="bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded uppercase tracking-wider">🔥 OFFER</span>
+            <div class="overflow-x-auto rounded-xl border bg-white dark:bg-slate-800 mt-4">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 dark:bg-slate-900 border-b font-bold uppercase">
+                            <th class="p-3">Fish Description</th>
+                            <th class="p-3 text-center">TenderCuts</th>
+                            <th class="p-3 text-center">Licious</th>
+                            <th class="p-3 text-center">Fresh Ma</th>
+                            <th class="p-3 text-center">Fresh To Home</th>
+                            <th class="p-3 text-center">Supreme</th>
+                            <th class="p-3 text-center bg-blue-50">TruSea Target</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y font-medium">
+                        <template x-for="item in filteredItems" :key="item.name">
+                            <tr>
+                                <td class="p-3 font-bold" x-text="item.name"></td>
+                                <template x-for="compName in ['TenderCuts', 'Licious', 'Fresh Ma', 'Fresh To Home', 'Supreme Sea Foods']" :key="compName">
+                                    <td class="p-3 text-center font-mono">
+                                        <div class="flex flex-col items-center gap-1">
+                                            <template x-if="item.competitors[compName] && item.competitors[compName].hasOffer">
+                                                <span class="bg-rose-500 text-white text-[8px] font-black px-1 rounded">🔥 OFFER</span>
                                             </template>
+                                            <span x-text="item.competitors[compName] ? (item.competitors[compName].price !== '-' ? '₹' + item.competitors[compName].price + '/kg' : item.competitors[compName].status) : '-'"></span>
                                         </div>
                                     </td>
-                                    
-                                    <td class="p-2.5 text-center font-mono">
-                                        <span class="text-[#16A34A] dark:text-[#4ADE80]" x-show="!item.competitors['TenderCuts'].status.toLowerCase().includes('not available') && !item.competitors['TenderCuts'].status.toLowerCase().includes('sold out')" x-text="item.competitors['TenderCuts'] && item.competitors['TenderCuts'].price !== '-' ? '₹' + item.competitors['TenderCuts'].price : '-'"></span>
-                                        <span class="text-[10px] text-[#F97316] font-bold" x-show="item.competitors['TenderCuts'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['TenderCuts'].price !== '-' ? ' (₹' + item.competitors['TenderCuts'].price + '/kg)' : '')"></span>
-                                        <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['TenderCuts'].status.toLowerCase().includes('not available')">Not Available</span>
-                                    </td>
-                                    
-                                    <td class="p-2.5 text-center font-mono">
-                                        <span class="text-[#16A34A] dark:text-[#4ADE80]" x-show="!item.competitors['Licious'].status.toLowerCase().includes('not available') && !item.competitors['Licious'].status.toLowerCase().includes('sold out')" x-text="item.competitors['Licious'] && item.competitors['Licious'].price !== '-' ? '₹' + item.competitors['Licious'].price : '-'"></span>
-                                        <span class="text-[10px] text-[#F97316] font-bold" x-show="item.competitors['Licious'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Licious'].price !== '-' ? ' (₹' + item.competitors['Licious'].price + '/kg)' : '')"></span>
-                                        <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Licious'].status.toLowerCase().includes('not available')">Not Available</span>
-                                    </td>
-                                    
-                                    <td class="p-2.5 text-center font-mono">
-                                        <span class="text-[#16A34A] dark:text-[#4ADE80]" x-show="!item.competitors['Fresh Ma'].status.toLowerCase().includes('not available') && !item.competitors['Fresh Ma'].status.toLowerCase().includes('sold out')" x-text="item.competitors['Fresh Ma'] && item.competitors['Fresh Ma'].price !== '-' ? '₹' + item.competitors['Fresh Ma'].price : '-'"></span>
-                                        <span class="text-[10px] text-[#F97316] font-bold" x-show="item.competitors['Fresh Ma'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Fresh Ma'].price !== '-' ? ' (₹' + item.competitors['Fresh Ma'].price + '/kg)' : '')"></span>
-                                        <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Fresh Ma'].status.toLowerCase().includes('not available')">Not Available</span>
-                                    </td>
-                                    
-                                    <td class="p-2.5 text-center font-mono">
-                                        <span class="text-[#16A34A] dark:text-[#4ADE80]" x-show="!item.competitors['Fresh To Home'].status.toLowerCase().includes('not available') && !item.competitors['Fresh To Home'].status.toLowerCase().includes('sold out')" x-text="item.competitors['Fresh To Home'] && item.competitors['Fresh To Home'].price !== '-' ? '₹' + item.competitors['Fresh To Home'].price : '-'"></span>
-                                        <span class="text-[10px] text-[#F97316] font-bold" x-show="item.competitors['Fresh To Home'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Fresh To Home'].price !== '-' ? ' (₹' + item.competitors['Fresh To Home'].price + '/kg)' : '')"></span>
-                                        <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Fresh To Home'].status.toLowerCase().includes('not available')">Not Available</span>
-                                    </td>
-                                    
-                                    <td class="p-2.5 text-center font-mono">
-                                        <span class="text-[#16A34A] dark:text-[#4ADE80]" x-show="!item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('not available') && !item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('sold out')" x-text="item.competitors['Supreme Sea Foods'] && item.competitors['Supreme Sea Foods'].price !== '-' ? '₹' + item.competitors['Supreme Sea Foods'].price : '-'"></span>
-                                        <span class="text-[10px] text-[#F97316] font-bold" x-show="item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Supreme Sea Foods'].price !== '-' ? ' (₹' + item.competitors['Supreme Sea Foods'].price + '/kg)' : '')"></span>
-                                        <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('not available')">Not Available</span>
-                                    </td>
-                                    
-                                    <td class="p-2.5 text-center font-mono bg-blue-100/50 dark:bg-blue-950/20 border-l border-slate-200 dark:border-slate-700 font-bold text-blue-900 dark:text-blue-300">
-                                        <span :class="getTruSeaPriceColorClass(item)" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
-                                    </td>
-
-                                    <td class="p-2.5 text-center font-mono bg-blue-500/10 dark:bg-blue-500/20 font-black text-blue-600 dark:text-blue-400 text-xs sm:text-sm">
-                                        <span x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
-                                    </td>
-                                </tr>
-                            </template>
-                            <template x-if="filteredItems.length === 0">
-                                <tr>
-                                    <td colspan="8" class="p-8 text-center text-slate-400 font-medium">No seafood data elements discovered matching filters.</td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
+                                </template>
+                                <td class="p-3 text-center font-bold bg-blue-50/50 text-blue-600" x-text="'₹' + item.truSeaPerKg"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
             </div>
         </template>
     </div>
