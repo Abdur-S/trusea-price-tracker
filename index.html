@@ -13,7 +13,7 @@
     <meta property="og:site_name" content="TruSea Tracker" />
     <meta name="twitter:card" content="summary_large_image" />
 
-    <!-- 3D Favicon & Web App Icon -->
+    <!-- 3D Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🐟</text></svg>">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -62,7 +62,7 @@
       x-data="trackerApp()" 
       x-init="initEngine()">
 
-    <div class="max-w-7xl mx-auto p-4 sm:p-6" x-cloak>
+    <div class="max-w-7xl mx-auto p-4 sm:p-6">
         <!-- HEADER -->
         <header class="mb-4 border-b border-slate-200 dark:border-slate-700 pb-3 flex justify-between items-center">
             <div class="flex items-center gap-2.5">
@@ -87,7 +87,7 @@
 
         <!-- VIEW TABS -->
         <div class="mb-5 flex border-b border-slate-200 dark:border-slate-700">
-            <button @click="activeViewTab = 'dashboard'; switchDateView(availableDates[0])" 
+            <button @click="activeViewTab = 'dashboard'; switchDateView(selectedDate)" 
                     :class="activeViewTab === 'dashboard' ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold border-b-2' : 'text-slate-500'"
                     class="px-5 py-2.5 text-sm transition">📊 Analytics Dashboard</button>
             <button @click="activeViewTab = 'table'; applyFilters();" 
@@ -138,7 +138,7 @@
         <!-- TAB 1: ANALYTICS DASHBOARD -->
         <template x-if="activeViewTab === 'dashboard'">
             <div>
-                <!-- ANALYTICS CARDS & BAR CHART (Hidden while search is active) -->
+                <!-- ANALYTICS CARDS & BAR CHART (Hidden while searching) -->
                 <div x-show="!isSearchActive" class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
                     <div class="lg:col-span-1 flex flex-col gap-3">
                         <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -151,7 +151,8 @@
                         </div>
                     </div>
                     <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                        <div class="relative h-[200px] w-full">
+                        <!-- Canvas Container for Re-creating Context Cleanly -->
+                        <div id="chartContainer" class="relative h-[200px] w-full">
                             <canvas id="insightsChart"></canvas>
                         </div>
                     </div>
@@ -284,7 +285,6 @@
                 activeQuery: '',
                 isSearchActive: false,
                 allMasterData: {}, 
-                allMasterAverages: {},
                 availableDates: [],
                 selectedDate: '',
                 filteredItems: [],
@@ -298,6 +298,22 @@
                 
                 async initEngine() {
                     if (this.darkMode) document.documentElement.classList.add('dark');
+
+                    // Load from Cache for Instant Page Display (0ms delay)
+                    var cachedData = localStorage.getItem('truSeaCachedData');
+                    if (cachedData) {
+                        try {
+                            var parsedCache = JSON.parse(cachedData);
+                            this.allMasterData = parsedCache.dataByDate || {};
+                            this.availableDates = parsedCache.meta.availableDates || [];
+                            if (this.availableDates.length > 0) {
+                                this.selectedDate = this.availableDates[0];
+                                this.applyFilters();
+                            }
+                        } catch (e) { console.error('Cache load error:', e); }
+                    }
+
+                    // Background Fetch for Fresh Live Updates
                     await this.fetchLivePrices(true);
 
                     setInterval(async () => {
@@ -310,9 +326,7 @@
                     localStorage.setItem('darkMode', this.darkMode);
                     if (this.darkMode) document.documentElement.classList.add('dark');
                     else document.documentElement.classList.remove('dark');
-                    if (this.availableDates.length > 0 && !this.isSearchActive) {
-                        this.processAnalytics(this.allMasterAverages[this.selectedDate] || []);
-                    }
+                    this.updateAnalyticsAndChart();
                 },
 
                 async fetchLivePrices(isFirstLoad) {
@@ -321,18 +335,17 @@
                         let response = await fetch(this.webAppUrl + '?_cb=' + cacheBuster);
                         let resData = await response.json();
                         
+                        // Save fresh response to localStorage cache
+                        localStorage.setItem('truSeaCachedData', JSON.stringify(resData));
+
                         this.allMasterData = resData.dataByDate || {};
-                        this.allMasterAverages = resData.averagesByDate || {};
                         this.availableDates = resData.meta.availableDates || [];
                         
-                        if (isFirstLoad && this.availableDates.length > 0) {
+                        if (isFirstLoad && this.availableDates.length > 0 && !this.selectedDate) {
                             this.selectedDate = this.availableDates[0];
                         }
                         
                         this.applyFilters();
-                        if (!this.isSearchActive) {
-                            this.processAnalytics(this.allMasterAverages[this.selectedDate] || []);
-                        }
                     } catch (e) {
                         console.error('Error fetching live data:', e);
                     }
@@ -341,9 +354,6 @@
                 switchDateView(dateLabel) {
                     this.selectedDate = dateLabel;
                     this.applyFilters();
-                    if (!this.isSearchActive) {
-                        this.processAnalytics(this.allMasterAverages[dateLabel] || []);
-                    }
                 },
 
                 execSearch() {
@@ -363,7 +373,6 @@
                     this.activeQuery = '';
                     this.isSearchActive = false;
                     this.applyFilters();
-                    this.processAnalytics(this.allMasterAverages[this.selectedDate] || []);
                 },
 
                 applyFilters() {
@@ -384,18 +393,56 @@
                     }
                     
                     this.filteredItems = items;
+                    this.updateAnalyticsAndChart();
                 },
 
-                processAnalytics(averages) {
-                    if (!averages || averages.length === 0) {
+                // DYNAMIC BENCHMARK AVERAGE (Calculates Avg strictly on currently showing fishes)
+                updateAnalyticsAndChart() {
+                    if (this.activeViewTab !== 'dashboard' || this.isSearchActive) return;
+
+                    var items = this.filteredItems;
+                    if (!items || items.length === 0) {
                         this.highestSeller = 'N/A';
                         this.normalSeller = 'N/A';
+                        this.renderChart([]);
                         return;
                     }
-                    
-                    let competitors = averages.filter(c => !c.isBrand && c.avg > 0);
+
+                    var totals = { 'TruSea': 0, 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
+                    var counts = { 'TruSea': 0, 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
+
+                    items.forEach(function(item) {
+                        // TruSea per-kg
+                        var tPrice = parseFloat(String(item.truSeaPerKg).replace(/[^\d.]/g, ''));
+                        if (!isNaN(tPrice) && tPrice > 0) {
+                            totals['TruSea'] += tPrice;
+                            counts['TruSea']++;
+                        }
+
+                        // Competitors
+                        if (item.competitors) {
+                            Object.keys(item.competitors).forEach(function(compName) {
+                                var c = item.competitors[compName];
+                                if (c && c.status === 'In Stock') {
+                                    var p = parseFloat(String(c.price).replace(/[^\d.]/g, ''));
+                                    if (!isNaN(p) && p > 0) {
+                                        totals[compName] += p;
+                                        counts[compName]++;
+                                    }
+                                }
+                            });
+                        }
+                    });
+
+                    var averages = [];
+                    Object.keys(totals).forEach(function(k) {
+                        var avg = counts[k] > 0 ? Math.round(totals[k] / counts[k]) : 0;
+                        averages.push({ name: k, avg: avg, isBrand: k === 'TruSea' });
+                    });
+
+                    var competitors = averages.filter(c => !c.isBrand && c.avg > 0);
                     competitors.sort((a, b) => b.avg - a.avg);
-                    
+
                     if (competitors.length > 0) {
                         this.highestSeller = competitors[0].name + ' (₹' + competitors[0].avg + '/KG)';
                         this.normalSeller = competitors[competitors.length - 1].name + ' (₹' + competitors[competitors.length - 1].avg + '/KG)';
@@ -403,23 +450,30 @@
                         this.highestSeller = 'N/A';
                         this.normalSeller = 'N/A';
                     }
-                    
+
                     this.$nextTick(() => {
                         this.renderChart(averages);
                     });
                 },
 
                 renderChart(averages) {
-                    let canvasEl = document.getElementById('insightsChart');
-                    if (!canvasEl) return;
-                    
+                    var container = document.getElementById('chartContainer');
+                    if (!container) return;
+
+                    // Cleanly reset canvas to prevent blank/invisible chart context bug
+                    container.innerHTML = '<canvas id="insightsChart"></canvas>';
+                    var canvasEl = document.getElementById('insightsChart');
+
                     if (this.chartInstance) {
                         this.chartInstance.destroy();
+                        this.chartInstance = null;
                     }
-                    
-                    let isDark = this.darkMode;
-                    let labels = averages.map(c => c.name);
-                    let dataVals = averages.map(c => c.avg);
+
+                    if (!averages || averages.length === 0) return;
+
+                    var isDark = this.darkMode;
+                    var labels = averages.map(c => c.name);
+                    var dataVals = averages.map(c => c.avg);
 
                     this.chartInstance = new Chart(canvasEl, {
                         type: 'bar',
