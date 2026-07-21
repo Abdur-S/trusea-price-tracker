@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TruSea Price Tracker</title>
 
+    <!-- Meta Tags & OpenGraph Sharing -->
+    <meta name="description" content="Live Real-Time Seafood Price Analysis & Competitor Market Price Tracking Dashboard." />
+    <meta property="og:title" content="TruSea Price Tracker" />
+    <meta property="og:description" content="Live Real-Time Seafood Price Analysis & Competitor Tracking Dataset." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="TruSea Tracker" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- 3D Favicon & Web App Icon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🐟</text></svg>">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = { darkMode: 'class' }
@@ -33,11 +44,11 @@
 
         .premium-glow-card {
             position: relative; border-radius: 1rem; z-index: 1;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
         }
         .premium-glow-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(0, 242, 254, 0.12);
+            box-shadow: 0 12px 24px rgba(0, 242, 254, 0.15);
         }
 
         .sticky-col {
@@ -54,8 +65,8 @@
     <div class="max-w-7xl mx-auto p-4 sm:p-6" x-cloak>
         <!-- HEADER -->
         <header class="mb-4 border-b border-slate-200 dark:border-slate-700 pb-3 flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <span class="text-3xl">🐟</span>
+            <div class="flex items-center gap-2.5">
+                <span class="text-3xl filter drop-shadow-md">🐟</span>
                 <h1 class="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-100">
                     <span class="text-blue-600 dark:text-blue-400">TruSea</span> Price Tracker
                 </h1>
@@ -65,7 +76,7 @@
                 <button @click="toggleTheme()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Toggle Theme">
                     <span x-text="darkMode ? '☀️' : '🌙'"></span>
                 </button>
-                <div class="flex items-center gap-1.5">
+                <div class="flex items-center gap-1.5" title="Live Sync Active">
                     <span class="relative flex h-3 w-3">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
@@ -84,20 +95,20 @@
                     class="px-5 py-2.5 text-sm transition">📋 Full Comparative Table</button>
         </div>
 
-        <!-- SEARCH BAR (NEON GEMINI STYLE) -->
+        <!-- NEON GEMINI SEARCH BAR -->
         <div class="mb-5 max-w-2xl mx-auto">
             <div class="gemini-ai-search-container">
                 <div class="flex items-center w-full bg-white dark:bg-slate-800 rounded-full px-4 py-1.5 shadow-sm">
-                    <input x-model="searchQuery" 
-                           @input="applyFilters()"
-                           @keyup.enter="applyFilters()"
+                    <input x-model="inputQuery" 
+                           @keyup.enter="execSearch()"
+                           @input="if(inputQuery.trim() === '') clearSearch();"
                            type="text" 
-                           placeholder="Search fish names..." 
+                           placeholder="Search fish names and press enter..." 
                            class="w-full text-sm bg-transparent border-none focus:outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 font-medium py-1">
-                    <button @click="applyFilters()" class="bg-cyan-600 hover:bg-cyan-700 text-white rounded-full px-4 py-1.5 text-xs font-bold transition">
+                    <button @click="execSearch()" class="bg-cyan-600 hover:bg-cyan-700 text-white rounded-full px-4 py-1.5 text-xs font-bold transition">
                         Search
                     </button>
-                    <button x-show="searchQuery.length > 0" @click="resetSearch()" class="ml-2 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <button x-show="inputQuery.length > 0" @click="clearSearch()" class="ml-2 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                         ✖ Clear
                     </button>
                 </div>
@@ -127,15 +138,15 @@
         <!-- TAB 1: ANALYTICS DASHBOARD -->
         <template x-if="activeViewTab === 'dashboard'">
             <div>
-                <!-- ANALYTICS CARDS & BAR CHART -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                <!-- ANALYTICS CARDS & BAR CHART (Hidden while search is active) -->
+                <div x-show="!isSearchActive" class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
                     <div class="lg:col-span-1 flex flex-col gap-3">
                         <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                             <span class="text-xs uppercase font-bold text-red-500 block mb-1">🔴 COSTLY MARKET VENDOR</span>
                             <div class="text-base font-black text-slate-900 dark:text-slate-100" x-text="highestSeller"></div>
                         </div>
                         <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                            <span class="text-xs uppercase font-bold text-emerald-600 block mb-1">🟢 NORMAL MARKET VENDOR</span>
+                            <span class="text-xs uppercase font-bold text-emerald-600 dark:text-emerald-400 block mb-1">🟢 NORMAL MARKET VENDOR</span>
                             <div class="text-base font-black text-slate-900 dark:text-slate-100" x-text="normalSeller"></div>
                         </div>
                     </div>
@@ -178,7 +189,7 @@
                                                   x-text="compVal.price !== '-' ? '₹' + compVal.price + '/kg' : '-'"></span>
                                             <span :class="{
                                                     'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900': compVal.status === 'In Stock',
-                                                    'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-900 font-bold': compVal.status.toLowerCase().includes('sold out'),
+                                                    'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900 font-bold': compVal.status.toLowerCase().includes('sold out'),
                                                     'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700': compVal.status.toLowerCase().includes('not available')
                                                   }" 
                                                   class="text-[10px] font-bold px-2 py-0.5 rounded border" 
@@ -196,7 +207,7 @@
         <!-- TAB 2: FULL COMPARATIVE TABLE -->
         <template x-if="activeViewTab === 'table'">
             <div class="space-y-4">
-                <!-- EXPORT BUTTONS -->
+                <!-- EXPORT BUTTONS & FILTERS -->
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full p-1">
                         <button @click="truSeaFilter = 'all'; applyFilters();"
@@ -214,14 +225,14 @@
                     </div>
                 </div>
 
-                <!-- TABLE CONTAINER WITH STICKY HEADERS & STICKY COLUMN -->
-                <div id="comparativeTableContainer" class="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800 max-h-[70vh]">
+                <!-- TABLE CONTAINER (No internal vertical scrollbar) -->
+                <div id="comparativeTableContainer" class="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800">
                     <table class="w-full table-auto border-collapse text-left text-xs">
                         <thead>
                             <tr class="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 font-bold uppercase sticky top-0 z-30">
                                 <th class="p-3 sticky-col bg-slate-100 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 min-w-[160px] shadow-[2px_0_4px_rgba(0,0,0,0.05)]">Fish Description</th>
-                                <th class="p-3 text-center min-w-[120px]">Current TruSea Website Price</th>
-                                <th class="p-3 text-center min-w-[120px] bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">Today's TruSea Target Price</th>
+                                <th class="p-3 text-center min-w-[130px]">Current TruSea Web Price</th>
+                                <th class="p-3 text-center min-w-[130px] bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">Today's Target Price</th>
                                 <th class="p-3 text-center min-w-[110px]">TenderCuts</th>
                                 <th class="p-3 text-center min-w-[110px]">Licious</th>
                                 <th class="p-3 text-center min-w-[110px]">Fresh Ma</th>
@@ -248,7 +259,7 @@
                                                 <template x-if="item.competitors[compName]">
                                                     <div>
                                                         <span x-show="item.competitors[compName].status === 'In Stock'" class="text-emerald-600 dark:text-emerald-400 font-bold" x-text="item.competitors[compName].price !== '-' ? '₹' + item.competitors[compName].price + '/kg' : '-'"></span>
-                                                        <span x-show="item.competitors[compName].status.toLowerCase().includes('sold out')" class="text-orange-600 dark:text-orange-400 font-bold text-[10px]" x-text="item.competitors[compName].status"></span>
+                                                        <span x-show="item.competitors[compName].status.toLowerCase().includes('sold out')" class="text-red-600 dark:text-red-400 font-bold text-[10px]" x-text="item.competitors[compName].status"></span>
                                                         <span x-show="item.competitors[compName].status.toLowerCase().includes('not available')" class="text-slate-400 text-[10px]">Not Available</span>
                                                     </div>
                                                 </template>
@@ -264,18 +275,21 @@
         </template>
     </div>
 
-    <!-- MAIN APP SCRIPT -->
+    <!-- MAIN APP CONTROLLER -->
     <script>
         function trackerApp() {
             return {
-                webAppUrl: 'https://script.google.com/macros/s/AKfycbzIq9dYDtJn8LgjZpLoMgrKcENzL09UiN7vRI2ruzJrD9643RLbqLNZx-svcDYig3ZNVQ/exec',
-                searchQuery: '', 
+                webAppUrl: 'https://script.google.com/macros/s/AKfycbyJG0UfF558PExvBlc30j9iMrCwlG3gV_-kGAqs-uyC17xk1tx2prfwZ_-BfMSkVQZ32g/exec',
+                inputQuery: '',
+                activeQuery: '',
+                isSearchActive: false,
                 allMasterData: {}, 
                 allMasterAverages: {},
                 availableDates: [],
                 selectedDate: '',
                 filteredItems: [],
-                highestSeller: 'Loading...', normalSeller: 'Loading...',
+                highestSeller: 'Loading...', 
+                normalSeller: 'Loading...',
                 chartInstance: null,
                 selectedCategory: 'All',
                 truSeaFilter: 'all',
@@ -296,7 +310,7 @@
                     localStorage.setItem('darkMode', this.darkMode);
                     if (this.darkMode) document.documentElement.classList.add('dark');
                     else document.documentElement.classList.remove('dark');
-                    if (this.availableDates.length > 0) {
+                    if (this.availableDates.length > 0 && !this.isSearchActive) {
                         this.processAnalytics(this.allMasterAverages[this.selectedDate] || []);
                     }
                 },
@@ -316,7 +330,9 @@
                         }
                         
                         this.applyFilters();
-                        this.processAnalytics(this.allMasterAverages[this.selectedDate] || []);
+                        if (!this.isSearchActive) {
+                            this.processAnalytics(this.allMasterAverages[this.selectedDate] || []);
+                        }
                     } catch (e) {
                         console.error('Error fetching live data:', e);
                     }
@@ -325,12 +341,34 @@
                 switchDateView(dateLabel) {
                     this.selectedDate = dateLabel;
                     this.applyFilters();
-                    this.processAnalytics(this.allMasterAverages[dateLabel] || []);
+                    if (!this.isSearchActive) {
+                        this.processAnalytics(this.allMasterAverages[dateLabel] || []);
+                    }
+                },
+
+                execSearch() {
+                    var q = this.inputQuery.trim();
+                    if (q !== "") {
+                        this.activeQuery = q;
+                        this.isSearchActive = true;
+                    } else {
+                        this.clearSearch();
+                        return;
+                    }
+                    this.applyFilters();
+                },
+
+                clearSearch() {
+                    this.inputQuery = '';
+                    this.activeQuery = '';
+                    this.isSearchActive = false;
+                    this.applyFilters();
+                    this.processAnalytics(this.allMasterAverages[this.selectedDate] || []);
                 },
 
                 applyFilters() {
                     let items = this.allMasterData[this.selectedDate] || [];
-                    let q = this.searchQuery.toLowerCase().trim();
+                    let q = this.activeQuery.toLowerCase().trim();
                     
                     if (q) {
                         items = items.filter(i => i.name.toLowerCase().includes(q));
@@ -346,11 +384,6 @@
                     }
                     
                     this.filteredItems = items;
-                },
-
-                resetSearch() {
-                    this.searchQuery = '';
-                    this.applyFilters();
                 },
 
                 processAnalytics(averages) {
@@ -427,7 +460,7 @@
                 },
 
                 exportExcel() {
-                    let headers = ['Fish Description', 'Current TruSea Website Price', 'TruSea Target Price', 'TenderCuts', 'Licious', 'Fresh Ma', 'Fresh To Home', 'Supreme Sea Foods'];
+                    let headers = ['Fish Description', 'Current TruSea Web Price', 'Today Target Price', 'TenderCuts', 'Licious', 'Fresh Ma', 'Fresh To Home', 'Supreme Sea Foods'];
                     let rows = this.filteredItems.map(item => [
                         item.name,
                         item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-',
