@@ -80,7 +80,7 @@
 </head>
 <body class="bg-[#F8FAFC] dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen pb-12 transition-colors duration-300"
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbyeeaWjBFjCfEZ_KbWyvGBgAkLzxUaP2P8WrktZwUZClmn40pXPQdlpjUEycssZZ014Gw/exec',
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbwUUeSV57S-jvplIhkj-U6Giz13R8eUxBoBftzog7v6c3zt1g79S60uiRIgf72DEhYQhQ/exec',
           searchQuery: '', 
           allMasterData: {}, 
           allMasterAverages: {},
@@ -516,7 +516,10 @@
                                     <template x-if="item.competitors">
                                         <template x-for="[compName, compVal] in Object.entries(item.competitors)" :key="compName">
                                             <div class="flex justify-between items-center bg-[#FAFAFA] dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
-                                                <span class="font-bold text-slate-600 dark:text-slate-300" x-text="compName"></span>
+                                                <span class="font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5" >
+                                                    <span x-text="compName"></span>
+                                                    <span x-show="compVal.offer" class="text-[9px] font-black text-white bg-amber-500 px-1.5 py-0.5 rounded-full tracking-wide transition-colors duration-300">OFFER</span>
+                                                </span>
                                                 <div class="flex items-center gap-2 max-w-[65%] text-right">
                                                     <span class="font-extrabold text-slate-900 dark:text-slate-100 whitespace-nowrap" 
                                                           x-show="!compVal.status.toLowerCase().includes('not available') && !compVal.status.toLowerCase().includes('sold out')" 
@@ -604,6 +607,7 @@
                                               x-show="!item.competitors['TenderCuts'].status.toLowerCase().includes('not available') && !item.competitors['TenderCuts'].status.toLowerCase().includes('sold out')" 
                                               x-text="item.competitors['TenderCuts'] && item.competitors['TenderCuts'].price !== '-' ? '₹' + item.competitors['TenderCuts'].price : '-'"></span>
                                         <span class="text-[10px] text-[#F97316] dark:text-[#FB923C] font-bold transition-colors duration-300" x-show="item.competitors['TenderCuts'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['TenderCuts'].price !== '-' ? ' (₹' + item.competitors['TenderCuts'].price + '/kg)' : '')"></span>
+                                        <span x-show="item.competitors['TenderCuts'].offer" class="block text-[9px] font-black text-white bg-amber-500 px-1.5 py-0.5 rounded-full tracking-wide w-fit mx-auto mt-0.5 transition-colors duration-300">OFFER</span>
                                         <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['TenderCuts'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
@@ -612,6 +616,7 @@
                                               x-show="!item.competitors['Licious'].status.toLowerCase().includes('not available') && !item.competitors['Licious'].status.toLowerCase().includes('sold out')"
                                               x-text="item.competitors['Licious'] && item.competitors['Licious'].price !== '-' ? '₹' + item.competitors['Licious'].price : '-'"></span>
                                         <span class="text-[10px] text-[#F97316] dark:text-[#FB923C] font-bold transition-colors duration-300" x-show="item.competitors['Licious'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Licious'].price !== '-' ? ' (₹' + item.competitors['Licious'].price + '/kg)' : '')"></span>
+                                        <span x-show="item.competitors['Licious'].offer" class="block text-[9px] font-black text-white bg-amber-500 px-1.5 py-0.5 rounded-full tracking-wide w-fit mx-auto mt-0.5 transition-colors duration-300">OFFER</span>
                                         <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Licious'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
@@ -620,6 +625,7 @@
                                               x-show="!item.competitors['Fresh Ma'].status.toLowerCase().includes('not available') && !item.competitors['Fresh Ma'].status.toLowerCase().includes('sold out')"
                                               x-text="item.competitors['Fresh Ma'] && item.competitors['Fresh Ma'].price !== '-' ? '₹' + item.competitors['Fresh Ma'].price : '-'"></span>
                                         <span class="text-[10px] text-[#F97316] dark:text-[#FB923C] font-bold transition-colors duration-300" x-show="item.competitors['Fresh Ma'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Fresh Ma'].price !== '-' ? ' (₹' + item.competitors['Fresh Ma'].price + '/kg)' : '')"></span>
+                                        <span x-show="item.competitors['Fresh Ma'].offer" class="block text-[9px] font-black text-white bg-amber-500 px-1.5 py-0.5 rounded-full tracking-wide w-fit mx-auto mt-0.5 transition-colors duration-300">OFFER</span>
                                         <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Fresh Ma'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
@@ -628,6 +634,7 @@
                                               x-show="!item.competitors['Fresh To Home'].status.toLowerCase().includes('not available') && !item.competitors['Fresh To Home'].status.toLowerCase().includes('sold out')"
                                               x-text="item.competitors['Fresh To Home'] && item.competitors['Fresh To Home'].price !== '-' ? '₹' + item.competitors['Fresh To Home'].price : '-'"></span>
                                         <span class="text-[10px] text-[#F97316] dark:text-[#FB923C] font-bold transition-colors duration-300" x-show="item.competitors['Fresh To Home'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Fresh To Home'].price !== '-' ? ' (₹' + item.competitors['Fresh To Home'].price + '/kg)' : '')"></span>
+                                        <span x-show="item.competitors['Fresh To Home'].offer" class="block text-[9px] font-black text-white bg-amber-500 px-1.5 py-0.5 rounded-full tracking-wide w-fit mx-auto mt-0.5 transition-colors duration-300">OFFER</span>
                                         <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Fresh To Home'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
@@ -636,6 +643,7 @@
                                               x-show="!item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('not available') && !item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('sold out')"
                                               x-text="item.competitors['Supreme Sea Foods'] && item.competitors['Supreme Sea Foods'].price !== '-' ? '₹' + item.competitors['Supreme Sea Foods'].price : '-'"></span>
                                         <span class="text-[10px] text-[#F97316] dark:text-[#FB923C] font-bold transition-colors duration-300" x-show="item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('sold out')" x-text="'Sold Out' + (item.competitors['Supreme Sea Foods'].price !== '-' ? ' (₹' + item.competitors['Supreme Sea Foods'].price + '/kg)' : '')"></span>
+                                        <span x-show="item.competitors['Supreme Sea Foods'].offer" class="block text-[9px] font-black text-white bg-amber-500 px-1.5 py-0.5 rounded-full tracking-wide w-fit mx-auto mt-0.5 transition-colors duration-300">OFFER</span>
                                         <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="item.competitors['Supreme Sea Foods'].status.toLowerCase().includes('not available')">Not Available</span>
                                     </td>
                                     
