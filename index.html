@@ -12,6 +12,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
         [x-cloak] { display: none !important; }
@@ -27,7 +28,7 @@
             background: conic-gradient(from var(--gemini-bar-angle), #3085ff, #00f2fe, #4facfe, #9b51e0, #ff7beb, #3085ff);
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor; mask-composite: exclude;
-            animation: geminiBarRotate 5s linear infinite; pointer-events: none; z-index: 2;
+            animation: geminiBarRotate 4s linear infinite; pointer-events: none; z-index: 2;
         }
 
         .premium-glow-card {
@@ -35,14 +36,21 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .premium-glow-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 20px rgba(0, 242, 254, 0.12);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 242, 254, 0.12);
+        }
+
+        /* Sticky table formatting for mobile/desktop */
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            z-index: 20;
         }
     </style>
 </head>
-<body class="bg-[#F8FAFC] dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen pb-12"
+<body class="bg-[#F8FAFC] dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen pb-12 transition-colors duration-300"
       x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbwqvsVkNBSgRxoQRD46Sh5FR4G5m06tK75p7mctmM1PtyG-UzkqJZ3BElSD5yT2AumVWQ/exec',
+          webAppUrl: 'https://script.google.com/macros/s/AKfycbw8NA3RsFGfWYFuLxiDYwVvErreM4m8U7XtOMc-RBIzNUEqsKi_jiUxiEalDnKeTlzMAw/exec',
           searchQuery: '', 
           allMasterData: {}, 
           allMasterAverages: {},
@@ -50,7 +58,7 @@
           selectedDate: '',
           filteredItems: [],
           highestSeller: 'Calculating...', normalSeller: 'Calculating...',
-          loading: true, isSyncing: false, chartInstance: null,
+          loading: true, chartInstance: null,
           selectedCategory: 'All',
           truSeaFilter: 'all',
           activeViewTab: 'dashboard', 
@@ -61,6 +69,10 @@
               this.loading = true;
               await this.fetchLivePrices(true);
               this.loading = false;
+
+              setInterval(async () => {
+                  await this.fetchLivePrices(false);
+              }, 30000);
           },
 
           toggleTheme() {
@@ -74,7 +86,6 @@
           },
 
           async fetchLivePrices(isFirstLoad) {
-              this.isSyncing = true;
               try {
                   let cacheBuster = new Date().getTime();
                   let response = await fetch(`${this.webAppUrl}?_cb=${cacheBuster}`);
@@ -91,9 +102,7 @@
                   this.applyFilters();
                   this.processAnalytics(this.allMasterAverages[this.selectedDate] || []);
               } catch (e) {
-                  console.error(e);
-              } finally {
-                  this.isSyncing = false;
+                  console.error('Error fetching live data:', e);
               }
           },
 
@@ -107,15 +116,25 @@
               let items = this.allMasterData[this.selectedDate] || [];
               let q = this.searchQuery.toLowerCase().trim();
               
-              if (q) items = items.filter(i => i.name.toLowerCase().includes(q));
-              if (this.selectedCategory !== 'All') {
-                  items = items.filter(i => i.name.toLowerCase().includes(this.selectedCategory.toLowerCase().replace(/s$/, '')));
+              if (q) {
+                  items = items.filter(i => i.name.toLowerCase().includes(q));
               }
+              
+              if (this.selectedCategory !== 'All') {
+                  let catKey = this.selectedCategory.toLowerCase().replace(/s$/, '');
+                  items = items.filter(i => i.name.toLowerCase().includes(catKey));
+              }
+              
               if (this.truSeaFilter === 'priced') {
                   items = items.filter(i => i.truSeaPerKg && i.truSeaPerKg !== '-');
               }
               
               this.filteredItems = items;
+          },
+
+          resetSearch() {
+              this.searchQuery = '';
+              this.applyFilters();
           },
 
           processAnalytics(averages) {
@@ -158,7 +177,7 @@
                           data: dataVals,
                           backgroundColor: ['#00f2fe', '#7c3aed', '#4f46e5', '#10b981', '#f59e0b', '#3b82f6'],
                           borderRadius: 8,
-                          maxBarThickness: 40
+                          maxBarThickness: 36
                       }]
                   },
                   options: { 
@@ -185,36 +204,128 @@
                       }
                   }
               });
+          },
+
+          exportExcel() {
+              let headers = ['Fish Description', 'Current TruSea Website Price', 'TruSea Target Price', 'TenderCuts', 'Licious', 'Fresh Ma', 'Fresh To Home', 'Supreme Sea Foods'];
+              let rows = this.filteredItems.map(item => [
+                  item.name,
+                  item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-',
+                  item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-',
+                  item.competitors['TenderCuts'] ? item.competitors['TenderCuts'].status : '-',
+                  item.competitors['Licious'] ? item.competitors['Licious'].status : '-',
+                  item.competitors['Fresh Ma'] ? item.competitors['Fresh Ma'].status : '-',
+                  item.competitors['Fresh To Home'] ? item.competitors['Fresh To Home'].status : '-',
+                  item.competitors['Supreme Sea Foods'] ? item.competitors['Supreme Sea Foods'].status : '-'
+              ]);
+              let csvContent = [headers, ...rows].map(e => e.map(v => '\"' + v + '\"').join(',')).join('\n');
+              let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+              let url = URL.createObjectURL(blob);
+              let a = document.createElement('a');
+              a.href = url;
+              a.download = `TruSea_Price_Tracker_${this.selectedDate}.csv`;
+              a.click();
+          },
+
+          exportPDF() {
+              let element = document.getElementById('comparativeTableContainer');
+              let opt = {
+                  margin: 0.2,
+                  filename: `TruSea_Price_Tracker_${this.selectedDate}.pdf`,
+                  image: { type: 'jpeg', quality: 0.98 },
+                  html2canvas: { scale: 2 },
+                  jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' }
+              };
+              html2pdf().set(opt).from(element).save();
+          },
+
+          exportPNG() {
+              let element = document.getElementById('comparativeTableContainer');
+              html2canvas(element).then(canvas => {
+                  let link = document.createElement('a');
+                  link.download = `TruSea_Price_Tracker_${this.selectedDate}.png`;
+                  link.href = canvas.toDataURL('image/png');
+                  link.click();
+              });
           }
       }" x-init="initEngine()">
 
     <div class="max-w-7xl mx-auto p-4 sm:p-6">
+        <!-- HEADER -->
         <header class="mb-4 border-b border-slate-200 dark:border-slate-700 pb-3 flex justify-between items-center">
-            <h1 class="text-xl sm:text-2xl font-medium text-slate-700 dark:text-slate-300">
-                <span class="font-black text-blue-600 dark:text-blue-500">TruSea</span> Price Tracker
-            </h1>
-            <button @click="toggleTheme()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">🌙/☀️</button>
+            <div class="flex items-center gap-2">
+                <span class="text-3xl">🐟</span>
+                <h1 class="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-100">
+                    <span class="text-blue-600 dark:text-blue-400">TruSea</span> Price Tracker
+                </h1>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button @click="toggleTheme()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Toggle Theme">
+                    <span x-text="darkMode ? '☀️' : '🌙'"></span>
+                </button>
+                <div class="flex items-center gap-1.5">
+                    <span class="relative flex h-3 w-3">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                    </span>
+                </div>
+            </div>
         </header>
 
+        <!-- VIEW TABS -->
         <div class="mb-5 flex border-b border-slate-200 dark:border-slate-700">
             <button @click="activeViewTab = 'dashboard'; switchDateView(availableDates[0])" 
                     :class="activeViewTab === 'dashboard' ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold border-b-2' : 'text-slate-500'"
-                    class="px-5 py-2.5 text-sm">📊 Analytics Dashboard</button>
+                    class="px-5 py-2.5 text-sm transition">📊 Analytics Dashboard</button>
             <button @click="activeViewTab = 'table'; applyFilters();" 
                     :class="activeViewTab === 'table' ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-bold border-b-2' : 'text-slate-500'"
-                    class="px-5 py-2.5 text-sm">📋 Full Comparative Table</button>
+                    class="px-5 py-2.5 text-sm transition">📋 Full Comparative Table</button>
         </div>
 
+        <!-- SEARCH BAR (NEON GEMINI STYLE) -->
+        <div class="mb-5 max-w-2xl mx-auto">
+            <div class="gemini-ai-search-container">
+                <div class="flex items-center w-full bg-white dark:bg-slate-800 rounded-full px-4 py-1.5 shadow-sm">
+                    <input x-model="searchQuery" 
+                           @input="applyFilters()"
+                           @keyup.enter="applyFilters()"
+                           type="text" 
+                           placeholder="Search fish names..." 
+                           class="w-full text-sm bg-transparent border-none focus:outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 font-medium py-1">
+                    <button @click="applyFilters()" class="bg-cyan-600 hover:bg-cyan-700 text-white rounded-full px-4 py-1.5 text-xs font-bold transition">
+                        Search
+                    </button>
+                    <button x-show="searchQuery.length > 0" @click="resetSearch()" class="ml-2 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        ✖ Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- FILTER CATEGORY TAGS -->
+        <div class="mb-6 flex flex-wrap items-center justify-center gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-5xl mx-auto">
+            <template x-for="cat in ['All', 'Premium Slices', 'Regular Slices', 'Thick Slices', 'Cleaned Whole Fish', 'Curry Cuts', 'Fillets', 'Cubes', 'Crabs', 'Prawns']" :key="cat">
+                <button @click="selectedCategory = cat; applyFilters();"
+                        :class="selectedCategory === cat ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'"
+                        class="px-3.5 py-1.5 text-xs rounded-full transition whitespace-nowrap"
+                        x-text="cat">
+                </button>
+            </template>
+        </div>
+
+        <!-- DATE SELECTOR -->
+        <div class="mb-5 flex gap-2 overflow-x-auto no-scrollbar">
+            <template x-for="date in availableDates" :key="date">
+                <button @click="switchDateView(date)" 
+                        :class="selectedDate === date ? 'bg-cyan-600 text-white font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'"
+                        class="px-4 py-1.5 text-xs rounded-full whitespace-nowrap transition" x-text="date"></button>
+            </template>
+        </div>
+
+        <!-- TAB 1: ANALYTICS DASHBOARD -->
         <template x-if="activeViewTab === 'dashboard'">
             <div>
-                <div class="mb-5 flex gap-2 overflow-x-auto no-scrollbar">
-                    <template x-for="date in availableDates" :key="date">
-                        <button @click="switchDateView(date)" 
-                                :class="selectedDate === date ? 'bg-cyan-600 text-white font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 border'"
-                                class="px-4 py-2 text-xs rounded-full whitespace-nowrap" x-text="date"></button>
-                    </template>
-                </div>
-
                 <!-- ANALYTICS CARDS & BAR CHART -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
                     <div class="lg:col-span-1 flex flex-col gap-3">
@@ -237,38 +348,39 @@
                 <!-- CARDS MATRIX -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     <template x-for="item in filteredItems" :key="item.name">
-                        <div class="premium-glow-card p-6 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl">
-                            <h3 class="text-lg font-extrabold text-slate-900 dark:text-slate-100 mb-3" x-text="item.name"></h3>
+                        <div class="premium-glow-card p-5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl">
+                            <h3 class="text-base font-extrabold text-slate-900 dark:text-slate-100 mb-3" x-text="item.name"></h3>
                             
-                            <div class="space-y-2 mb-4 bg-[#FAFAFA] dark:bg-slate-900 p-4 rounded-lg text-sm">
+                            <div class="space-y-2 mb-4 bg-[#FAFAFA] dark:bg-slate-900 p-3.5 rounded-lg text-xs">
                                 <div class="flex justify-between">
-                                    <span class="text-slate-500">Current TruSea Web Price</span>
-                                    <span class="font-bold" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
+                                    <span class="text-slate-500 dark:text-slate-400">Current TruSea Web Price</span>
+                                    <span class="font-bold text-slate-800 dark:text-slate-200" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
                                 </div>
-                                <div class="flex justify-between border-t pt-2">
-                                    <span class="font-bold">Today's Target TruSea Price</span>
-                                    <span class="text-lg font-black text-cyan-600" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
+                                <div class="flex justify-between border-t border-slate-200 dark:border-slate-800 pt-2">
+                                    <span class="font-bold text-slate-900 dark:text-slate-100">Today's Target TruSea Price</span>
+                                    <span class="text-sm font-black text-cyan-600 dark:text-cyan-400" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
                                 </div>
                             </div>
                             
-                            <div class="border-t pt-3 space-y-2.5 text-sm">
+                            <div class="border-t border-slate-100 dark:border-slate-700 pt-3 space-y-2 text-xs">
                                 <template x-for="[compName, compVal] in Object.entries(item.competitors)" :key="compName">
-                                    <div class="flex justify-between items-center bg-[#FAFAFA] dark:bg-slate-900 p-2.5 rounded-lg border">
+                                    <div class="flex justify-between items-center bg-[#FAFAFA] dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
                                         <div class="flex items-center gap-1.5">
                                             <span class="font-bold text-slate-700 dark:text-slate-300" x-text="compName"></span>
-                                            <!-- COMPETITOR SPECIFIC OFFER BADGE -->
                                             <template x-if="compVal.hasOffer">
-                                                <span class="bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider animate-pulse">🔥 OFFER</span>
+                                                <span class="bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider animate-pulse">🔥 OFFER</span>
                                             </template>
                                         </div>
                                         <div class="flex items-center gap-2">
-                                            <span class="font-extrabold" x-show="!compVal.status.toLowerCase().includes('not available') && !compVal.status.toLowerCase().includes('sold out')" x-text="compVal.price !== '-' ? '₹' + compVal.price + '/kg' : '-'"></span>
+                                            <span class="font-extrabold text-slate-900 dark:text-slate-100" 
+                                                  x-show="compVal.status === 'In Stock'" 
+                                                  x-text="compVal.price !== '-' ? '₹' + compVal.price + '/kg' : '-'"></span>
                                             <span :class="{
-                                                    'bg-emerald-50 text-emerald-700 border-emerald-200': !compVal.status.toLowerCase().includes('sold out') && !compVal.status.toLowerCase().includes('not available'),
-                                                    'bg-rose-50 text-rose-700 border-rose-200': compVal.status.toLowerCase().includes('sold out'),
-                                                    'bg-slate-100 text-slate-500': compVal.status.toLowerCase().includes('not available')
+                                                    'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900': compVal.status === 'In Stock',
+                                                    'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-900 font-bold': compVal.status.toLowerCase().includes('sold out'),
+                                                    'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700': compVal.status.toLowerCase().includes('not available')
                                                   }" 
-                                                  class="text-xs font-bold px-2 py-1 rounded border" 
+                                                  class="text-[10px] font-bold px-2 py-0.5 rounded border" 
                                                   x-text="compVal.status"></span>
                                         </div>
                                     </div>
@@ -280,39 +392,73 @@
             </div>
         </template>
 
+        <!-- TAB 2: FULL COMPARATIVE TABLE -->
         <template x-if="activeViewTab === 'table'">
-            <div class="overflow-x-auto rounded-xl border bg-white dark:bg-slate-800 mt-4">
-                <table class="w-full text-left text-xs">
-                    <thead>
-                        <tr class="bg-slate-50 dark:bg-slate-900 border-b font-bold uppercase">
-                            <th class="p-3">Fish Description</th>
-                            <th class="p-3 text-center">TenderCuts</th>
-                            <th class="p-3 text-center">Licious</th>
-                            <th class="p-3 text-center">Fresh Ma</th>
-                            <th class="p-3 text-center">Fresh To Home</th>
-                            <th class="p-3 text-center">Supreme</th>
-                            <th class="p-3 text-center bg-blue-50">TruSea Target</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y font-medium">
-                        <template x-for="item in filteredItems" :key="item.name">
-                            <tr>
-                                <td class="p-3 font-bold" x-text="item.name"></td>
-                                <template x-for="compName in ['TenderCuts', 'Licious', 'Fresh Ma', 'Fresh To Home', 'Supreme Sea Foods']" :key="compName">
-                                    <td class="p-3 text-center font-mono">
-                                        <div class="flex flex-col items-center gap-1">
-                                            <template x-if="item.competitors[compName] && item.competitors[compName].hasOffer">
-                                                <span class="bg-rose-500 text-white text-[8px] font-black px-1 rounded">🔥 OFFER</span>
-                                            </template>
-                                            <span x-text="item.competitors[compName] ? (item.competitors[compName].price !== '-' ? '₹' + item.competitors[compName].price + '/kg' : item.competitors[compName].status) : '-'"></span>
-                                        </div>
-                                    </td>
-                                </template>
-                                <td class="p-3 text-center font-bold bg-blue-50/50 text-blue-600" x-text="'₹' + item.truSeaPerKg"></td>
+            <div class="space-y-4">
+                <!-- EXPORT BUTTONS -->
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full p-1">
+                        <button @click="truSeaFilter = 'all'; applyFilters();"
+                                :class="truSeaFilter === 'all' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow font-bold' : 'text-slate-500'"
+                                class="px-3 py-1 text-xs rounded-full transition whitespace-nowrap">All Fish</button>
+                        <button @click="truSeaFilter = 'priced'; applyFilters();"
+                                :class="truSeaFilter === 'priced' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow font-bold' : 'text-slate-500'"
+                                class="px-3 py-1 text-xs rounded-full transition whitespace-nowrap">Only TruSea Priced</button>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button @click="exportExcel()" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1">📊 Excel</button>
+                        <button @click="exportPDF()" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition flex items-center gap-1">📄 PDF</button>
+                        <button @click="exportPNG()" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-1">🖼️ PNG</button>
+                    </div>
+                </div>
+
+                <!-- TABLE CONTAINER WITH STICKY HEADERS & STICKY COLUMN -->
+                <div id="comparativeTableContainer" class="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800 max-h-[70vh]">
+                    <table class="w-full table-auto border-collapse text-left text-xs">
+                        <thead>
+                            <tr class="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 font-bold uppercase sticky top-0 z-30">
+                                <th class="p-3 sticky-col bg-slate-100 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 min-w-[160px] shadow-[2px_0_4px_rgba(0,0,0,0.05)]">Fish Description</th>
+                                <th class="p-3 text-center min-w-[120px]">Current TruSea Website Price</th>
+                                <th class="p-3 text-center min-w-[120px] bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">Today's TruSea Target Price</th>
+                                <th class="p-3 text-center min-w-[110px]">TenderCuts</th>
+                                <th class="p-3 text-center min-w-[110px]">Licious</th>
+                                <th class="p-3 text-center min-w-[110px]">Fresh Ma</th>
+                                <th class="p-3 text-center min-w-[110px]">Fresh To Home</th>
+                                <th class="p-3 text-center min-w-[110px]">Supreme Sea Foods</th>
                             </tr>
-                        </template>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-700/60 font-medium">
+                            <template x-for="item in filteredItems" :key="item.name">
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition">
+                                    <td class="p-3 font-bold sticky-col bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 shadow-[2px_0_4px_rgba(0,0,0,0.05)]" x-text="item.name"></td>
+                                    
+                                    <td class="p-3 text-center font-mono font-bold text-slate-700 dark:text-slate-300" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></td>
+                                    
+                                    <td class="p-3 text-center font-mono font-black text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/20" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></td>
+
+                                    <template x-for="compName in ['TenderCuts', 'Licious', 'Fresh Ma', 'Fresh To Home', 'Supreme Sea Foods']" :key="compName">
+                                        <td class="p-3 text-center font-mono">
+                                            <div class="flex flex-col items-center gap-1">
+                                                <template x-if="item.competitors[compName] && item.competitors[compName].hasOffer">
+                                                    <span class="bg-rose-500 text-white text-[8px] font-black px-1 rounded uppercase tracking-wider animate-pulse">🔥 OFFER</span>
+                                                </template>
+                                                
+                                                <template x-if="item.competitors[compName]">
+                                                    <div>
+                                                        <span x-show="item.competitors[compName].status === 'In Stock'" class="text-emerald-600 dark:text-emerald-400 font-bold" x-text="item.competitors[compName].price !== '-' ? '₹' + item.competitors[compName].price + '/kg' : '-'"></span>
+                                                        <span x-show="item.competitors[compName].status.toLowerCase().includes('sold out')" class="text-orange-600 dark:text-orange-400 font-bold text-[10px]" x-text="item.competitors[compName].status"></span>
+                                                        <span x-show="item.competitors[compName].status.toLowerCase().includes('not available')" class="text-slate-400 text-[10px]">Not Available</span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </td>
+                                    </template>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </template>
     </div>
