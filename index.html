@@ -40,7 +40,6 @@
             box-shadow: 0 10px 20px rgba(0, 242, 254, 0.12);
         }
 
-        /* Sticky table formatting for mobile/desktop */
         .sticky-col {
             position: sticky;
             left: 0;
@@ -49,208 +48,10 @@
     </style>
 </head>
 <body class="bg-[#F8FAFC] dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen pb-12 transition-colors duration-300"
-      x-data="{
-          webAppUrl: 'https://script.google.com/macros/s/AKfycbw8NA3RsFGfWYFuLxiDYwVvErreM4m8U7XtOMc-RBIzNUEqsKi_jiUxiEalDnKeTlzMAw/exec',
-          searchQuery: '', 
-          allMasterData: {}, 
-          allMasterAverages: {},
-          availableDates: [],
-          selectedDate: '',
-          filteredItems: [],
-          highestSeller: 'Calculating...', normalSeller: 'Calculating...',
-          loading: true, chartInstance: null,
-          selectedCategory: 'All',
-          truSeaFilter: 'all',
-          activeViewTab: 'dashboard', 
-          darkMode: localStorage.getItem('darkMode') === 'true',
-          
-          async initEngine() {
-              if (this.darkMode) document.documentElement.classList.add('dark');
-              this.loading = true;
-              await this.fetchLivePrices(true);
-              this.loading = false;
+      x-data="trackerApp()" 
+      x-init="initEngine()">
 
-              setInterval(async () => {
-                  await this.fetchLivePrices(false);
-              }, 30000);
-          },
-
-          toggleTheme() {
-              this.darkMode = !this.darkMode;
-              localStorage.setItem('darkMode', this.darkMode);
-              if (this.darkMode) document.documentElement.classList.add('dark');
-              else document.documentElement.classList.remove('dark');
-              if (this.availableDates.length > 0) {
-                  this.processAnalytics(this.allMasterAverages[this.selectedDate] || []);
-              }
-          },
-
-          async fetchLivePrices(isFirstLoad) {
-              try {
-                  let cacheBuster = new Date().getTime();
-                  let response = await fetch(`${this.webAppUrl}?_cb=${cacheBuster}`);
-                  let resData = await response.json();
-                  
-                  this.allMasterData = resData.dataByDate || {};
-                  this.allMasterAverages = resData.averagesByDate || {};
-                  this.availableDates = resData.meta.availableDates || [];
-                  
-                  if (isFirstLoad && this.availableDates.length > 0) {
-                      this.selectedDate = this.availableDates[0];
-                  }
-                  
-                  this.applyFilters();
-                  this.processAnalytics(this.allMasterAverages[this.selectedDate] || []);
-              } catch (e) {
-                  console.error('Error fetching live data:', e);
-              }
-          },
-
-          switchDateView(dateLabel) {
-              this.selectedDate = dateLabel;
-              this.applyFilters();
-              this.processAnalytics(this.allMasterAverages[dateLabel] || []);
-          },
-
-          applyFilters() {
-              let items = this.allMasterData[this.selectedDate] || [];
-              let q = this.searchQuery.toLowerCase().trim();
-              
-              if (q) {
-                  items = items.filter(i => i.name.toLowerCase().includes(q));
-              }
-              
-              if (this.selectedCategory !== 'All') {
-                  let catKey = this.selectedCategory.toLowerCase().replace(/s$/, '');
-                  items = items.filter(i => i.name.toLowerCase().includes(catKey));
-              }
-              
-              if (this.truSeaFilter === 'priced') {
-                  items = items.filter(i => i.truSeaPerKg && i.truSeaPerKg !== '-');
-              }
-              
-              this.filteredItems = items;
-          },
-
-          resetSearch() {
-              this.searchQuery = '';
-              this.applyFilters();
-          },
-
-          processAnalytics(averages) {
-              if (!averages || averages.length === 0) return;
-              
-              let competitors = averages.filter(c => !c.isBrand && c.avg > 0);
-              competitors.sort((a, b) => b.avg - a.avg);
-              
-              if (competitors.length > 0) {
-                  this.highestSeller = competitors[0].name + ' (₹' + competitors[0].avg + '/KG)';
-                  this.normalSeller = competitors[competitors.length - 1].name + ' (₹' + competitors[competitors.length - 1].avg + '/KG)';
-              } else {
-                  this.highestSeller = 'N/A';
-                  this.normalSeller = 'N/A';
-              }
-              
-              this.$nextTick(() => {
-                  this.renderChart(averages);
-              });
-          },
-
-          renderChart(averages) {
-              let canvasEl = document.getElementById('insightsChart');
-              if (!canvasEl) return;
-              
-              if (this.chartInstance) {
-                  this.chartInstance.destroy();
-              }
-              
-              let isDark = this.darkMode;
-              let labels = averages.map(c => c.name);
-              let dataVals = averages.map(c => c.avg);
-
-              this.chartInstance = new Chart(canvasEl, {
-                  type: 'bar',
-                  data: {
-                      labels: labels,
-                      datasets: [{
-                          label: 'Avg Price (₹/KG)',
-                          data: dataVals,
-                          backgroundColor: ['#00f2fe', '#7c3aed', '#4f46e5', '#10b981', '#f59e0b', '#3b82f6'],
-                          borderRadius: 8,
-                          maxBarThickness: 36
-                      }]
-                  },
-                  options: { 
-                      responsive: true, 
-                      maintainAspectRatio: false,
-                      plugins: { 
-                          legend: { display: false },
-                          tooltip: {
-                              callbacks: {
-                                  label: function(ctx) { return ' Avg Price: ₹' + ctx.parsed.y + '/KG'; }
-                              }
-                          }
-                      },
-                      scales: {
-                          y: { 
-                              beginAtZero: true,
-                              grid: { color: isDark ? '#334155' : '#f1f5f9' }, 
-                              ticks: { color: isDark ? '#94a3b8' : '#64748b' } 
-                          },
-                          x: { 
-                              grid: { display: false }, 
-                              ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { weight: 'bold' } } 
-                          }
-                      }
-                  }
-              });
-          },
-
-          exportExcel() {
-              let headers = ['Fish Description', 'Current TruSea Website Price', 'TruSea Target Price', 'TenderCuts', 'Licious', 'Fresh Ma', 'Fresh To Home', 'Supreme Sea Foods'];
-              let rows = this.filteredItems.map(item => [
-                  item.name,
-                  item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-',
-                  item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-',
-                  item.competitors['TenderCuts'] ? item.competitors['TenderCuts'].status : '-',
-                  item.competitors['Licious'] ? item.competitors['Licious'].status : '-',
-                  item.competitors['Fresh Ma'] ? item.competitors['Fresh Ma'].status : '-',
-                  item.competitors['Fresh To Home'] ? item.competitors['Fresh To Home'].status : '-',
-                  item.competitors['Supreme Sea Foods'] ? item.competitors['Supreme Sea Foods'].status : '-'
-              ]);
-              let csvContent = [headers, ...rows].map(e => e.map(v => '\"' + v + '\"').join(',')).join('\n');
-              let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-              let url = URL.createObjectURL(blob);
-              let a = document.createElement('a');
-              a.href = url;
-              a.download = `TruSea_Price_Tracker_${this.selectedDate}.csv`;
-              a.click();
-          },
-
-          exportPDF() {
-              let element = document.getElementById('comparativeTableContainer');
-              let opt = {
-                  margin: 0.2,
-                  filename: `TruSea_Price_Tracker_${this.selectedDate}.pdf`,
-                  image: { type: 'jpeg', quality: 0.98 },
-                  html2canvas: { scale: 2 },
-                  jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' }
-              };
-              html2pdf().set(opt).from(element).save();
-          },
-
-          exportPNG() {
-              let element = document.getElementById('comparativeTableContainer');
-              html2canvas(element).then(canvas => {
-                  let link = document.createElement('a');
-                  link.download = `TruSea_Price_Tracker_${this.selectedDate}.png`;
-                  link.href = canvas.toDataURL('image/png');
-                  link.click();
-              });
-          }
-      }" x-init="initEngine()">
-
-    <div class="max-w-7xl mx-auto p-4 sm:p-6">
+    <div class="max-w-7xl mx-auto p-4 sm:p-6" x-cloak>
         <!-- HEADER -->
         <header class="mb-4 border-b border-slate-200 dark:border-slate-700 pb-3 flex justify-between items-center">
             <div class="flex items-center gap-2">
@@ -462,5 +263,211 @@
             </div>
         </template>
     </div>
+
+    <!-- SCRIPT SCOPED SAFELY -->
+    <script>
+        function trackerApp() {
+            return {
+                webAppUrl: 'https://script.google.com/macros/s/AKfycbw8NA3RsFGfWYFuLxiDYwVvErreM4m8U7XtOMc-RBIzNUEqsKi_jiUxiEalDnKeTlzMAw/exec',
+                searchQuery: '', 
+                allMasterData: {}, 
+                allMasterAverages: {},
+                availableDates: [],
+                selectedDate: '',
+                filteredItems: [],
+                highestSeller: 'Calculating...', normalSeller: 'Calculating...',
+                loading: true, chartInstance: null,
+                selectedCategory: 'All',
+                truSeaFilter: 'all',
+                activeViewTab: 'dashboard', 
+                darkMode: localStorage.getItem('darkMode') === 'true',
+                
+                async initEngine() {
+                    if (this.darkMode) document.documentElement.classList.add('dark');
+                    this.loading = true;
+                    await this.fetchLivePrices(true);
+                    this.loading = false;
+
+                    setInterval(async () => {
+                        await this.fetchLivePrices(false);
+                    }, 30000);
+                },
+
+                toggleTheme() {
+                    this.darkMode = !this.darkMode;
+                    localStorage.setItem('darkMode', this.darkMode);
+                    if (this.darkMode) document.documentElement.classList.add('dark');
+                    else document.documentElement.classList.remove('dark');
+                    if (this.availableDates.length > 0) {
+                        this.processAnalytics(this.allMasterAverages[this.selectedDate] || []);
+                    }
+                },
+
+                async fetchLivePrices(isFirstLoad) {
+                    try {
+                        let cacheBuster = new Date().getTime();
+                        let response = await fetch(this.webAppUrl + '?_cb=' + cacheBuster);
+                        let resData = await response.json();
+                        
+                        this.allMasterData = resData.dataByDate || {};
+                        this.allMasterAverages = resData.averagesByDate || {};
+                        this.availableDates = resData.meta.availableDates || [];
+                        
+                        if (isFirstLoad && this.availableDates.length > 0) {
+                            this.selectedDate = this.availableDates[0];
+                        }
+                        
+                        this.applyFilters();
+                        this.processAnalytics(this.allMasterAverages[this.selectedDate] || []);
+                    } catch (e) {
+                        console.error('Error fetching live data:', e);
+                    }
+                },
+
+                switchDateView(dateLabel) {
+                    this.selectedDate = dateLabel;
+                    this.applyFilters();
+                    this.processAnalytics(this.allMasterAverages[dateLabel] || []);
+                },
+
+                applyFilters() {
+                    let items = this.allMasterData[this.selectedDate] || [];
+                    let q = this.searchQuery.toLowerCase().trim();
+                    
+                    if (q) {
+                        items = items.filter(i => i.name.toLowerCase().includes(q));
+                    }
+                    
+                    if (this.selectedCategory !== 'All') {
+                        let catKey = this.selectedCategory.toLowerCase().replace(/s$/, '');
+                        items = items.filter(i => i.name.toLowerCase().includes(catKey));
+                    }
+                    
+                    if (this.truSeaFilter === 'priced') {
+                        items = items.filter(i => i.truSeaPerKg && i.truSeaPerKg !== '-');
+                    }
+                    
+                    this.filteredItems = items;
+                },
+
+                resetSearch() {
+                    this.searchQuery = '';
+                    this.applyFilters();
+                },
+
+                processAnalytics(averages) {
+                    if (!averages || averages.length === 0) return;
+                    
+                    let competitors = averages.filter(c => !c.isBrand && c.avg > 0);
+                    competitors.sort((a, b) => b.avg - a.avg);
+                    
+                    if (competitors.length > 0) {
+                        this.highestSeller = competitors[0].name + ' (₹' + competitors[0].avg + '/KG)';
+                        this.normalSeller = competitors[competitors.length - 1].name + ' (₹' + competitors[competitors.length - 1].avg + '/KG)';
+                    } else {
+                        this.highestSeller = 'N/A';
+                        this.normalSeller = 'N/A';
+                    }
+                    
+                    this.$nextTick(() => {
+                        this.renderChart(averages);
+                    });
+                },
+
+                renderChart(averages) {
+                    let canvasEl = document.getElementById('insightsChart');
+                    if (!canvasEl) return;
+                    
+                    if (this.chartInstance) {
+                        this.chartInstance.destroy();
+                    }
+                    
+                    let isDark = this.darkMode;
+                    let labels = averages.map(c => c.name);
+                    let dataVals = averages.map(c => c.avg);
+
+                    this.chartInstance = new Chart(canvasEl, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Avg Price (₹/KG)',
+                                data: dataVals,
+                                backgroundColor: ['#00f2fe', '#7c3aed', '#4f46e5', '#10b981', '#f59e0b', '#3b82f6'],
+                                borderRadius: 8,
+                                maxBarThickness: 36
+                            }]
+                        },
+                        options: { 
+                            responsive: true, 
+                            maintainAspectRatio: false,
+                            plugins: { 
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(ctx) { return ' Avg Price: ₹' + ctx.parsed.y + '/KG'; }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: { 
+                                    beginAtZero: true,
+                                    grid: { color: isDark ? '#334155' : '#f1f5f9' }, 
+                                    ticks: { color: isDark ? '#94a3b8' : '#64748b' } 
+                                },
+                                x: { 
+                                    grid: { display: false }, 
+                                    ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { weight: 'bold' } } 
+                                }
+                            }
+                        }
+                    });
+                },
+
+                exportExcel() {
+                    let headers = ['Fish Description', 'Current TruSea Website Price', 'TruSea Target Price', 'TenderCuts', 'Licious', 'Fresh Ma', 'Fresh To Home', 'Supreme Sea Foods'];
+                    let rows = this.filteredItems.map(item => [
+                        item.name,
+                        item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-',
+                        item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-',
+                        item.competitors['TenderCuts'] ? item.competitors['TenderCuts'].status : '-',
+                        item.competitors['Licious'] ? item.competitors['Licious'].status : '-',
+                        item.competitors['Fresh Ma'] ? item.competitors['Fresh Ma'].status : '-',
+                        item.competitors['Fresh To Home'] ? item.competitors['Fresh To Home'].status : '-',
+                        item.competitors['Supreme Sea Foods'] ? item.competitors['Supreme Sea Foods'].status : '-'
+                    ]);
+                    let csvContent = [headers, ...rows].map(e => e.map(v => '"' + v + '"').join(',')).join('\n');
+                    let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    let url = URL.createObjectURL(blob);
+                    let a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'TruSea_Price_Tracker_' + this.selectedDate + '.csv';
+                    a.click();
+                },
+
+                exportPDF() {
+                    let element = document.getElementById('comparativeTableContainer');
+                    let opt = {
+                        margin: 0.2,
+                        filename: 'TruSea_Price_Tracker_' + this.selectedDate + '.pdf',
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2 },
+                        jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' }
+                    };
+                    html2pdf().set(opt).from(element).save();
+                },
+
+                exportPNG() {
+                    let element = document.getElementById('comparativeTableContainer');
+                    html2canvas(element).then(canvas => {
+                        let link = document.createElement('a');
+                        link.download = 'TruSea_Price_Tracker_' + this.selectedDate + '.png';
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    });
+                }
+            }
+        }
+    </script>
 </body>
 </html>
