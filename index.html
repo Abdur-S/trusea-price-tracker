@@ -135,10 +135,14 @@
         <!-- TAB 1: ANALYTICS DASHBOARD -->
         <template x-if="activeViewTab === 'dashboard'">
             <div>
-                <!-- ANALYTICS CARDS & COSTLY VENDOR RANKINGS -->
+                <!-- ANALYTICS CARDS & COMPETITOR RANKINGS -->
                 <div x-show="!isSearchActive" class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-                    <!-- COSTLY & NORMAL VENDORS -->
+                    <!-- COSTLY, NORMAL & TRUSEA BENCHMARK CARDS -->
                     <div class="lg:col-span-1 flex flex-col gap-3">
+                        <div class="bg-blue-600 text-white p-4 rounded-xl border border-blue-700 shadow-md">
+                            <span class="text-xs uppercase font-black text-blue-200 block mb-0.5">🐟 TRUSEA BENCHMARK AVG</span>
+                            <div class="text-xl font-black font-mono" x-text="truSeaAverage !== 'N/A' ? '₹' + truSeaAverage + '/KG' : 'N/A'"></div>
+                        </div>
                         <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                             <span class="text-xs uppercase font-bold text-red-500 block mb-1">🔴 COSTLY MARKET VENDOR</span>
                             <div class="text-base font-black text-slate-900 dark:text-slate-100" x-text="highestSeller"></div>
@@ -149,53 +153,43 @@
                         </div>
                     </div>
 
-                    <!-- COSTLY VENDOR LEADERBOARD -->
-                    <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                        <div class="flex justify-between items-center mb-3 border-b border-slate-100 dark:border-slate-700 pb-2">
-                            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">🔥 Market Price Leaderboard (Avg Price/KG)</h2>
-                            <span class="text-[10px] text-blue-600 dark:text-blue-400 font-bold" x-text="'Showing: ' + selectedDate"></span>
-                        </div>
+                    <!-- COMPETITOR-ONLY MARKET LEADERBOARD -->
+                    <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-3 border-b border-slate-100 dark:border-slate-700 pb-2">
+                                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">🔥 Competitor Price Leaderboard (Avg Price/KG)</h2>
+                                <span class="text-[10px] text-blue-600 dark:text-blue-400 font-bold" x-text="'Showing: ' + selectedDate"></span>
+                            </div>
 
-                        <div class="space-y-2">
-                            <template x-for="(comp, index) in competitorRankings" :key="comp.name">
-                                <div class="flex justify-between items-center p-2.5 rounded-lg border transition-all duration-200"
-                                     :class="{
-                                        'bg-blue-50/80 dark:bg-blue-950/40 border-blue-300 dark:border-blue-700 shadow-xs': comp.isBrand,
-                                        'bg-[#FAFAFA] dark:bg-slate-900 border-slate-100 dark:border-slate-800': !comp.isBrand
-                                     }">
-                                    <div class="flex items-center gap-2.5">
-                                        <span class="text-xs font-black px-2 py-0.5 rounded text-white" 
-                                              :class="{
-                                                'bg-blue-600': comp.isBrand,
-                                                'bg-rose-500': !comp.isBrand && comp.rankIndex === 0,
-                                                'bg-orange-500': !comp.isBrand && comp.rankIndex === 1,
-                                                'bg-amber-500': !comp.isBrand && comp.rankIndex === 2,
-                                                'bg-emerald-500': !comp.isBrand && comp.rankIndex >= 3
-                                              }" 
-                                              x-text="'#' + (index + 1)"></span>
-                                        
-                                        <div class="flex items-center gap-1.5">
-                                            <span class="text-sm font-extrabold" :class="comp.isBrand ? 'text-blue-700 dark:text-blue-300' : 'text-slate-800 dark:text-slate-200'" x-text="comp.name"></span>
+                            <div class="space-y-2">
+                                <template x-for="(comp, index) in competitorRankings" :key="comp.name">
+                                    <div class="flex justify-between items-center p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 bg-[#FAFAFA] dark:bg-slate-900">
+                                        <div class="flex items-center gap-2.5">
+                                            <span class="text-xs font-black px-2 py-0.5 rounded text-white" 
+                                                  :class="{
+                                                    'bg-rose-500': index === 0,
+                                                    'bg-orange-500': index === 1,
+                                                    'bg-amber-500': index === 2,
+                                                    'bg-emerald-500': index >= 3
+                                                  }" 
+                                                  x-text="'#' + (index + 1)"></span>
                                             
-                                            <template x-if="comp.isBrand">
-                                                <span class="bg-blue-600 text-white text-[9px] px-1.5 py-0.2 rounded font-black tracking-wide">OUR BRAND</span>
-                                            </template>
-                                            
-                                            <template x-if="!comp.isBrand && comp.rankIndex === 0">
-                                                <span class="bg-rose-500 text-white text-[8px] px-1.5 py-0.2 rounded font-black uppercase tracking-wider">MOST EXPENSIVE</span>
-                                            </template>
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="text-sm font-extrabold text-slate-800 dark:text-slate-200" x-text="comp.name"></span>
+                                                <template x-if="index === 0">
+                                                    <span class="bg-rose-500 text-white text-[8px] px-1.5 py-0.2 rounded font-black uppercase tracking-wider">MOST EXPENSIVE</span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span class="text-sm font-black font-mono text-slate-900 dark:text-slate-100" x-text="'₹' + comp.avg + '/KG'"></span>
                                         </div>
                                     </div>
-                                    <div>
-                                        <span class="text-sm font-black font-mono" 
-                                              :class="comp.isBrand ? 'text-blue-600 dark:text-blue-400' : 'text-slate-900 dark:text-slate-100'"
-                                              x-text="'₹' + comp.avg + '/KG'"></span>
-                                    </div>
-                                </div>
-                            </template>
-                            <template x-if="competitorRankings.length === 0">
-                                <div class="text-center py-6 text-xs text-slate-400">No pricing available for current selection.</div>
-                            </template>
+                                </template>
+                                <template x-if="competitorRankings.length === 0">
+                                    <div class="text-center py-6 text-xs text-slate-400">No competitor pricing available for current selection.</div>
+                                </template>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -330,6 +324,7 @@
                 filteredItems: [],
                 highestSeller: 'Loading...', 
                 normalSeller: 'Loading...',
+                truSeaAverage: 'N/A',
                 competitorRankings: [],
                 selectedCategory: 'All',
                 truSeaFilter: 'all',
@@ -432,20 +427,32 @@
                     this.computeAnalytics();
                 },
 
-                // ACCURATE BENCHMARK MATCHING (LIKE-FOR-LIKE COMPARISON)
                 computeAnalytics() {
                     var items = this.filteredItems || [];
                     
                     var compTotals = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
                     var compCounts = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
 
-                    var truMatchedTotal = 0;
-                    var truMatchedCount = 0;
+                    var truTotal = 0;
+                    var truCount = 0;
 
                     items.forEach(function(item) {
-                        var tPrice = parseFloat(String(item.truSeaPerKg || item.currentTruSeaWebPrice).replace(/[^\d.]/g, ''));
-                        var itemHasCompetitorInStock = false;
+                        // 1. TruSea: Calculate on active available fishes listed on website
+                        var webStr = String(item.currentTruSeaWebPrice || '').trim();
+                        var targetStr = String(item.truSeaPerKg || '').trim();
 
+                        if (webStr !== '-' && webStr !== '' && !/not|sold|na/i.test(webStr)) {
+                            var tPrice = parseFloat(targetStr.replace(/[^\d.]/g, ''));
+                            if (isNaN(tPrice) || tPrice <= 0) {
+                                tPrice = parseFloat(webStr.replace(/[^\d.]/g, ''));
+                            }
+                            if (!isNaN(tPrice) && tPrice > 0 && tPrice < 10000) {
+                                truTotal += tPrice;
+                                truCount++;
+                            }
+                        }
+
+                        // 2. Competitors: Calculate strictly on available in-stock items
                         if (item.competitors) {
                             Object.keys(item.competitors).forEach(function(compName) {
                                 var c = item.competitors[compName];
@@ -456,59 +463,36 @@
                                         if (!isNaN(p) && p > 0 && p < 10000) {
                                             compTotals[compName] += p;
                                             compCounts[compName]++;
-                                            itemHasCompetitorInStock = true;
                                         }
                                     }
                                 }
                             });
                         }
-
-                        // Calculate TruSea's average strictly on the matching items where competitors are in stock
-                        if (!isNaN(tPrice) && tPrice > 0 && itemHasCompetitorInStock) {
-                            truMatchedTotal += tPrice;
-                            truMatchedCount++;
-                        }
                     });
 
-                    // 1. Competitors Only list for Costly & Normal Vendor cards
-                    var competitorsOnly = [];
+                    // Update TruSea Benchmark Card
+                    this.truSeaAverage = truCount > 0 ? Math.round(truTotal / truCount) : 'N/A';
+
+                    // Competitors Leaderboard (STRICTLY COMPETITORS ONLY)
+                    var rankings = [];
                     Object.keys(compTotals).forEach(function(k) {
                         if (compCounts[k] > 0) {
                             var avg = Math.round(compTotals[k] / compCounts[k]);
-                            competitorsOnly.push({ name: k, avg: avg, count: compCounts[k], isBrand: false });
+                            rankings.push({ name: k, avg: avg, count: compCounts[k] });
                         }
                     });
 
-                    competitorsOnly.sort((a, b) => b.avg - a.avg);
+                    // Sort descending (highest avg price to lowest)
+                    rankings.sort((a, b) => b.avg - a.avg);
 
-                    if (competitorsOnly.length > 0) {
-                        this.highestSeller = competitorsOnly[0].name + ' (₹' + competitorsOnly[0].avg + '/KG)';
-                        this.normalSeller = competitorsOnly[competitorsOnly.length - 1].name + ' (₹' + competitorsOnly[competitorsOnly.length - 1].avg + '/KG)';
+                    // Update Vendor Cards & Leaderboard List
+                    if (rankings.length > 0) {
+                        this.highestSeller = rankings[0].name + ' (₹' + rankings[0].avg + '/KG)';
+                        this.normalSeller = rankings[rankings.length - 1].name + ' (₹' + rankings[rankings.length - 1].avg + '/KG)';
                     } else {
                         this.highestSeller = 'N/A';
                         this.normalSeller = 'N/A';
                     }
-
-                    // 2. Full Leaderboard List (Matched TruSea + Competitors)
-                    var rankings = [...competitorsOnly];
-
-                    if (truMatchedCount > 0) {
-                        var truAvg = Math.round(truMatchedTotal / truMatchedCount);
-                        rankings.push({ name: 'TruSea', avg: truAvg, count: truMatchedCount, isBrand: true });
-                    }
-
-                    // Sort Descending (Highest Avg Price First)
-                    rankings.sort((a, b) => b.avg - a.avg);
-
-                    var compRank = 0;
-                    rankings.forEach(function(r) {
-                        if (!r.isBrand) {
-                            r.rankIndex = compRank;
-                            compRank++;
-                        } else {
-                            r.rankIndex = -1;
-                        }
-                    });
 
                     this.competitorRankings = rankings;
                 },
