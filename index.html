@@ -264,7 +264,7 @@
         </template>
     </div>
 
-    <!-- SCRIPT SCOPED SAFELY -->
+    <!-- MAIN APP SCRIPT -->
     <script>
         function trackerApp() {
             return {
@@ -275,8 +275,8 @@
                 availableDates: [],
                 selectedDate: '',
                 filteredItems: [],
-                highestSeller: 'Calculating...', normalSeller: 'Calculating...',
-                loading: true, chartInstance: null,
+                highestSeller: 'Loading...', normalSeller: 'Loading...',
+                chartInstance: null,
                 selectedCategory: 'All',
                 truSeaFilter: 'all',
                 activeViewTab: 'dashboard', 
@@ -284,9 +284,7 @@
                 
                 async initEngine() {
                     if (this.darkMode) document.documentElement.classList.add('dark');
-                    this.loading = true;
                     await this.fetchLivePrices(true);
-                    this.loading = false;
 
                     setInterval(async () => {
                         await this.fetchLivePrices(false);
@@ -356,7 +354,11 @@
                 },
 
                 processAnalytics(averages) {
-                    if (!averages || averages.length === 0) return;
+                    if (!averages || averages.length === 0) {
+                        this.highestSeller = 'N/A';
+                        this.normalSeller = 'N/A';
+                        return;
+                    }
                     
                     let competitors = averages.filter(c => !c.isBrand && c.avg > 0);
                     competitors.sort((a, b) => b.avg - a.avg);
