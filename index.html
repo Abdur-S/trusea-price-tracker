@@ -136,7 +136,7 @@
         <!-- TAB 1: ANALYTICS DASHBOARD -->
         <template x-if="activeViewTab === 'dashboard'">
             <div>
-                <!-- ANALYTICS CARDS & BAR CHART -->
+                <!-- ANALYTICS CARDS & ANIMATED BAR CHART -->
                 <div x-show="!isSearchActive" class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
                     <div class="lg:col-span-1 flex flex-col gap-3">
                         <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -280,7 +280,6 @@
                 activeQuery: '',
                 isSearchActive: false,
                 allMasterData: {}, 
-                allMasterAverages: {},
                 availableDates: [],
                 selectedDate: '',
                 filteredItems: [],
@@ -300,7 +299,6 @@
                         try {
                             var parsedCache = JSON.parse(cachedData);
                             this.allMasterData = parsedCache.dataByDate || {};
-                            this.allMasterAverages = parsedCache.averagesByDate || {};
                             this.availableDates = parsedCache.meta.availableDates || [];
                             if (this.availableDates.length > 0) {
                                 this.selectedDate = this.availableDates[0];
@@ -333,7 +331,6 @@
                         localStorage.setItem('truSeaCachedData', JSON.stringify(resData));
 
                         this.allMasterData = resData.dataByDate || {};
-                        this.allMasterAverages = resData.averagesByDate || {};
                         this.availableDates = resData.meta.availableDates || [];
                         
                         if (isFirstLoad && this.availableDates.length > 0 && !this.selectedDate) {
@@ -348,6 +345,15 @@
 
                 switchDateView(dateLabel) {
                     this.selectedDate = dateLabel;
+                    // Reset Chart Canvas Instantly to Blank State Before Animation
+                    var container = document.getElementById('chartContainer');
+                    if (container) {
+                        container.innerHTML = '<canvas id="insightsChart"></canvas>';
+                    }
+                    if (this.chartInstance) {
+                        this.chartInstance.destroy();
+                        this.chartInstance = null;
+                    }
                     this.applyFilters();
                 },
 
@@ -391,18 +397,27 @@
                     this.updateAnalyticsAndChart();
                 },
 
+                // DYNAMIC MATCHED BENCHMARK AVERAGE (Active in-stock fishes only)
                 updateAnalyticsAndChart() {
                     if (this.activeViewTab !== 'dashboard' || this.isSearchActive) return;
 
-                    var averages = [];
+                    var items = this.filteredItems || [];
+                    if (items.length === 0) {
+                        this.highestSeller = 'N/A';
+                        this.normalSeller = 'N/A';
+                        this.renderChart([]);
+                        return;
+                    }
 
-                    // Always compute dynamic averages for active date/category view
-                    var totals = { 'TruSea': 0, 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
-                    var counts = { 'TruSea': 0, 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
+                    var compTotals = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
+                    var compCounts = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
 
-                    (this.filteredItems || []).forEach(function(item) {
+                    var truMatchedTotal = 0;
+                    var truMatchedCount = 0;
+
+                    items.forEach(function(item) {
                         var tPrice = parseFloat(String(item.truSeaPerKg).replace(/[^\d.]/g, ''));
-                        if (!isNaN(tPrice) && tPrice > 0) { totals['TruSea'] += tPrice; counts['TruSea']++; }
+                        var itemHasActiveComp = false;
 
                         if (item.competitors) {
                             Object.keys(item.competitors).forEach(function(compName) {
@@ -411,16 +426,28 @@
                                     var sLower = (c.status || '').toLowerCase();
                                     if (!sLower.includes('not available') && !sLower.includes('sold out')) {
                                         var p = parseFloat(String(c.price).replace(/[^\d.]/g, ''));
-                                        if (!isNaN(p) && p > 0) { totals[compName] += p; counts[compName]++; }
+                                        if (!isNaN(p) && p > 0 && p < 10000) {
+                                            compTotals[compName] += p;
+                                            compCounts[compName]++;
+                                            itemHasActiveComp = true;
+                                        }
                                     }
                                 }
                             });
                         }
+
+                        if (!isNaN(tPrice) && tPrice > 0 && itemHasActiveComp) {
+                            truMatchedTotal += tPrice;
+                            truMatchedCount++;
+                        }
                     });
 
-                    Object.keys(totals).forEach(function(k) {
-                        var avg = counts[k] > 0 ? Math.round(totals[k] / counts[k]) : 0;
-                        averages.push({ name: k, avg: avg, isBrand: k === 'TruSea' });
+                    var truAvg = truMatchedCount > 0 ? Math.round(truMatchedTotal / truMatchedCount) : 0;
+                    var averages = [{ name: 'TruSea', avg: truAvg, isBrand: true }];
+
+                    Object.keys(compTotals).forEach(function(k) {
+                        var avg = compCounts[k] > 0 ? Math.round(compTotals[k] / compCounts[k]) : 0;
+                        averages.push({ name: k, avg: avg, isBrand: false });
                     });
 
                     var competitors = averages.filter(c => !c.isBrand && c.avg > 0);
@@ -443,7 +470,6 @@
                     var container = document.getElementById('chartContainer');
                     if (!container) return;
 
-                    // Clean canvas DOM re-mount prevents date-switching invisible chart bug
                     container.innerHTML = '<canvas id="insightsChart"></canvas>';
                     var canvasEl = document.getElementById('insightsChart');
 
@@ -473,6 +499,10 @@
                         options: { 
                             responsive: true, 
                             maintainAspectRatio: false,
+                            animation: {
+                                duration: 1000,
+                                easing: 'easeInOutQuart'
+                            },
                             plugins: { 
                                 legend: { display: false },
                                 tooltip: {
