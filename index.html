@@ -126,7 +126,7 @@
             </template>
         </div>
 
-        <!-- DATE SELECTOR -->
+        <!-- DYNAMIC 7-DAY ROLLING SELECTOR -->
         <div class="mb-5 flex gap-2 overflow-x-auto no-scrollbar">
             <template x-for="date in availableDates" :key="date">
                 <button @click="switchDateView(date)" 
@@ -138,7 +138,7 @@
         <!-- TAB 1: ANALYTICS DASHBOARD -->
         <template x-if="activeViewTab === 'dashboard'">
             <div>
-                <!-- ANALYTICS CARDS & BAR CHART (Hidden while searching) -->
+                <!-- ANALYTICS CARDS & BAR CHART (Hidden while search is active) -->
                 <div x-show="!isSearchActive" class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
                     <div class="lg:col-span-1 flex flex-col gap-3">
                         <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -285,6 +285,7 @@
                 activeQuery: '',
                 isSearchActive: false,
                 allMasterData: {}, 
+                allMasterAverages: {},
                 availableDates: [],
                 selectedDate: '',
                 filteredItems: [],
@@ -305,6 +306,7 @@
                         try {
                             var parsedCache = JSON.parse(cachedData);
                             this.allMasterData = parsedCache.dataByDate || {};
+                            this.allMasterAverages = parsedCache.averagesByDate || {};
                             this.availableDates = parsedCache.meta.availableDates || [];
                             if (this.availableDates.length > 0) {
                                 this.selectedDate = this.availableDates[0];
@@ -338,6 +340,7 @@
                         localStorage.setItem('truSeaCachedData', JSON.stringify(resData));
 
                         this.allMasterData = resData.dataByDate || {};
+                        this.allMasterAverages = resData.averagesByDate || {};
                         this.availableDates = resData.meta.availableDates || [];
                         
                         if (isFirstLoad && this.availableDates.length > 0 && !this.selectedDate) {
@@ -395,52 +398,40 @@
                     this.updateAnalyticsAndChart();
                 },
 
-                // ACCURATE BENCHMARK AVERAGE PARSER
                 updateAnalyticsAndChart() {
                     if (this.activeViewTab !== 'dashboard' || this.isSearchActive) return;
 
-                    var items = this.filteredItems;
-                    if (!items || items.length === 0) {
-                        this.highestSeller = 'N/A';
-                        this.normalSeller = 'N/A';
-                        this.renderChart([]);
-                        return;
-                    }
+                    var averages = this.allMasterAverages[this.selectedDate] || [];
 
-                    var totals = { 'TruSea': 0, 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
-                    var counts = { 'TruSea': 0, 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
+                    // If category is filtered, dynamically calculate average for showing items
+                    if (this.selectedCategory !== 'All') {
+                        var totals = { 'TruSea': 0, 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
+                        var counts = { 'TruSea': 0, 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
 
-                    items.forEach(function(item) {
-                        // TruSea per-kg
-                        var tPrice = parseFloat(String(item.truSeaPerKg).replace(/[^\d.]/g, ''));
-                        if (!isNaN(tPrice) && tPrice > 0) {
-                            totals['TruSea'] += tPrice;
-                            counts['TruSea']++;
-                        }
+                        this.filteredItems.forEach(function(item) {
+                            var tPrice = parseFloat(String(item.truSeaPerKg).replace(/[^\d.]/g, ''));
+                            if (!isNaN(tPrice) && tPrice > 0) { totals['TruSea'] += tPrice; counts['TruSea']++; }
 
-                        // Competitors
-                        if (item.competitors) {
-                            Object.keys(item.competitors).forEach(function(compName) {
-                                var c = item.competitors[compName];
-                                if (c && c.price && c.price !== '-' && c.price !== '') {
-                                    var sLower = (c.status || '').toLowerCase();
-                                    if (!sLower.includes('not available') && !sLower.includes('sold out')) {
-                                        var p = parseFloat(String(c.price).replace(/[^\d.]/g, ''));
-                                        if (!isNaN(p) && p > 0 && p < 10000) {
-                                            totals[compName] += p;
-                                            counts[compName]++;
+                            if (item.competitors) {
+                                Object.keys(item.competitors).forEach(function(compName) {
+                                    var c = item.competitors[compName];
+                                    if (c && c.price && c.price !== '-') {
+                                        var sLower = (c.status || '').toLowerCase();
+                                        if (!sLower.includes('not available') && !sLower.includes('sold out')) {
+                                            var p = parseFloat(String(c.price).replace(/[^\d.]/g, ''));
+                                            if (!isNaN(p) && p > 0) { totals[compName] += p; counts[compName]++; }
                                         }
                                     }
-                                }
-                            });
-                        }
-                    });
+                                });
+                            }
+                        });
 
-                    var averages = [];
-                    Object.keys(totals).forEach(function(k) {
-                        var avg = counts[k] > 0 ? Math.round(totals[k] / counts[k]) : 0;
-                        averages.push({ name: k, avg: avg, isBrand: k === 'TruSea' });
-                    });
+                        averages = [];
+                        Object.keys(totals).forEach(function(k) {
+                            var avg = counts[k] > 0 ? Math.round(totals[k] / counts[k]) : 0;
+                            averages.push({ name: k, avg: avg, isBrand: k === 'TruSea' });
+                        });
+                    }
 
                     var competitors = averages.filter(c => !c.isBrand && c.avg > 0);
                     competitors.sort((a, b) => b.avg - a.avg);
