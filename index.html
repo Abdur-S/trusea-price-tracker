@@ -453,7 +453,7 @@
                 </div>
 
                 <div x-show="!loading" class="mb-6 flex flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-5xl mx-auto">
-                    <template x-for="cat in ['All', 'Premium Slices', 'Regular Slices', 'Thick Slices', 'Fillets', 'Curry Cuts', 'Prawns', 'Crabs']" :key="cat">
+                    <template x-for="cat in ['All', 'Premium Slices', 'Regular Slices', 'Thick Slices', 'Fillets', 'Curry Cuts', 'Cleaned Whole Fish', 'Cubes', 'Prawns', 'Crabs']" :key="cat">
                         <button @click="selectedCategory = cat; applyFilters();"
                                 :class="selectedCategory === cat ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-slate-800 dark:border-slate-200 font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'"
                                 class="px-3.5 py-1.5 text-xs rounded-full border transition font-medium"
@@ -548,7 +548,7 @@
                     </p>
 
                     <div class="flex flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-                        <template x-for="cat in ['All', 'Premium Slices', 'Regular Slices', 'Thick Slices', 'Fillets', 'Curry Cuts', 'Prawns', 'Crabs']" :key="cat">
+                        <template x-for="cat in ['All', 'Premium Slices', 'Regular Slices', 'Thick Slices', 'Fillets', 'Curry Cuts', 'Cleaned Whole Fish', 'Cubes', 'Prawns', 'Crabs']" :key="cat">
                             <button @click="selectedCategory = cat; applyFilters();"
                                     :class="selectedCategory === cat ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-slate-800 dark:border-slate-200 font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'"
                                     class="px-3.5 py-1.5 text-xs rounded-full border transition font-medium whitespace-nowrap"
