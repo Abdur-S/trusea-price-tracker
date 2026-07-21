@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TruSea Price Tracker</title>
 
-    <!-- Meta Tags & OpenGraph Sharing -->
     <meta name="description" content="Live Real-Time Seafood Price Analysis & Competitor Market Price Tracking Dashboard." />
     <meta property="og:title" content="TruSea Price Tracker" />
     <meta property="og:description" content="Live Real-Time Seafood Price Analysis & Competitor Tracking Dataset." />
@@ -13,7 +12,6 @@
     <meta property="og:site_name" content="TruSea Tracker" />
     <meta name="twitter:card" content="summary_large_image" />
 
-    <!-- 3D Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🐟</text></svg>">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -126,7 +124,7 @@
             </template>
         </div>
 
-        <!-- DYNAMIC 7-DAY ROLLING SELECTOR -->
+        <!-- DATE SELECTOR -->
         <div class="mb-5 flex gap-2 overflow-x-auto no-scrollbar">
             <template x-for="date in availableDates" :key="date">
                 <button @click="switchDateView(date)" 
@@ -138,7 +136,7 @@
         <!-- TAB 1: ANALYTICS DASHBOARD -->
         <template x-if="activeViewTab === 'dashboard'">
             <div>
-                <!-- ANALYTICS CARDS & BAR CHART (Hidden while search is active) -->
+                <!-- ANALYTICS CARDS & BAR CHART -->
                 <div x-show="!isSearchActive" class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
                     <div class="lg:col-span-1 flex flex-col gap-3">
                         <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -151,7 +149,6 @@
                         </div>
                     </div>
                     <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                        <!-- Canvas Container -->
                         <div id="chartContainer" class="relative h-[200px] w-full">
                             <canvas id="insightsChart"></canvas>
                         </div>
@@ -208,7 +205,6 @@
         <!-- TAB 2: FULL COMPARATIVE TABLE -->
         <template x-if="activeViewTab === 'table'">
             <div class="space-y-4">
-                <!-- EXPORT BUTTONS & FILTERS -->
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full p-1">
                         <button @click="truSeaFilter = 'all'; applyFilters();"
@@ -226,7 +222,6 @@
                     </div>
                 </div>
 
-                <!-- TABLE CONTAINER -->
                 <div id="comparativeTableContainer" class="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800">
                     <table class="w-full table-auto border-collapse text-left text-xs">
                         <thead>
@@ -276,7 +271,7 @@
         </template>
     </div>
 
-    <!-- MAIN APP CONTROLLER -->
+    <!-- MAIN CONTROLLER -->
     <script>
         function trackerApp() {
             return {
@@ -300,7 +295,6 @@
                 async initEngine() {
                     if (this.darkMode) document.documentElement.classList.add('dark');
 
-                    // Load from Cache for Instant Page Display (0ms delay)
                     var cachedData = localStorage.getItem('truSeaCachedData');
                     if (cachedData) {
                         try {
@@ -315,7 +309,6 @@
                         } catch (e) { console.error('Cache load error:', e); }
                     }
 
-                    // Background Fetch for Fresh Live Updates
                     await this.fetchLivePrices(true);
 
                     setInterval(async () => {
@@ -401,37 +394,34 @@
                 updateAnalyticsAndChart() {
                     if (this.activeViewTab !== 'dashboard' || this.isSearchActive) return;
 
-                    var averages = this.allMasterAverages[this.selectedDate] || [];
+                    var averages = [];
 
-                    // If category is filtered, dynamically calculate average for showing items
-                    if (this.selectedCategory !== 'All') {
-                        var totals = { 'TruSea': 0, 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
-                        var counts = { 'TruSea': 0, 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
+                    // Always compute dynamic averages for active date/category view
+                    var totals = { 'TruSea': 0, 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
+                    var counts = { 'TruSea': 0, 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
 
-                        this.filteredItems.forEach(function(item) {
-                            var tPrice = parseFloat(String(item.truSeaPerKg).replace(/[^\d.]/g, ''));
-                            if (!isNaN(tPrice) && tPrice > 0) { totals['TruSea'] += tPrice; counts['TruSea']++; }
+                    (this.filteredItems || []).forEach(function(item) {
+                        var tPrice = parseFloat(String(item.truSeaPerKg).replace(/[^\d.]/g, ''));
+                        if (!isNaN(tPrice) && tPrice > 0) { totals['TruSea'] += tPrice; counts['TruSea']++; }
 
-                            if (item.competitors) {
-                                Object.keys(item.competitors).forEach(function(compName) {
-                                    var c = item.competitors[compName];
-                                    if (c && c.price && c.price !== '-') {
-                                        var sLower = (c.status || '').toLowerCase();
-                                        if (!sLower.includes('not available') && !sLower.includes('sold out')) {
-                                            var p = parseFloat(String(c.price).replace(/[^\d.]/g, ''));
-                                            if (!isNaN(p) && p > 0) { totals[compName] += p; counts[compName]++; }
-                                        }
+                        if (item.competitors) {
+                            Object.keys(item.competitors).forEach(function(compName) {
+                                var c = item.competitors[compName];
+                                if (c && c.price && c.price !== '-') {
+                                    var sLower = (c.status || '').toLowerCase();
+                                    if (!sLower.includes('not available') && !sLower.includes('sold out')) {
+                                        var p = parseFloat(String(c.price).replace(/[^\d.]/g, ''));
+                                        if (!isNaN(p) && p > 0) { totals[compName] += p; counts[compName]++; }
                                     }
-                                });
-                            }
-                        });
+                                }
+                            });
+                        }
+                    });
 
-                        averages = [];
-                        Object.keys(totals).forEach(function(k) {
-                            var avg = counts[k] > 0 ? Math.round(totals[k] / counts[k]) : 0;
-                            averages.push({ name: k, avg: avg, isBrand: k === 'TruSea' });
-                        });
-                    }
+                    Object.keys(totals).forEach(function(k) {
+                        var avg = counts[k] > 0 ? Math.round(totals[k] / counts[k]) : 0;
+                        averages.push({ name: k, avg: avg, isBrand: k === 'TruSea' });
+                    });
 
                     var competitors = averages.filter(c => !c.isBrand && c.avg > 0);
                     competitors.sort((a, b) => b.avg - a.avg);
@@ -444,15 +434,16 @@
                         this.normalSeller = 'N/A';
                     }
 
-                    this.$nextTick(() => {
+                    setTimeout(() => {
                         this.renderChart(averages);
-                    });
+                    }, 50);
                 },
 
                 renderChart(averages) {
                     var container = document.getElementById('chartContainer');
                     if (!container) return;
 
+                    // Clean canvas DOM re-mount prevents date-switching invisible chart bug
                     container.innerHTML = '<canvas id="insightsChart"></canvas>';
                     var canvasEl = document.getElementById('insightsChart');
 
