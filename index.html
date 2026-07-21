@@ -135,7 +135,7 @@
         <!-- TAB 1: ANALYTICS DASHBOARD -->
         <template x-if="activeViewTab === 'dashboard'">
             <div>
-                <!-- ANALYTICS CARDS & COMPETITOR RANKING LIST -->
+                <!-- ANALYTICS CARDS & MARKET RANKING LIST -->
                 <div x-show="!isSearchActive" class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
                     <!-- COSTLY & NORMAL VENDORS -->
                     <div class="lg:col-span-1 flex flex-col gap-3">
@@ -149,35 +149,47 @@
                         </div>
                     </div>
 
-                    <!-- COMPETITOR MARKET RANKING LIST -->
+                    <!-- MARKET PRICE LEADERBOARD INCLUDING TRUSEA -->
                     <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                         <div class="flex justify-between items-center mb-3 border-b border-slate-100 dark:border-slate-700 pb-2">
-                            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">🏆 Competitor Price Leaderboard (Avg Per KG)</h2>
+                            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">🏆 Market Price Leaderboard (Avg Per KG)</h2>
                             <span class="text-[10px] text-blue-600 dark:text-blue-400 font-bold" x-text="'Showing: ' + selectedDate"></span>
                         </div>
 
                         <div class="space-y-2">
                             <template x-for="(comp, index) in competitorRankings" :key="comp.name">
-                                <div class="flex justify-between items-center bg-[#FAFAFA] dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                                <div class="flex justify-between items-center p-2.5 rounded-lg border transition-all duration-200"
+                                     :class="{
+                                        'bg-cyan-50/80 dark:bg-cyan-950/40 border-cyan-300 dark:border-cyan-700 shadow-xs': comp.isBrand,
+                                        'bg-[#FAFAFA] dark:bg-slate-900 border-slate-100 dark:border-slate-800': !comp.isBrand
+                                     }">
                                     <div class="flex items-center gap-2.5">
                                         <span class="text-xs font-black px-2 py-0.5 rounded text-white" 
                                               :class="{
-                                                'bg-rose-500': index === 0,
-                                                'bg-orange-500': index === 1,
-                                                'bg-amber-500': index === 2,
-                                                'bg-emerald-500': index >= 3
+                                                'bg-cyan-500': comp.isBrand,
+                                                'bg-rose-500': !comp.isBrand && index === 0,
+                                                'bg-orange-500': !comp.isBrand && index === 1,
+                                                'bg-amber-500': !comp.isBrand && index === 2,
+                                                'bg-emerald-500': !comp.isBrand && index >= 3
                                               }" 
                                               x-text="'#' + (index + 1)"></span>
-                                        <span class="text-sm font-extrabold text-slate-800 dark:text-slate-200" x-text="comp.name"></span>
+                                        <span class="text-sm font-extrabold flex items-center gap-1.5"
+                                              :class="comp.isBrand ? 'text-cyan-700 dark:text-cyan-300' : 'text-slate-800 dark:text-slate-200'">
+                                            <span x-text="comp.name"></span>
+                                            <template x-if="comp.isBrand">
+                                                <span class="bg-cyan-600 text-white text-[9px] px-1.5 py-0.2 rounded font-black tracking-wide">TRUSEA</span>
+                                            </template>
+                                        </span>
                                     </div>
-                                    <div class="flex items-center gap-3">
-                                        <span class="text-xs text-slate-400" x-text="comp.count + ' items available'"></span>
-                                        <span class="text-sm font-black text-slate-900 dark:text-slate-100 font-mono" x-text="'₹' + comp.avg + '/KG'"></span>
+                                    <div>
+                                        <span class="text-sm font-black font-mono" 
+                                              :class="comp.isBrand ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-900 dark:text-slate-100'"
+                                              x-text="'₹' + comp.avg + '/KG'"></span>
                                     </div>
                                 </div>
                             </template>
                             <template x-if="competitorRankings.length === 0">
-                                <div class="text-center py-6 text-xs text-slate-400">No competitor pricing available for current selection.</div>
+                                <div class="text-center py-6 text-xs text-slate-400">No pricing available for current selection.</div>
                             </template>
                         </div>
                     </div>
@@ -415,14 +427,20 @@
                     this.computeAnalytics();
                 },
 
-                // DYNAMIC BENCHMARKING (In-Stock Competitors Only)
+                // DYNAMIC BENCHMARKING (Includes TruSea + Competitors)
                 computeAnalytics() {
                     var items = this.filteredItems || [];
                     
                     var compTotals = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
                     var compCounts = { 'TenderCuts': 0, 'Licious': 0, 'Fresh Ma': 0, 'Fresh To Home': 0, 'Supreme Sea Foods': 0 };
 
+                    var truMatchedTotal = 0;
+                    var truMatchedCount = 0;
+
                     items.forEach(function(item) {
+                        var tPrice = parseFloat(String(item.truSeaPerKg).replace(/[^\d.]/g, ''));
+                        var itemHasActiveComp = false;
+
                         if (item.competitors) {
                             Object.keys(item.competitors).forEach(function(compName) {
                                 var c = item.competitors[compName];
@@ -433,27 +451,42 @@
                                         if (!isNaN(p) && p > 0 && p < 10000) {
                                             compTotals[compName] += p;
                                             compCounts[compName]++;
+                                            itemHasActiveComp = true;
                                         }
                                     }
                                 }
                             });
                         }
+
+                        if (!isNaN(tPrice) && tPrice > 0 && itemHasActiveComp) {
+                            truMatchedTotal += tPrice;
+                            truMatchedCount++;
+                        }
                     });
 
                     var rankings = [];
+
+                    // 1. Add TruSea
+                    if (truMatchedCount > 0) {
+                        var truAvg = Math.round(truMatchedTotal / truMatchedCount);
+                        rankings.push({ name: 'TruSea', avg: truAvg, count: truMatchedCount, isBrand: true });
+                    }
+
+                    // 2. Add Competitors
                     Object.keys(compTotals).forEach(function(k) {
                         if (compCounts[k] > 0) {
                             var avg = Math.round(compTotals[k] / compCounts[k]);
-                            rankings.push({ name: k, avg: avg, count: compCounts[k] });
+                            rankings.push({ name: k, avg: avg, count: compCounts[k], isBrand: false });
                         }
                     });
 
                     rankings.sort((a, b) => b.avg - a.avg);
                     this.competitorRankings = rankings;
 
-                    if (rankings.length > 0) {
-                        this.highestSeller = rankings[0].name + ' (₹' + rankings[0].avg + '/KG)';
-                        this.normalSeller = rankings[rankings.length - 1].name + ' (₹' + rankings[rankings.length - 1].avg + '/KG)';
+                    var competitorsOnly = rankings.filter(c => !c.isBrand);
+                    if (competitorsOnly.length > 0) {
+                        this.highestSeller = competitorsOnly[0].name + ' (₹' + competitorsOnly[0].avg + '/KG)';
+                        this.normalSeller = competitorsOnly[competitorsOnly.length - 1].name + ' (₹' + competitorsOnly[competitorsOnly.length - 1].avg + '/KG)';
                     } else {
                         this.highestSeller = 'N/A';
                         this.normalSeller = 'N/A';
