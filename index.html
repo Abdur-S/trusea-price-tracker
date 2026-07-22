@@ -124,11 +124,14 @@
         </div>
 
         <!-- DATE SELECTOR -->
-        <div class="mb-5 flex gap-2 overflow-x-auto no-scrollbar">
+        <div class="mb-5 flex gap-2 overflow-x-auto no-scrollbar justify-center">
             <template x-for="date in availableDates" :key="date">
                 <button @click="switchDateView(date)" 
                         :class="selectedDate === date ? 'bg-cyan-600 text-white font-bold shadow-md' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'"
                         class="px-4 py-2 text-xs sm:text-sm rounded-full whitespace-nowrap transition" x-text="date"></button>
+            </template>
+            <template x-if="availableDates.length === 0">
+                <div class="text-xs text-slate-400 italic py-1">Loading available date sheets...</div>
             </template>
         </div>
 
@@ -158,7 +161,7 @@
                         <div>
                             <div class="flex justify-between items-center mb-3 border-b border-slate-100 dark:border-slate-700 pb-2">
                                 <h2 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">🔥 Competitor Price Leaderboard (Avg Price/KG)</h2>
-                                <span class="text-xs text-blue-600 dark:text-blue-400 font-bold" x-text="'Showing: ' + selectedDate"></span>
+                                <span class="text-xs text-blue-600 dark:text-blue-400 font-bold" x-text="'Showing: ' + (selectedDate || 'N/A')"></span>
                             </div>
 
                             <div class="space-y-2">
@@ -241,7 +244,7 @@
             </div>
         </template>
 
-        <!-- TAB 2: FULL COMPARATIVE TABLE (BIGGER FONTS & HIGH CONTRAST) -->
+        <!-- TAB 2: FULL COMPARATIVE TABLE -->
         <template x-if="activeViewTab === 'table'">
             <div class="space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-3">
@@ -339,7 +342,7 @@
                         try {
                             var parsedCache = JSON.parse(cachedData);
                             this.allMasterData = parsedCache.dataByDate || {};
-                            this.availableDates = parsedCache.meta.availableDates || [];
+                            this.availableDates = parsedCache.meta ? parsedCache.meta.availableDates || [] : [];
                             if (this.availableDates.length > 0) {
                                 this.selectedDate = this.availableDates[0];
                                 this.applyFilters();
@@ -364,19 +367,28 @@
                 async fetchLivePrices(isFirstLoad) {
                     try {
                         let cacheBuster = new Date().getTime();
-                        let response = await fetch(this.webAppUrl + '?_cb=' + cacheBuster);
+                        let response = await fetch(this.webAppUrl + '?_cb=' + cacheBuster, {
+                            method: 'GET',
+                            redirect: 'follow'
+                        });
+                        
                         let resData = await response.json();
                         
-                        localStorage.setItem('truSeaCachedData', JSON.stringify(resData));
+                        if (resData && resData.dataByDate && Object.keys(resData.dataByDate).length > 0) {
+                            localStorage.setItem('truSeaCachedData', JSON.stringify(resData));
 
-                        this.allMasterData = resData.dataByDate || {};
-                        this.availableDates = resData.meta.availableDates || [];
-                        
-                        if (isFirstLoad && this.availableDates.length > 0 && !this.selectedDate) {
-                            this.selectedDate = this.availableDates[0];
+                            this.allMasterData = resData.dataByDate || {};
+                            this.availableDates = (resData.meta && resData.meta.availableDates) ? resData.meta.availableDates : Object.keys(this.allMasterData);
+                            
+                            if (this.availableDates.length > 0) {
+                                if (isFirstLoad || !this.selectedDate || !this.availableDates.includes(this.selectedDate)) {
+                                    this.selectedDate = this.availableDates[0];
+                                }
+                            }
+                            this.applyFilters();
+                        } else {
+                            console.warn("API returned empty dataset:", resData);
                         }
-                        
-                        this.applyFilters();
                     } catch (e) {
                         console.error('Error fetching live data:', e);
                     }
@@ -406,38 +418,38 @@
                     this.applyFilters();
                 },
 
-           applyFilters() {
-    let items = this.allMasterData[this.selectedDate] || [];
-    let q = this.activeQuery.toLowerCase().trim();
-    
-    if (q) {
-        items = items.filter(i => i.name.toLowerCase().includes(q));
-    }
-    
-    if (this.selectedCategory !== 'All') {
-        let cat = this.selectedCategory.toLowerCase();
-        items = items.filter(i => {
-            let name = i.name.toLowerCase();
-            if (cat === 'premium slices') return name.includes('slice') || name.includes('steak');
-            if (cat === 'regular slices') return name.includes('slice');
-            if (cat === 'thick slices') return name.includes('thick') || name.includes('slice');
-            if (cat === 'cleaned whole fish') return name.includes('cleaned') || name.includes('whole');
-            if (cat === 'curry cuts') return name.includes('curry') || name.includes('cut');
-            if (cat === 'fillets') return name.includes('fillet');
-            if (cat === 'cubes') return name.includes('cube');
-            if (cat === 'crabs') return name.includes('crab');
-            if (cat === 'prawns') return name.includes('prawn') || name.includes('shrimp');
-            return name.includes(cat);
-        });
-    }
-    
-    if (this.truSeaFilter === 'priced') {
-        items = items.filter(i => i.truSeaPerKg && i.truSeaPerKg !== '-');
-    }
-    
-    this.filteredItems = items;
-    this.computeAnalytics();
-}
+                applyFilters() {
+                    let items = this.allMasterData[this.selectedDate] || [];
+                    let q = this.activeQuery.toLowerCase().trim();
+                    
+                    if (q) {
+                        items = items.filter(i => i.name.toLowerCase().includes(q));
+                    }
+                    
+                    if (this.selectedCategory !== 'All') {
+                        let cat = this.selectedCategory.toLowerCase();
+                        items = items.filter(i => {
+                            let name = i.name.toLowerCase();
+                            if (cat === 'premium slices') return name.includes('slice') || name.includes('steak');
+                            if (cat === 'regular slices') return name.includes('slice');
+                            if (cat === 'thick slices') return name.includes('thick') || name.includes('slice');
+                            if (cat === 'cleaned whole fish') return name.includes('cleaned') || name.includes('whole');
+                            if (cat === 'curry cuts') return name.includes('curry') || name.includes('cut');
+                            if (cat === 'fillets') return name.includes('fillet');
+                            if (cat === 'cubes') return name.includes('cube');
+                            if (cat === 'crabs') return name.includes('crab');
+                            if (cat === 'prawns') return name.includes('prawn') || name.includes('shrimp');
+                            return name.includes(cat);
+                        });
+                    }
+                    
+                    if (this.truSeaFilter === 'priced') {
+                        items = items.filter(i => i.truSeaPerKg && i.truSeaPerKg !== '-');
+                    }
+                    
+                    this.filteredItems = items;
+                    this.computeAnalytics();
+                },
 
                 computeAnalytics() {
                     var items = this.filteredItems || [];
