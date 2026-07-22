@@ -92,7 +92,7 @@
                     class="px-5 py-2.5 text-base transition">📋 Full Comparative Table</button>
         </div>
 
-        <!-- NEON GEMINI SEARCH BAR -->
+        <!-- SEARCH BAR -->
         <div class="mb-5 max-w-2xl mx-auto">
             <div class="gemini-ai-search-container">
                 <div class="flex items-center w-full bg-white dark:bg-slate-800 rounded-full px-4 py-2 shadow-sm">
@@ -138,13 +138,12 @@
         <!-- TAB 1: ANALYTICS DASHBOARD -->
         <template x-if="activeViewTab === 'dashboard'">
             <div>
-                <!-- ANALYTICS CARDS & COSTLY VENDOR RANKINGS -->
+                <!-- ANALYTICS CARDS & RANKINGS -->
                 <div x-show="!isSearchActive" class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-                    <!-- COSTLY, NORMAL & TRUSEA BENCHMARK CARDS -->
                     <div class="lg:col-span-1 flex flex-col gap-3">
                         <div class="bg-blue-600 text-white p-4 rounded-xl border border-blue-700 shadow-md">
-                            <span class="text-xs uppercase font-black text-blue-200 block mb-0.5">🐟 TRUSEA BENCHMARK AVG</span>
-                            <div class="text-2xl font-black font-mono" x-text="truSeaAverage !== 'N/A' ? '₹' + truSeaAverage + '/KG' : 'N/A'"></div>
+                            <span class="text-xs uppercase font-black text-blue-200 block mb-0.5">🐟 TRUSEA BENCHMARK AVG (PER KG)</span>
+                            <div class="text-2xl font-black font-mono" x-text="truSeaAverage !== 'N/A' ? '₹' + truSeaAverage + '/kg' : 'N/A'"></div>
                         </div>
                         <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                             <span class="text-xs uppercase font-bold text-red-500 block mb-1">🔴 COSTLY MARKET VENDOR</span>
@@ -156,7 +155,6 @@
                         </div>
                     </div>
 
-                    <!-- COMPETITOR-ONLY MARKET LEADERBOARD -->
                     <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between">
                         <div>
                             <div class="flex justify-between items-center mb-3 border-b border-slate-100 dark:border-slate-700 pb-2">
@@ -185,7 +183,7 @@
                                             </div>
                                         </div>
                                         <div>
-                                            <span class="text-base sm:text-lg font-black font-mono text-slate-900 dark:text-slate-100" x-text="'₹' + comp.avg + '/KG'"></span>
+                                            <span class="text-base sm:text-lg font-black font-mono text-slate-900 dark:text-slate-100" x-text="'₹' + comp.avg + '/kg'"></span>
                                         </div>
                                     </div>
                                 </template>
@@ -206,11 +204,11 @@
                             <div class="space-y-2 mb-4 bg-[#FAFAFA] dark:bg-slate-900 p-3.5 rounded-lg text-sm">
                                 <div class="flex justify-between">
                                     <span class="text-slate-500 dark:text-slate-400">Current TruSea Web Price</span>
-                                    <span class="font-extrabold text-slate-800 dark:text-slate-200" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></span>
+                                    <span class="font-extrabold text-slate-800 dark:text-slate-200" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice + '/kg' : '-'"></span>
                                 </div>
                                 <div class="flex justify-between border-t border-slate-200 dark:border-slate-800 pt-2">
                                     <span class="font-bold text-slate-900 dark:text-slate-100">Today's Target TruSea Price</span>
-                                    <span class="text-base font-black text-cyan-600 dark:text-cyan-400" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></span>
+                                    <span class="text-base font-black text-cyan-600 dark:text-cyan-400" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg + '/kg' : '-'"></span>
                                 </div>
                             </div>
                             
@@ -244,7 +242,7 @@
             </div>
         </template>
 
-        <!-- TAB 2: FULL COMPARATIVE TABLE -->
+        <!-- TAB 2: COMPARATIVE TABLE -->
         <template x-if="activeViewTab === 'table'">
             <div class="space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-3">
@@ -268,9 +266,9 @@
                     <table class="w-full table-auto border-collapse text-left text-sm sm:text-base">
                         <thead>
                             <tr class="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 font-black uppercase text-xs sm:text-sm tracking-wider sticky top-0 z-30 text-slate-800 dark:text-slate-200">
-                                <th class="p-3.5 sm:p-4 sticky-col bg-slate-100 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 min-w-[200px] shadow-[2px_0_4px_rgba(0,0,0,0.05)]">FISH DESCRIPTION</th>
-                                <th class="p-3.5 sm:p-4 text-center min-w-[150px]">CURRENT TRUSEA WEB PRICE</th>
-                                <th class="p-3.5 sm:p-4 text-center min-w-[150px] bg-blue-100/70 dark:bg-blue-950/60 text-blue-900 dark:text-blue-200 font-black">TODAY'S TARGET PRICE</th>
+                                <th class="p-3.5 sm:p-4 sticky-col bg-slate-100 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 min-w-[200px]">FISH DESCRIPTION</th>
+                                <th class="p-3.5 sm:p-4 text-center min-w-[150px]">CURRENT WEB PRICE (₹/KG)</th>
+                                <th class="p-3.5 sm:p-4 text-center min-w-[150px] bg-blue-100/70 dark:bg-blue-950/60 text-blue-900 dark:text-blue-200 font-black">TARGET PRICE (₹/KG)</th>
                                 <th class="p-3.5 sm:p-4 text-center min-w-[130px]">TENDERCUTS</th>
                                 <th class="p-3.5 sm:p-4 text-center min-w-[130px]">LICIOUS</th>
                                 <th class="p-3.5 sm:p-4 text-center min-w-[130px]">FRESH MA</th>
@@ -281,11 +279,11 @@
                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700/80 font-medium">
                             <template x-for="item in filteredItems" :key="item.name">
                                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition">
-                                    <td class="p-3.5 sm:p-4 font-extrabold text-slate-900 dark:text-slate-100 text-sm sm:text-base sticky-col bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 shadow-[2px_0_4px_rgba(0,0,0,0.05)]" x-text="item.name"></td>
+                                    <td class="p-3.5 sm:p-4 font-extrabold text-slate-900 dark:text-slate-100 text-sm sm:text-base sticky-col bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700" x-text="item.name"></td>
                                     
-                                    <td class="p-3.5 sm:p-4 text-center font-mono font-bold text-slate-800 dark:text-slate-200 text-sm sm:text-base" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-'"></td>
+                                    <td class="p-3.5 sm:p-4 text-center font-mono font-bold text-slate-800 dark:text-slate-200 text-sm sm:text-base" x-text="item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice + '/kg' : '-'"></td>
                                     
-                                    <td class="p-3.5 sm:p-4 text-center font-mono font-black text-blue-700 dark:text-blue-400 bg-blue-50/70 dark:bg-blue-950/30 text-base sm:text-lg" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-'"></td>
+                                    <td class="p-3.5 sm:p-4 text-center font-mono font-black text-blue-700 dark:text-blue-400 bg-blue-50/70 dark:bg-blue-950/30 text-base sm:text-lg" x-text="item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg + '/kg' : '-'"></td>
 
                                     <template x-for="compName in ['TenderCuts', 'Licious', 'Fresh Ma', 'Fresh To Home', 'Supreme Sea Foods']" :key="compName">
                                         <td class="p-3.5 sm:p-4 text-center font-mono">
@@ -342,7 +340,7 @@
                         try {
                             var parsedCache = JSON.parse(cachedData);
                             this.allMasterData = parsedCache.dataByDate || {};
-                            this.availableDates = parsedCache.meta ? parsedCache.meta.availableDates || [] : [];
+                            this.availableDates = (parsedCache.meta && parsedCache.meta.availableDates) ? parsedCache.meta.availableDates : [];
                             if (this.availableDates.length > 0) {
                                 this.selectedDate = this.availableDates[0];
                                 this.applyFilters();
@@ -386,8 +384,6 @@
                                 }
                             }
                             this.applyFilters();
-                        } else {
-                            console.warn("API returned empty dataset:", resData);
                         }
                     } catch (e) {
                         console.error('Error fetching live data:', e);
@@ -464,13 +460,16 @@
                         var webStr = String(item.currentTruSeaWebPrice || '').trim();
                         var targetStr = String(item.truSeaPerKg || '').trim();
 
-                        if (webStr !== '-' && webStr !== '' && !/not|sold|na/i.test(webStr)) {
+                        if (targetStr !== '-' && targetStr !== '') {
                             var tPrice = parseFloat(targetStr.replace(/[^\d.]/g, ''));
-                            if (isNaN(tPrice) || tPrice <= 0) {
-                                tPrice = parseFloat(webStr.replace(/[^\d.]/g, ''));
-                            }
-                            if (!isNaN(tPrice) && tPrice > 0 && tPrice < 10000) {
+                            if (!isNaN(tPrice) && tPrice > 0) {
                                 truTotal += tPrice;
+                                truCount++;
+                            }
+                        } else if (webStr !== '-' && webStr !== '') {
+                            var wPrice = parseFloat(webStr.replace(/[^\d.]/g, ''));
+                            if (!isNaN(wPrice) && wPrice > 0) {
+                                truTotal += wPrice;
                                 truCount++;
                             }
                         }
@@ -482,7 +481,7 @@
                                     var sLower = (c.status || '').toLowerCase();
                                     if (!sLower.includes('not available') && !sLower.includes('sold out')) {
                                         var p = parseFloat(String(c.price).replace(/[^\d.]/g, ''));
-                                        if (!isNaN(p) && p > 0 && p < 10000) {
+                                        if (!isNaN(p) && p > 0) {
                                             compTotals[compName] += p;
                                             compCounts[compName]++;
                                         }
@@ -498,15 +497,15 @@
                     Object.keys(compTotals).forEach(function(k) {
                         if (compCounts[k] > 0) {
                             var avg = Math.round(compTotals[k] / compCounts[k]);
-                            competitorsOnly.push({ name: k, avg: avg, count: compCounts[k], isBrand: false });
+                            competitorsOnly.push({ name: k, avg: avg, count: compCounts[k] });
                         }
                     });
 
                     competitorsOnly.sort((a, b) => b.avg - a.avg);
 
                     if (competitorsOnly.length > 0) {
-                        this.highestSeller = competitorsOnly[0].name + ' (₹' + competitorsOnly[0].avg + '/KG)';
-                        this.normalSeller = competitorsOnly[competitorsOnly.length - 1].name + ' (₹' + competitorsOnly[competitorsOnly.length - 1].avg + '/KG)';
+                        this.highestSeller = competitorsOnly[0].name + ' (₹' + competitorsOnly[0].avg + '/kg)';
+                        this.normalSeller = competitorsOnly[competitorsOnly.length - 1].name + ' (₹' + competitorsOnly[competitorsOnly.length - 1].avg + '/kg)';
                     } else {
                         this.highestSeller = 'N/A';
                         this.normalSeller = 'N/A';
@@ -516,11 +515,11 @@
                 },
 
                 exportExcel() {
-                    let headers = ['Fish Description', 'Current TruSea Web Price', 'Today Target Price', 'TenderCuts', 'Licious', 'Fresh Ma', 'Fresh To Home', 'Supreme Sea Foods'];
+                    let headers = ['Fish Description', 'Current TruSea Web Price (₹/kg)', 'Today Target Price (₹/kg)', 'TenderCuts', 'Licious', 'Fresh Ma', 'Fresh To Home', 'Supreme Sea Foods'];
                     let rows = this.filteredItems.map(item => [
                         item.name,
-                        item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice : '-',
-                        item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg : '-',
+                        item.currentTruSeaWebPrice !== '-' ? '₹' + item.currentTruSeaWebPrice + '/kg' : '-',
+                        item.truSeaPerKg !== '-' ? '₹' + item.truSeaPerKg + '/kg' : '-',
                         item.competitors['TenderCuts'] ? item.competitors['TenderCuts'].status : '-',
                         item.competitors['Licious'] ? item.competitors['Licious'].status : '-',
                         item.competitors['Fresh Ma'] ? item.competitors['Fresh Ma'].status : '-',
