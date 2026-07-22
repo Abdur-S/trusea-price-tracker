@@ -406,26 +406,38 @@
                     this.applyFilters();
                 },
 
-                applyFilters() {
-                    let items = this.allMasterData[this.selectedDate] || [];
-                    let q = this.activeQuery.toLowerCase().trim();
-                    
-                    if (q) {
-                        items = items.filter(i => i.name.toLowerCase().includes(q));
-                    }
-                    
-                    if (this.selectedCategory !== 'All') {
-                        let catKey = this.selectedCategory.toLowerCase().replace(/s$/, '');
-                        items = items.filter(i => i.name.toLowerCase().includes(catKey));
-                    }
-                    
-                    if (this.truSeaFilter === 'priced') {
-                        items = items.filter(i => i.truSeaPerKg && i.truSeaPerKg !== '-');
-                    }
-                    
-                    this.filteredItems = items;
-                    this.computeAnalytics();
-                },
+           applyFilters() {
+    let items = this.allMasterData[this.selectedDate] || [];
+    let q = this.activeQuery.toLowerCase().trim();
+    
+    if (q) {
+        items = items.filter(i => i.name.toLowerCase().includes(q));
+    }
+    
+    if (this.selectedCategory !== 'All') {
+        let cat = this.selectedCategory.toLowerCase();
+        items = items.filter(i => {
+            let name = i.name.toLowerCase();
+            if (cat === 'premium slices') return name.includes('slice') || name.includes('steak');
+            if (cat === 'regular slices') return name.includes('slice');
+            if (cat === 'thick slices') return name.includes('thick') || name.includes('slice');
+            if (cat === 'cleaned whole fish') return name.includes('cleaned') || name.includes('whole');
+            if (cat === 'curry cuts') return name.includes('curry') || name.includes('cut');
+            if (cat === 'fillets') return name.includes('fillet');
+            if (cat === 'cubes') return name.includes('cube');
+            if (cat === 'crabs') return name.includes('crab');
+            if (cat === 'prawns') return name.includes('prawn') || name.includes('shrimp');
+            return name.includes(cat);
+        });
+    }
+    
+    if (this.truSeaFilter === 'priced') {
+        items = items.filter(i => i.truSeaPerKg && i.truSeaPerKg !== '-');
+    }
+    
+    this.filteredItems = items;
+    this.computeAnalytics();
+}
 
                 computeAnalytics() {
                     var items = this.filteredItems || [];
